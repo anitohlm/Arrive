@@ -1,0 +1,10 @@
+azure-ai-projects
+azure-ai-inference
+azure-ai-agents
+azure-cosmos
+azure-search-documents
+azure-identity
+python-dotenv
+fastapi[all]
+uvicorn[standard]
+httpx
