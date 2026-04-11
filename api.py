@@ -61,3 +61,9 @@ def submit_entry(request: SubmitEntryRequest):
 def monthly_insights(request: InsightsRequest):
     result = handle_monthly_insights(request.user_id)
     return result
+
+@app.post("/memory-resurface")
+def memory_resurface(request: OpenAppRequest):
+    from agents.memory_agent import resurface_memories
+    result = resurface_memories(request.user_id, request.mood)
+    return result
