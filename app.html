@@ -2832,9 +2832,9 @@ function _drawKnotGeometry(ctx, cx, cy, R, entries, monthIndex){
   // 3-layer system — each layer uses a different blend depth
   // layers rotated so petals interlace through the gaps (Option A — chosen design)
   var layers = [
-    { params: blend.full, rMult: 0.95, alpha: 0.65, layerOff: 0.00 },
-    { params: blend.mid,  rMult: 0.80, alpha: 0.85, layerOff: Math.PI/12 },
-    { params: blend.dom,  rMult: 0.65, alpha: 1.00, layerOff: Math.PI/6  },
+    { params: blend.full, rMult: 0.95, alpha: 1.00, layerOff: 0.00 },
+    { params: blend.mid,  rMult: 0.80, alpha: 0.75, layerOff: Math.PI/12 },
+    { params: blend.dom,  rMult: 0.65, alpha: 0.55, layerOff: Math.PI/6  },
   ];
 
   layers.forEach(function(L){
@@ -2927,9 +2927,9 @@ function startKnotRotation(canvas, entries, monthIndex){
   // Option A layering — layers interlaced through rotation, alphas raised so
   // mid and dom colors breathe through the outer silhouette.
   var rotLayers = [
-    { params: blend.full, rMult: 0.95, alpha: 0.65, layerOff: 0.00 },
-    { params: blend.mid,  rMult: 0.80, alpha: 0.85, layerOff: Math.PI/12 },
-    { params: blend.dom,  rMult: 0.65, alpha: 1.00, layerOff: Math.PI/6  },
+    { params: blend.full, rMult: 0.95, alpha: 1.00, layerOff: 0.00 },
+    { params: blend.mid,  rMult: 0.80, alpha: 0.75, layerOff: Math.PI/12 },
+    { params: blend.dom,  rMult: 0.65, alpha: 0.55, layerOff: Math.PI/6  },
   ];
 
   function drawFrame(){
@@ -2979,11 +2979,11 @@ function startKnotRotation(canvas, entries, monthIndex){
       // Dominant (inner-most) layer gets a slightly thicker stroke so the
       // month's primary emotion color reads with more confidence.
       var layerIdx = rotLayers.indexOf(L);
-      // smoother, steeper gradient — outer is a hairline halo,
-      // dominant layer reads confidently as the primary color
-      var strokeMult = layerIdx === 2 ? 1.15   // dom (thickest — primary emotion)
+      // outer petals (blended chord) are thickest; inner dominant layer is the
+      // thinnest accent — the month's mix is the headline, the dominant is the spark
+      var strokeMult = layerIdx === 0 ? 1.15   // outer blended chord (thickest)
                     : layerIdx === 1 ? 0.90   // mid (blended shape)
-                    : 0.55;                   // outer blended halo (thinnest)
+                    : 0.55;                   // dom (inner accent)
       ctx.globalAlpha = L.alpha * 0.04;
       ctx.fillStyle = p.color;
       ctx.fill();
@@ -3680,9 +3680,9 @@ function showMonthEndCeremony(){
   }
   var layerPts = [buildLayer(0), buildLayer(1), buildLayer(2)];
   var layerCfg = [
-    { start:    0, duration: 1800, alpha: 0.65 },
-    { start:  600, duration: 1400, alpha: 0.85 },
-    { start: 1100, duration: 1000, alpha: 1.00 }
+    { start:    0, duration: 1800, alpha: 1.00 },
+    { start:  600, duration: 1400, alpha: 0.75 },
+    { start: 1100, duration: 1000, alpha: 0.55 }
   ];
   var WEAVE_DURATION = 2100; // max end across layers
   var WEAVE_HOLD = 1400; // pad so total time to bloom = 3500ms
@@ -3707,7 +3707,7 @@ function showMonthEndCeremony(){
     // all 3 layers — each uses its own layer color (outer/mid/dom)
     for(var layer = 0; layer < 3; layer++){
       var pts = layerPts[layer];
-      var alpha = [0.65, 0.85, 1.00][layer];
+      var alpha = [1.00, 0.75, 0.55][layer];
       var lcolor = layerColors[layer];
       weaveCtx.beginPath();
       for(var i = 0; i <= STEPS; i++){
@@ -3725,8 +3725,8 @@ function showMonthEndCeremony(){
       weaveCtx.fill();
       weaveCtx.globalAlpha = alpha;
       weaveCtx.strokeStyle = lcolor;
-      // dominant (inner-most) layer gets thicker stroke — smooth gradient
-      var _sm = layer === 2 ? 1.15 : layer === 1 ? 0.90 : 0.55;
+      // outer layer thickest, inner thinnest
+      var _sm = layer === 0 ? 1.15 : layer === 1 ? 0.90 : 0.55;
       weaveCtx.lineWidth = p.strokeW * _sm * sizeBoost;
       weaveCtx.lineCap = 'round';
       weaveCtx.lineJoin = 'round';
@@ -4042,8 +4042,8 @@ function showMonthEndCeremony(){
         : -1 + (4 - 2*_settleProg)*_settleProg;
 
       // target alphas / stroke-widths for each layer (match rotate-phase values)
-      var _targetAlphas  = [0.65, 0.85, 1.00];
-      var _targetStrokes = [0.55, 0.90, 1.15];
+      var _targetAlphas  = [1.00, 0.75, 0.55];
+      var _targetStrokes = [1.15, 0.90, 0.55];
       // rose (single-color outer) alpha decays as layers fade in
       var _roseA = (1 - _eP) * 0.9;
 
@@ -4146,8 +4146,8 @@ function showMonthEndCeremony(){
         for(var j2 = 1; j2 < count; j2++) weaveCtx.lineTo(pts[j2].x, pts[j2].y);
         weaveCtx.globalAlpha = cfg.alpha * rawP;
         weaveCtx.strokeStyle = lcolor;
-        // dominant (inner-most, i===2) layer thicker so main emotion reads confidently
-        var _sm2 = i === 2 ? 1.15 : i === 1 ? 0.90 : 0.55;
+        // outer thickest, inner thinnest
+        var _sm2 = i === 0 ? 1.15 : i === 1 ? 0.90 : 0.55;
         weaveCtx.lineWidth = p.strokeW * _sm2 * sizeBoost;
         weaveCtx.lineCap = 'round';
         weaveCtx.lineJoin = 'round';
