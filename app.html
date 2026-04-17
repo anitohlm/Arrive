@@ -2785,10 +2785,10 @@ function _blendKnotParams(entries, monthIndex){
   blended.glow = 'rgba('+r+','+g+','+b+',0.25)';
   blended.seed = (monthIndex||0) * 137.5;
 
-  // top-2 blend for the middle layer
-  var top2Total = (emoCounts[top[0]]||0) + (emoCounts[top[1]||top[0]]||0);
+  // top-2 blend for the middle layer; color defaults to #1 emotion
   var p0 = KNOT_PARAMS[top[0]] || KNOT_FALLBACK;
   var p1 = KNOT_PARAMS[top[1]||top[0]] || KNOT_FALLBACK;
+  var top2Total = (emoCounts[top[0]]||0) + (emoCounts[top[1]||top[0]]||0);
   var w0 = emoCounts[top[0]] / top2Total;
   var w1 = (emoCounts[top[1]||top[0]]||0) / top2Total;
   var mid = {
@@ -2830,10 +2830,11 @@ function _drawKnotGeometry(ctx, cx, cy, R, entries, monthIndex){
   ctx.fill();
 
   // 3-layer system — each layer uses a different blend depth
+  // layers rotated so petals interlace through the gaps (Option A — chosen design)
   var layers = [
-    { params: blend.full, rMult: 0.95, alpha: 1.00, layerOff: 0.00 },
-    { params: blend.mid,  rMult: 0.80, alpha: 0.72, layerOff: 0.04 },
-    { params: blend.dom,  rMult: 0.65, alpha: 0.44, layerOff: 0.08 },
+    { params: blend.full, rMult: 0.95, alpha: 0.65, layerOff: 0.00 },
+    { params: blend.mid,  rMult: 0.80, alpha: 0.85, layerOff: Math.PI/12 },
+    { params: blend.dom,  rMult: 0.65, alpha: 1.00, layerOff: Math.PI/6  },
   ];
 
   layers.forEach(function(L){
@@ -2923,10 +2924,12 @@ function startKnotRotation(canvas, entries, monthIndex){
   // throttle to 30fps by skipping alternate RAF callbacks
   var frameCount = 0;
 
+  // Option A layering — layers interlaced through rotation, alphas raised so
+  // mid and dom colors breathe through the outer silhouette.
   var rotLayers = [
-    { params: blend.full, rMult: 0.95, alpha: 1.00, layerOff: 0.00 },
-    { params: blend.mid,  rMult: 0.80, alpha: 0.72, layerOff: 0.04 },
-    { params: blend.dom,  rMult: 0.65, alpha: 0.44, layerOff: 0.08 },
+    { params: blend.full, rMult: 0.95, alpha: 0.65, layerOff: 0.00 },
+    { params: blend.mid,  rMult: 0.80, alpha: 0.85, layerOff: Math.PI/12 },
+    { params: blend.dom,  rMult: 0.65, alpha: 1.00, layerOff: Math.PI/6  },
   ];
 
   function drawFrame(){
@@ -2971,13 +2974,23 @@ function startKnotRotation(canvas, entries, monthIndex){
       }
       ctx.closePath();
 
-      ctx.globalAlpha = L.alpha * 0.1;
+      // match the grid tile's downscaled look — thin strokes, minimal fill,
+      // so inner-layer colors breathe through instead of being painted over.
+      // Dominant (inner-most) layer gets a slightly thicker stroke so the
+      // month's primary emotion color reads with more confidence.
+      var layerIdx = rotLayers.indexOf(L);
+      // smoother, steeper gradient — outer is a hairline halo,
+      // dominant layer reads confidently as the primary color
+      var strokeMult = layerIdx === 2 ? 1.15   // dom (thickest — primary emotion)
+                    : layerIdx === 1 ? 0.90   // mid (blended shape)
+                    : 0.55;                   // outer blended halo (thinnest)
+      ctx.globalAlpha = L.alpha * 0.04;
       ctx.fillStyle = p.color;
       ctx.fill();
 
       ctx.globalAlpha = L.alpha;
       ctx.strokeStyle = p.color;
-      ctx.lineWidth = p.strokeW*(1-L.layerOff*2)*sizeBoost;
+      ctx.lineWidth = p.strokeW * strokeMult * sizeBoost;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.stroke();
@@ -3281,12 +3294,21 @@ function showMonthEndCeremony(){
   var monthMsg = PORTRAIT_MESSAGES[dominant] || 'you were here. the chain remembers.';
 
   // use blended params so color reflects ALL emotions, not just dominant
+  // keep the full `blend` around so each rendering layer can use its own
+  // layer-specific color (full / mid / dom) — gives three emotions per knot
+  var blend = null;
   var p;
   if(typeof _blendKnotParams === 'function' && monthEntries.length > 0){
-    p = _blendKnotParams(monthEntries, monthIndex).full;
+    blend = _blendKnotParams(monthEntries, monthIndex);
+    p = blend.full;
   } else {
     p = KNOT_PARAMS[dominant] || KNOT_FALLBACK;
   }
+  // per-layer colors: outer = blended, middle = dominant, inner = dominant
+  // (matches the grid tile look)
+  var layerColors = blend
+    ? [blend.full.color, blend.mid.color, blend.dom.color]
+    : [p.color, p.color, p.color];
 
   // derive glowRgb from blended color (hex → rgb)
   var _ch = p.color.replace('#','');
@@ -3650,16 +3672,17 @@ function showMonthEndCeremony(){
       var r2 = Math.pow(r1, 1 - p.round*0.5 + p.sharp*0.3);
       var harmonic = 1 + p.sharp*0.15 * Math.cos((p.petals*2+1)*t + seed);
       var r = layerR * r2 * harmonic;
-      var angle = t + layerIndex*0.04;
+      // Option A interlace offsets: 0, π/12, π/6 — petals weave through each other's gaps
+      var angle = t + [0, Math.PI/12, Math.PI/6][layerIndex];
       pts.push({x: cx + r*Math.cos(angle), y: cy + r*Math.sin(angle)});
     }
     return pts;
   }
   var layerPts = [buildLayer(0), buildLayer(1), buildLayer(2)];
   var layerCfg = [
-    { start:    0, duration: 1800, alpha: 1.0  },
-    { start:  600, duration: 1400, alpha: 0.72 },
-    { start: 1100, duration: 1000, alpha: 0.44 }
+    { start:    0, duration: 1800, alpha: 0.65 },
+    { start:  600, duration: 1400, alpha: 0.85 },
+    { start: 1100, duration: 1000, alpha: 1.00 }
   ];
   var WEAVE_DURATION = 2100; // max end across layers
   var WEAVE_HOLD = 1400; // pad so total time to bloom = 3500ms
@@ -3681,10 +3704,11 @@ function showMonthEndCeremony(){
     weaveCtx.translate(cx, cy);
     weaveCtx.scale(scale, scale);
     weaveCtx.translate(-cx, -cy);
-    // all 3 layers
+    // all 3 layers — each uses its own layer color (outer/mid/dom)
     for(var layer = 0; layer < 3; layer++){
       var pts = layerPts[layer];
-      var alpha = 1 - layer*0.28;
+      var alpha = [0.65, 0.85, 1.00][layer];
+      var lcolor = layerColors[layer];
       weaveCtx.beginPath();
       for(var i = 0; i <= STEPS; i++){
         var pt = pts[i];
@@ -3696,12 +3720,14 @@ function showMonthEndCeremony(){
         if(i===0) weaveCtx.moveTo(x,y); else weaveCtx.lineTo(x,y);
       }
       weaveCtx.closePath();
-      weaveCtx.globalAlpha = alpha*0.1;
-      weaveCtx.fillStyle = p.color;
+      weaveCtx.globalAlpha = alpha*0.04;
+      weaveCtx.fillStyle = lcolor;
       weaveCtx.fill();
       weaveCtx.globalAlpha = alpha;
-      weaveCtx.strokeStyle = p.color;
-      weaveCtx.lineWidth = p.strokeW*(1-layer*0.2)*sizeBoost;
+      weaveCtx.strokeStyle = lcolor;
+      // dominant (inner-most) layer gets thicker stroke — smooth gradient
+      var _sm = layer === 2 ? 1.15 : layer === 1 ? 0.90 : 0.55;
+      weaveCtx.lineWidth = p.strokeW * _sm * sizeBoost;
       weaveCtx.lineCap = 'round';
       weaveCtx.lineJoin = 'round';
       weaveCtx.stroke();
@@ -4005,27 +4031,59 @@ function showMonthEndCeremony(){
       weaveCtx.globalAlpha=1;
     }
 
-    // keep the complete rose visible during settle
+    // resolve the complete rose into the three-layer colored knot during settle
+    // this avoids the hard jump when phase switches from 'seed' to 'rotate'
     if(_t > SEED_T.burstEnd){
-      var _holdAlpha = Math.min(1,
-        (_t-SEED_T.burstEnd)/(SEED_T.settleEnd-SEED_T.burstEnd)*0.85+0.15);
-      weaveCtx.globalAlpha = _holdAlpha * 0.9;
-      weaveCtx.strokeStyle = p.color;
-      weaveCtx.lineWidth = p.strokeW * sizeBoost;
-      weaveCtx.lineCap = 'round';
-      var _hpts = layerPts[0];
-      weaveCtx.beginPath();
-      for(var _hi=0; _hi<=STEPS; _hi++){
-        var _hpt = _hpts[_hi];
-        var _hdx = _hpt.x-cx, _hdy = _hpt.y-cy;
-        var _hr = Math.sqrt(_hdx*_hdx+_hdy*_hdy);
-        var _hang = Math.atan2(_hdy,_hdx);
-        var _hx = cx+_hr*Math.cos(_hang);
-        var _hy = cy+_hr*Math.sin(_hang);
-        if(_hi===0) weaveCtx.moveTo(_hx,_hy);
-        else weaveCtx.lineTo(_hx,_hy);
+      var _settleProg = Math.min(1,
+        (_t-SEED_T.burstEnd)/(SEED_T.settleEnd-SEED_T.burstEnd));
+      // ease-in-out so the cross-fade feels gentle
+      var _eP = _settleProg < 0.5
+        ? 2*_settleProg*_settleProg
+        : -1 + (4 - 2*_settleProg)*_settleProg;
+
+      // target alphas / stroke-widths for each layer (match rotate-phase values)
+      var _targetAlphas  = [0.65, 0.85, 1.00];
+      var _targetStrokes = [0.55, 0.90, 1.15];
+      // rose (single-color outer) alpha decays as layers fade in
+      var _roseA = (1 - _eP) * 0.9;
+
+      // outer rose hold (the single-color rose we just animated) — fades out
+      if(_roseA > 0.01){
+        weaveCtx.globalAlpha = _roseA;
+        weaveCtx.strokeStyle = p.color;
+        weaveCtx.lineWidth = p.strokeW * sizeBoost;
+        weaveCtx.lineCap = 'round';
+        var _hpts = layerPts[0];
+        weaveCtx.beginPath();
+        for(var _hi=0; _hi<=STEPS; _hi++){
+          var _hpt = _hpts[_hi];
+          if(_hi===0) weaveCtx.moveTo(_hpt.x, _hpt.y);
+          else weaveCtx.lineTo(_hpt.x, _hpt.y);
+        }
+        weaveCtx.stroke();
       }
-      weaveCtx.stroke();
+
+      // three target layers — fade in as the rose fades out
+      var _layerColorsSeed = (typeof layerColors !== 'undefined' && layerColors)
+        ? layerColors
+        : [p.color, p.color, p.color];
+      for(var _li=0; _li<3; _li++){
+        var _lp = layerPts[_li];
+        var _la = _targetAlphas[_li] * _eP;
+        if(_la < 0.01) continue;
+        weaveCtx.globalAlpha = _la;
+        weaveCtx.strokeStyle = _layerColorsSeed[_li];
+        weaveCtx.lineWidth = p.strokeW * _targetStrokes[_li] * sizeBoost;
+        weaveCtx.lineCap = 'round';
+        weaveCtx.lineJoin = 'round';
+        weaveCtx.beginPath();
+        for(var _lj=0; _lj<=STEPS; _lj++){
+          var _lpt = _lp[_lj];
+          if(_lj===0) weaveCtx.moveTo(_lpt.x, _lpt.y);
+          else weaveCtx.lineTo(_lpt.x, _lpt.y);
+        }
+        weaveCtx.stroke();
+      }
       weaveCtx.globalAlpha = 1;
     }
 
@@ -4074,20 +4132,23 @@ function showMonthEndCeremony(){
         var count = Math.floor(prog * STEPS);
         if(count < 2) return;
         var pts = layerPts[i];
+        var lcolor = layerColors[i];
         // fill
         weaveCtx.beginPath();
         weaveCtx.moveTo(pts[0].x, pts[0].y);
         for(var j = 1; j < count; j++) weaveCtx.lineTo(pts[j].x, pts[j].y);
-        weaveCtx.globalAlpha = cfg.alpha * 0.08 * rawP;
-        weaveCtx.fillStyle = p.color;
+        weaveCtx.globalAlpha = cfg.alpha * 0.04 * rawP;
+        weaveCtx.fillStyle = lcolor;
         weaveCtx.fill();
         // stroke
         weaveCtx.beginPath();
         weaveCtx.moveTo(pts[0].x, pts[0].y);
         for(var j2 = 1; j2 < count; j2++) weaveCtx.lineTo(pts[j2].x, pts[j2].y);
         weaveCtx.globalAlpha = cfg.alpha * rawP;
-        weaveCtx.strokeStyle = p.color;
-        weaveCtx.lineWidth = p.strokeW*(1-i*0.2)*sizeBoost;
+        weaveCtx.strokeStyle = lcolor;
+        // dominant (inner-most, i===2) layer thicker so main emotion reads confidently
+        var _sm2 = i === 2 ? 1.15 : i === 1 ? 0.90 : 0.55;
+        weaveCtx.lineWidth = p.strokeW * _sm2 * sizeBoost;
         weaveCtx.lineCap = 'round';
         weaveCtx.lineJoin = 'round';
         weaveCtx.stroke();
