@@ -7062,10 +7062,66 @@ function startBreathingExercise(){
     _breathingRAF = requestAnimationFrame(drawFrame);
   }
 
-  updateLabels(PHASES[0]);
   var labelEl = document.getElementById('breathingLabel');
   if(labelEl) labelEl.textContent = emo + ' \u00B7 breathe with me';
-  _breathingRAF = requestAnimationFrame(drawFrame);
+
+  // ── Preparation countdown ───────────────────────────────────────
+  // Give the user a beat to settle before the 4-7-8 cycle begins.
+  // Shows "settle in" then a gentle 3-2-1, with the min-radius circle
+  // already drawn so the canvas isn't empty during prep.
+  var instrEl = document.getElementById('breathingInstruction');
+  var countEl = document.getElementById('breathingCount');
+
+  // Draw the initial small circle so canvas has presence during prep
+  (function drawPrepCircle(){
+    ctx.clearRect(0, 0, 220, 220);
+    ctx.beginPath();
+    ctx.arc(cx, cy, maxR + 8, 0, Math.PI*2);
+    ctx.strokeStyle = 'rgba(201,148,58,0.06)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(cx, cy, minR, 0, Math.PI*2);
+    var grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, minR);
+    grd.addColorStop(0, 'rgba(230,182,88,0.22)');
+    grd.addColorStop(1, 'rgba(201,148,58,0.04)');
+    ctx.fillStyle = grd;
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(201,148,58,0.35)';
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  })();
+
+  var prepSteps = [
+    { text: 'settle in', count: '' },
+    { text: 'begin in', count: '3' },
+    { text: 'begin in', count: '2' },
+    { text: 'begin in', count: '1' }
+  ];
+  var prepIdx = 0;
+  function prepTick(){
+    if(!_breathingRunning) return;
+    if(prepIdx >= prepSteps.length){
+      // Prep done — hand off to the real breathing loop
+      updateLabels(PHASES[0]);
+      lastTime = null;
+      _breathingRAF = requestAnimationFrame(drawFrame);
+      return;
+    }
+    var s = prepSteps[prepIdx];
+    if(instrEl){
+      instrEl.style.opacity = '0';
+      setTimeout(function(){
+        if(!_breathingRunning) return;
+        instrEl.textContent = s.text;
+        instrEl.style.opacity = '1';
+      }, 180);
+    }
+    if(countEl) countEl.textContent = s.count;
+    prepIdx++;
+    setTimeout(prepTick, 1000);
+  }
+  prepTick();
 
   // surface Mindfulness Agent response if available — poll briefly then give up
   var guideEl = document.getElementById('breathingAiGuide');
