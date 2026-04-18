@@ -3695,7 +3695,7 @@ function _drawKnotGeometry(ctx, cx, cy, R, entries, monthIndex){
   ctx.arc(cx,cy,R*1.6,0,Math.PI*2);
   ctx.fill();
 
-  // 3-layer system — each layer uses a different blend depth
+  // 3-layer rose-curve — each layer uses a different blend depth
   // layers rotated so petals interlace through the gaps (Option A — chosen design)
   var layers = [
     { params: blend.full, rMult: 0.95, alpha: 1.00, layerOff: 0.00 },
@@ -3731,18 +3731,8 @@ function _drawKnotGeometry(ctx, cx, cy, R, entries, monthIndex){
     ctx.stroke();
   });
 
-  // center spark
-  ctx.globalAlpha = 0.7;
-  var sparkR = Math.max(2, R*0.05);
-  var sg = ctx.createRadialGradient(cx,cy,0,cx,cy,sparkR*1.2);
-  sg.addColorStop(0,'#ffffff');
-  sg.addColorStop(0.4,'#e6b658');
-  sg.addColorStop(1,'rgba(201,148,58,0)');
-  ctx.fillStyle = sg;
-  ctx.beginPath();
-  ctx.arc(cx,cy,sparkR,0,Math.PI*2);
-  ctx.fill();
-  ctx.globalAlpha = 1;
+  // (center spark removed — the filled inner dot serves as the centerpiece
+  //  now that the knot geometry is concentric rings.)
   ctx.restore();
 }
 
@@ -3840,20 +3830,13 @@ function startKnotRotation(canvas, entries, monthIndex){
       }
       ctx.closePath();
 
-      // match the grid tile's downscaled look — thin strokes, minimal fill,
-      // so inner-layer colors breathe through instead of being painted over.
-      // Dominant (inner-most) layer gets a slightly thicker stroke so the
-      // month's primary emotion color reads with more confidence.
       var layerIdx = rotLayers.indexOf(L);
-      // outer petals (blended chord) are thickest; inner dominant layer is the
-      // thinnest accent — the month's mix is the headline, the dominant is the spark
-      var strokeMult = layerIdx === 0 ? 1.15   // outer blended chord (thickest)
-                    : layerIdx === 1 ? 0.90   // mid (blended shape)
-                    : 0.55;                   // dom (inner accent)
+      var strokeMult = layerIdx === 0 ? 1.15
+                    : layerIdx === 1 ? 0.90
+                    : 0.55;
       ctx.globalAlpha = L.alpha * 0.04;
       ctx.fillStyle = p.color;
       ctx.fill();
-
       ctx.globalAlpha = L.alpha;
       ctx.strokeStyle = p.color;
       ctx.lineWidth = p.strokeW * strokeMult * sizeBoost;
@@ -3862,19 +3845,7 @@ function startKnotRotation(canvas, entries, monthIndex){
       ctx.stroke();
     });
 
-    // center spark — gentle pulse independent of rotation
-    var sparkPulse = 1.0 + 0.12 * Math.sin(Date.now() / 1800 * Math.PI);
-    var sparkR = Math.max(2, R*0.05) * sparkPulse;
-    var sg = ctx.createRadialGradient(cx,cy,0,cx,cy,sparkR*2);
-    sg.addColorStop(0, 'rgba(255,255,255,0.9)');
-    sg.addColorStop(0.4, 'rgba(230,182,88,0.7)');
-    sg.addColorStop(1, 'rgba(201,148,58,0)');
-    ctx.globalAlpha = 0.85;
-    ctx.fillStyle = sg;
-    ctx.beginPath();
-    ctx.arc(cx,cy,sparkR,0,Math.PI*2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
+    // (center spark removed — filled inner dot is the centerpiece now)
 
     rotation += SPEED;
     canvas._lastRotation = rotation;
@@ -6236,31 +6207,31 @@ function drawCurrentMonthForming(ctx, cx, cy, R, rotation, stats, emo){
     : 0.06;
   var seed = new Date().getMonth() * 137.5;
   ctx.save();
-  // ghost rose curve — 3 layers, scaled opacity
-  for(var layer = 0; layer < 3; layer++){
-    var layerR = R * (0.95 - layer*0.15);
+  // Ghost concentric rings (matches weave nav's ◎ aesthetic).
+  // Radii match _drawKnotGeometry's ring layout so forming → complete has
+  // continuity of position.
+  var ghostRings = [
+    { rMult: 0.95, fill: false, strokeMult: 1.10 },
+    { rMult: 0.55, fill: false, strokeMult: 0.85 },
+    { rMult: 0.18, fill: true,  strokeMult: 0    }
+  ];
+  ghostRings.forEach(function(L, layer){
+    var layerR = R * L.rMult;
     ctx.beginPath();
-    var STEPS = 200;
-    for(var i = 0; i <= STEPS; i++){
-      var t = (i/STEPS) * Math.PI * 2;
-      var k = p.petals%2===0 ? p.petals/2 : p.petals;
-      var r1 = Math.abs(Math.cos(k*t + p.twist*Math.PI));
-      var r2 = Math.pow(r1, 1 - p.round*0.5 + p.sharp*0.3);
-      var h  = 1 + p.sharp*0.15*Math.cos((p.petals*2+1)*t + seed);
-      var r  = layerR * r2 * h;
-      var angle = t + layer*0.04 + rotation;
-      var x = cx + r * Math.cos(angle);
-      var y = cy + r * Math.sin(angle);
-      if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+    ctx.arc(cx, cy, layerR, 0, Math.PI*2);
+    if(L.fill){
+      ctx.globalAlpha = opacity * 1.5; // center dot reads a touch brighter
+      ctx.fillStyle = p.color;
+      ctx.fill();
+    } else {
+      ctx.globalAlpha = opacity * (1 - layer*0.18);
+      ctx.strokeStyle = p.color;
+      ctx.lineWidth = p.strokeW * L.strokeMult * 0.7;
+      ctx.lineCap = 'round';
+      ctx.stroke();
     }
-    ctx.closePath();
-    ctx.globalAlpha = opacity * (1 - layer*0.2);
-    ctx.strokeStyle = p.color;
-    ctx.lineWidth = p.strokeW*(1-layer*0.2)*0.7;
-    ctx.lineCap = 'round';
-    ctx.stroke();
-  }
-  // dashed outer ring
+  });
+  // dashed outer ring (unchanged — outer boundary hint)
   ctx.strokeStyle = p.color;
   ctx.lineWidth = 0.8;
   ctx.globalAlpha = 0.2;
@@ -6368,6 +6339,8 @@ function renderPortraitMonth(){
   var monthComplete = ceremonySeen || (currentState === 'complete');
 
   if(!monthComplete && stats.count > 0){
+    // Stop any lingering rotation loop from a previous complete-state render
+    canvas._rotationRunning = false;
     $('portraitWord').textContent =
       currentState === 'gathering' ? '' :
       currentState === 'forming'   ? (stats.word || '') :
@@ -6400,14 +6373,13 @@ function renderPortraitMonth(){
     ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.clearRect(0,0,260,260);
 
-    if(currentState === 'gathering'){
-      drawCurrentMonthSpiral(ctx, 130, 130, 80,
-        Date.now()*0.001, stats.topEmo||'calm');
-    } else {
-      drawCurrentMonthForming(ctx, 130, 130, 80,
-        0, {count:stats.count, topEmo:stats.topEmo},
-        stats.topEmo||'calm');
-    }
+    // Before month-end: show the weave-icon placeholder (concentric rings)
+    // via drawCurrentMonthForming. The full rose-curve reveal is reserved
+    // for the end-of-month ceremony; up until then this is just a marker
+    // that the month is still forming.
+    drawCurrentMonthForming(ctx, 130, 130, 80,
+      0, {count:stats.count, topEmo:stats.topEmo},
+      stats.topEmo||'calm');
     canvas.style.filter = 'none';
     return;
   }
@@ -6498,6 +6470,12 @@ function resumeKnotRotation(){
   if(!localStorage.getItem('gc_portrait_seen_' + ym)) return;
   var stats = computeMonthStats(ym);
   if(stats.count === 0) return;
+  // don't start the rose-rotation while the month is still in progress — the
+  // ring placeholder stays until end-of-month ceremony.
+  var state = (typeof computeCurrentMonthState === 'function') ? computeCurrentMonthState() : null;
+  var ceremonySeen = localStorage.getItem('gc_ceremony_seen_' + ym);
+  var monthComplete = ceremonySeen || state === 'complete';
+  if(!monthComplete) return;
   startKnotRotation(canvas, stats.entries, new Date().getMonth());
 }
 
@@ -6581,28 +6559,16 @@ function renderPortraitYear(){
         (function(canvas, entries, idx){
           requestAnimationFrame(function(){ drawKnotOnCanvas(canvas, entries, idx); });
         })(c, stats.entries, m);
-      } else if(currentState === 'almost'){
-        c.style.filter = knotShadowFilter(stats.topEmo, 10, morning ? 0.25 : 0.12);
-        cell.dataset.animType = 'almost';
-        c.width = 76 * dpr; c.height = 76 * dpr;
-        var lctx = c.getContext('2d');
-        lctx.setTransform(dpr,0,0,dpr,0,0);
-        drawCurrentMonthForming(lctx, 38, 38, 28, 0, stats, stats.topEmo || 'calm');
-      } else if(currentState === 'forming'){
-        c.style.filter = 'none';
-        cell.dataset.animType = 'forming';
-        c.width = 76 * dpr; c.height = 76 * dpr;
-        var lctx = c.getContext('2d');
-        lctx.setTransform(dpr,0,0,dpr,0,0);
-        drawCurrentMonthForming(lctx, 38, 38, 28, 0, stats, stats.topEmo || 'calm');
       } else {
-        // gathering — spinning spiral, no rose yet
+        // Before month-end (gathering / forming / almost) — show the
+        // ◎ ring placeholder via drawCurrentMonthForming. Full rose reveal
+        // is reserved for the end-of-month ceremony.
         c.style.filter = 'none';
-        cell.dataset.animType = 'spiral';
+        cell.dataset.animType = 'pending';
         c.width = 76 * dpr; c.height = 76 * dpr;
         var lctx = c.getContext('2d');
         lctx.setTransform(dpr,0,0,dpr,0,0);
-        drawCurrentMonthSpiral(lctx, 38, 38, 28, Date.now()*0.001, stats.topEmo || 'calm');
+        drawCurrentMonthForming(lctx, 38, 38, 28, 0, stats, stats.topEmo || 'calm');
       }
     } else if(isPastComplete){
       // emotion-matched shadow per cell
@@ -6737,7 +6703,302 @@ function stopPortraitLoadingAnim(){
 }
 
 // ── month detail bottom sheet ──
+// Monthly replay — paged view for a completed past month from the Year grid.
+// Mirrors the structure of the end-of-month ceremony (announcement, what you
+// carried, moment that held, days, thread held, close) but skips the
+// weave-in intro since the user has already earned the reveal.
+function showMonthReplay(ym, monthIndex, entries){
+  if(document.getElementById('monthReplayOverlay')) return;
+  entries = entries || [];
+  if(entries.length === 0) return;
+
+  var yearOfReplay = parseInt(ym.slice(0,4),10) || new Date().getFullYear();
+  var dateForLabel = new Date(yearOfReplay, monthIndex, 1);
+  var monthName = dateForLabel.toLocaleDateString('en-US',{month:'long'}).toLowerCase();
+  var daysInMonth = new Date(yearOfReplay, monthIndex+1, 0).getDate();
+  var DAY_WORDS = ['','one','two','three','four','five','six','seven','eight','nine','ten',
+    'eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty',
+    'twenty-one','twenty-two','twenty-three','twenty-four','twenty-five','twenty-six','twenty-seven',
+    'twenty-eight','twenty-nine','thirty','thirty-one'];
+
+  // stats
+  var emoCounts = {};
+  var longestEntry = null, longestLen = -1;
+  entries.forEach(function(e){
+    if(e.emo) emoCounts[e.emo] = (emoCounts[e.emo]||0) + 1;
+    var tl = (e.text||'').length;
+    if(tl > longestLen){ longestLen = tl; longestEntry = e; }
+  });
+  var dominant = Object.keys(emoCounts).sort(function(a,b){ return emoCounts[b]-emoCounts[a]; })[0] || 'calm';
+  var monthWord = PORTRAIT_WORDS[dominant] || dominant;
+  var monthMsg = PORTRAIT_MESSAGES[dominant] || 'you were here. the chain remembers.';
+  var closingLines = {
+    calm:'the quiet was real. you were in it.',
+    tender:'soft and still here. that matters.',
+    grateful:'you noticed. the chain remembers.',
+    hard:'hard months count too. this one did.',
+    heavy:'you carried what you could. that is enough.',
+    overwhelmed:'small returns through the flood. you kept arriving.',
+    alive:'you burned. the chain burned with you.',
+    numb:'even the quiet ones are held.',
+    hopeful:'something is still opening. stay close to it.',
+    light:'you caught the brightness. it stays.',
+    quiet:'a month of hush. you honored it.',
+    foggy:'you kept walking through. that is how it clears.',
+    restless:'restlessness pointed you somewhere. you followed.',
+    searching:'searching is a kind of faith. you held it.',
+    sad:'sadness got a witness this month. you gave it one.',
+    frustrated:'you cared enough to be frustrated. that is love.',
+    anxious:'small safe things, one at a time. you did them.',
+    heartbroken:'the chain held what you could not carry alone.',
+    disappointed:'what disappointed you mattered. that means something.',
+    exhausted:'rest is also part of the practice. you earned it.',
+    moved:'you let it move you. that is a kind of courage.',
+    passionate:'you burned for something. the chain burned with you.',
+    nervous:'you stayed close to the edge and kept arriving.',
+    livid:'anger was honest this month. you told the truth.',
+    lonely:'the chain kept you company. you were not alone.',
+    ashamed:'you showed up when you wanted to hide. that counts.',
+    certain:'you knew what you knew this month. that is not small.',
+    content:'enough arrived. you let it be enough.',
+    focused:'you kept the thread this month. that is a practice.',
+    inspired:'something sparked. you tended it. it stays.',
+    lost:'you walked without a map. arriving still counts.',
+    relaxed:'ease visited. you let it stay.',
+    vulnerable:'you were soft. the chain held that.',
+    yearning:'a month of reaching. the chain is the evidence.',
+    betrayed:'the break was real. you told the truth about it.',
+    bored:'flat months count. you stayed.',
+    insecure:'you doubted and showed up anyway.',
+    upset:'upset is honest. you let it be.'
+  };
+
+  // ── Build overlay + pages ────────────────────────────────────────
+  var overlay = document.createElement('div');
+  overlay.id = 'monthReplayOverlay';
+  overlay.style.cssText = 'position:fixed;inset:0;z-index:200;background:rgba(7,5,3,0.95);opacity:0;transition:opacity 500ms ease;overflow:hidden';
+
+  var pager = document.createElement('div');
+  pager.style.cssText = 'width:100%;height:100%;display:flex;transition:transform 400ms cubic-bezier(0.25,0.1,0.25,1);touch-action:pan-y';
+  var pages = [];
+  for(var i = 0; i < 6; i++){
+    var page = document.createElement('div');
+    page.style.cssText = 'flex:0 0 100vw;width:100vw;height:100%;position:relative';
+    pager.appendChild(page);
+    pages.push(page);
+  }
+
+  // Close button (top-right)
+  var closeBtn = document.createElement('button');
+  closeBtn.textContent = 'close';
+  closeBtn.style.cssText = 'position:absolute;top:max(18px,env(safe-area-inset-top));right:20px;background:transparent;border:none;font-family:Fraunces,serif;font-style:italic;font-size:13px;color:rgba(201,148,58,0.55);cursor:pointer;z-index:20';
+  closeBtn.addEventListener('click', function(){
+    overlay.style.opacity = '0';
+    setTimeout(function(){ if(overlay.parentNode) overlay.remove(); }, 500);
+  });
+
+  // Dots
+  var dotsWrap = document.createElement('div');
+  dotsWrap.style.cssText = 'position:absolute;bottom:calc(32px + env(safe-area-inset-bottom));left:0;right:0;display:flex;justify-content:center;gap:8px;pointer-events:none';
+  var dots = [];
+  for(var j = 0; j < 6; j++){
+    var dot = document.createElement('div');
+    dot.style.cssText = 'width:6px;height:6px;border-radius:50%;background:rgba(201,148,58,'+(j===0?'0.8':'0.25')+');transition:background 300ms';
+    dotsWrap.appendChild(dot);
+    dots.push(dot);
+  }
+
+  // ── Render pages ─────────────────────────────────────────────────
+  var dpr = Math.min(window.devicePixelRatio||1, 2);
+
+  // PAGE 1 — announcement
+  (function(){
+    var wrap = '<div style="padding:calc(60px + env(safe-area-inset-top)) 32px 80px;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:center;gap:16px;max-width:400px;margin:0 auto;box-sizing:border-box">'
+      + '<p style="font-family:DM Mono,monospace;font-size:9px;letter-spacing:0.2em;color:rgba(201,148,58,0.45);text-transform:uppercase;margin:0">'+ yearOfReplay +'</p>'
+      + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:34px;color:rgba(245,237,224,0.9);margin:0">'+ monthName +'</p>'
+      + '<p style="font-family:Fraunces,serif;font-style:italic;font-size:13px;color:rgba(245,237,224,0.4);margin:0 0 8px">'+ (DAY_WORDS[entries.length]||String(entries.length)) +' '+(entries.length===1?'morning':'mornings')+'</p>'
+      + '<canvas id="_mrKnotMain" width="240" height="240" style="width:220px;height:220px"></canvas>'
+      + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:24px;color:var(--gold);margin:8px 0 0">'+ monthWord +'</p>'
+      + '<div style="width:28px;height:1px;background:rgba(201,148,58,0.35);margin:4px 0"></div>'
+      + '<p style="font-family:Fraunces,serif;font-style:italic;font-size:14px;color:rgba(245,237,224,0.65);line-height:1.6;text-align:center;max-width:320px;margin:0">'+ monthMsg +'</p>'
+      + '</div>';
+    pages[0].innerHTML = wrap;
+  })();
+
+  // PAGE 2 — what you carried
+  (function(){
+    var total = entries.length;
+    var sorted = Object.keys(emoCounts).sort(function(a,b){ return emoCounts[b]-emoCounts[a]; }).slice(0,5);
+    var rows = sorted.map(function(emo){
+      var count = emoCounts[emo];
+      var pct = Math.round(count/total*100);
+      var color = (KNOT_PARAMS[emo]||KNOT_FALLBACK).color;
+      return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'
+        + '<span style="font-family:Fraunces,serif;font-style:italic;font-size:15px;color:rgba(245,237,224,0.85);flex:0 0 90px">'+emo+'</span>'
+        + '<div style="flex:1;height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden">'
+        +   '<div style="width:'+pct+'%;height:100%;background:'+color+';opacity:0.8"></div>'
+        + '</div>'
+        + '<span style="font-family:DM Mono,monospace;font-size:10px;color:var(--gold);opacity:0.75">'+pct+'%</span>'
+        + '</div>';
+    }).join('');
+    pages[1].innerHTML = '<div style="padding:calc(80px + env(safe-area-inset-top)) 48px 80px;display:flex;flex-direction:column;height:100%;justify-content:center;max-width:420px;margin:0 auto;box-sizing:border-box">'
+      + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.4;text-transform:uppercase;letter-spacing:0.18em;margin:0 0 24px;text-align:center">what you carried</p>'
+      + '<p style="font-family:Fraunces,serif;font-weight:300;font-size:28px;color:var(--text);text-align:center;margin:0 0 32px">'+total+' '+(total===1?'entry':'entries')+'</p>'
+      + rows
+      + '</div>';
+  })();
+
+  // PAGE 3 — a moment that held
+  (function(){
+    var text = longestEntry ? (longestEntry.text||'') : '';
+    var dayLabel = longestEntry && typeof longestEntry.day === 'number' ? ('DAY '+String(longestEntry.day).padStart(3,'0')) : '';
+    var emoLabel = longestEntry && longestEntry.emo ? longestEntry.emo : '';
+    pages[2].innerHTML = '<div style="padding:calc(80px + env(safe-area-inset-top)) 32px 80px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:18px;max-width:420px;margin:0 auto;box-sizing:border-box">'
+      + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.4;text-transform:uppercase;letter-spacing:0.18em;margin:0">a moment that held</p>'
+      + (dayLabel ? '<p style="font-family:DM Mono,monospace;font-size:9px;color:var(--gold);opacity:0.55;letter-spacing:0.12em;margin:0">'+dayLabel+(emoLabel?'  \u00B7  '+emoLabel:'')+'</p>' : '')
+      + '<div style="width:24px;height:1px;background:rgba(201,148,58,0.35);margin:4px 0"></div>'
+      + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:17px;color:rgba(245,237,224,0.85);line-height:1.7;text-align:center;margin:0">'+ (text || '\u2014') +'</p>'
+      + '</div>';
+  })();
+
+  // PAGE 4 — days
+  (function(){
+    var word = DAY_WORDS[entries.length] || String(entries.length);
+    pages[3].innerHTML = '<div style="padding:calc(80px + env(safe-area-inset-top)) 32px 80px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:14px;box-sizing:border-box">'
+      + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.4;text-transform:uppercase;letter-spacing:0.18em;margin:0">mornings</p>'
+      + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:52px;color:var(--gold);letter-spacing:-0.02em;margin:12px 0;text-align:center;line-height:1.1">'+word+'</p>'
+      + '<p style="font-family:Fraunces,serif;font-style:italic;font-size:15px;color:rgba(245,237,224,0.5);text-align:center;margin:0">mornings you arrived</p>'
+      + '<p style="font-family:DM Mono,monospace;font-size:9px;color:rgba(201,148,58,0.4);letter-spacing:0.08em;margin:28px 0 0">out of '+daysInMonth+'</p>'
+      + '</div>';
+  })();
+
+  // PAGE 5 — the thread held
+  (function(){
+    var closing = closingLines[dominant] || 'you arrived this month. the chain remembers.';
+    pages[4].innerHTML = '<div style="padding:calc(80px + env(safe-area-inset-top)) 36px 80px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:20px;max-width:400px;margin:0 auto;box-sizing:border-box">'
+      + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.4;text-transform:uppercase;letter-spacing:0.18em;margin:0">the thread held</p>'
+      + '<div style="width:40px;height:1px;background:linear-gradient(90deg,transparent,#c9943a,transparent);opacity:0.6"></div>'
+      + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:18px;color:var(--gold);line-height:1.7;text-align:center;margin:0">'+closing+'</p>'
+      + '</div>';
+  })();
+
+  // PAGE 6 — close
+  (function(){
+    var wrap = document.createElement('div');
+    wrap.style.cssText = 'padding:calc(100px + env(safe-area-inset-top)) 32px calc(100px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:24px;max-width:400px;margin:0 auto;box-sizing:border-box';
+    var mini = document.createElement('canvas');
+    mini.id = '_mrKnotMini';
+    mini.style.cssText = 'width:120px;height:120px';
+    mini.width = 120 * dpr; mini.height = 120 * dpr;
+    wrap.appendChild(mini);
+    var mLabel = document.createElement('p');
+    mLabel.textContent = monthName.toUpperCase() + '  ' + yearOfReplay;
+    mLabel.style.cssText = 'font-family:"DM Mono",monospace;font-size:10px;color:var(--gold);opacity:0.55;letter-spacing:0.2em;margin:4px 0 0';
+    wrap.appendChild(mLabel);
+    var spacer = document.createElement('div');
+    spacer.style.cssText = 'flex:1';
+    wrap.appendChild(spacer);
+    var closeInnerBtn = document.createElement('button');
+    closeInnerBtn.textContent = 'close';
+    closeInnerBtn.style.cssText = 'width:100%;max-width:280px;padding:16px;background:rgba(201,148,58,0.08);border:1px solid var(--gold);border-radius:14px;color:var(--gold);font-family:Fraunces,serif;font-style:italic;font-size:16px;cursor:pointer;transition:all 200ms ease';
+    closeInnerBtn.addEventListener('click', function(){
+      overlay.style.opacity = '0';
+      setTimeout(function(){ if(overlay.parentNode) overlay.remove(); }, 500);
+    });
+    wrap.appendChild(closeInnerBtn);
+    pages[5].innerHTML = '';
+    pages[5].appendChild(wrap);
+  })();
+
+  overlay.appendChild(pager);
+  overlay.appendChild(closeBtn);
+  overlay.appendChild(dotsWrap);
+  document.body.appendChild(overlay);
+
+  // Draw the two knots after attach (so getContext is valid + sized)
+  requestAnimationFrame(function(){
+    var main = document.getElementById('_mrKnotMain');
+    if(main) drawKnotOnCanvas(main, entries, monthIndex);
+    var mini = document.getElementById('_mrKnotMini');
+    if(mini) drawKnotOnCanvas(mini, entries, monthIndex);
+  });
+
+  // Fade in
+  requestAnimationFrame(function(){ overlay.style.opacity = '1'; });
+
+  // ── Swipe + keyboard + mouse navigation ──────────────────────────
+  var currentPage = 0;
+  var dragStartX = 0, dragActive = false;
+
+  function setPage(idx){
+    idx = Math.max(0, Math.min(5, idx));
+    currentPage = idx;
+    pager.style.transform = 'translateX(-'+(idx * 100)+'vw)';
+    dots.forEach(function(dt, ix){
+      dt.style.background = 'rgba(201,148,58,'+(ix===idx?'0.8':'0.25')+')';
+    });
+  }
+
+  // Pointer events cover mouse, touch, and pen in one handler — works on
+  // desktop (preview) and mobile (device). Fall back to touchstart/touchend
+  // if pointer isn't supported.
+  function onDragStart(clientX, target){
+    // ignore drags that originate on interactive elements (buttons, dots)
+    if(target && target.closest && target.closest('button')) return false;
+    dragStartX = clientX;
+    dragActive = true;
+    return true;
+  }
+  function onDragEnd(clientX){
+    if(!dragActive) return;
+    var dx = clientX - dragStartX;
+    if(Math.abs(dx) > 40) setPage(currentPage + (dx < 0 ? 1 : -1));
+    dragActive = false;
+  }
+
+  if(window.PointerEvent){
+    overlay.addEventListener('pointerdown', function(e){
+      onDragStart(e.clientX, e.target);
+    });
+    overlay.addEventListener('pointerup', function(e){ onDragEnd(e.clientX); });
+    overlay.addEventListener('pointercancel', function(){ dragActive = false; });
+  } else {
+    overlay.addEventListener('touchstart', function(e){
+      onDragStart(e.touches[0].clientX, e.target);
+    }, {passive:true});
+    overlay.addEventListener('touchend', function(e){
+      onDragEnd(e.changedTouches[0].clientX);
+    }, {passive:true});
+    overlay.addEventListener('mousedown', function(e){ onDragStart(e.clientX, e.target); });
+    overlay.addEventListener('mouseup', function(e){ onDragEnd(e.clientX); });
+  }
+
+  overlay.tabIndex = 0;
+  overlay.focus();
+  overlay.addEventListener('keydown', function(e){
+    if(e.key === 'ArrowRight') setPage(currentPage + 1);
+    if(e.key === 'ArrowLeft') setPage(currentPage - 1);
+    if(e.key === 'Escape'){
+      overlay.style.opacity = '0';
+      setTimeout(function(){ if(overlay.parentNode) overlay.remove(); }, 500);
+    }
+  });
+  overlay._setPage = setPage;
+}
+
 function openMonthDetail(monthIndex, entries){
+  // Route to the paged replay overlay instead of the simple bottom sheet.
+  if(entries && entries.length > 0){
+    // Derive ym from the first entry's date (year may not be the current year).
+    var ym = (entries[0].date || '').slice(0,7);
+    if(!ym){
+      var fallback = new Date(new Date().getFullYear(), monthIndex, 1);
+      ym = fallback.getFullYear() + '-' + String(monthIndex+1).padStart(2,'0');
+    }
+    showMonthReplay(ym, monthIndex, entries);
+    return;
+  }
+  // empty-month case — fall back to the simple sheet
   var year = new Date().getFullYear();
   var d = new Date(year, monthIndex, 1);
   $('monthSheetTitle').textContent = d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
@@ -9389,20 +9650,20 @@ if (typeof window !== 'undefined') {
     var pad = function(n){ return String(n).padStart(2,'0'); };
     var iso = function(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
     var start = new Date(today); start.setDate(start.getDate() - 364);
-    // handcrafted 12-month emotional arc matching the designed narrative
+    // full 37-emotion arc — every emotion appears at least once across the year
     var monthEmos = [
-      ['quiet','searching','overwhelmed','restless'],  // Jan — new year weight
-      ['tender','heartbroken','exhausted','heavy'],    // Feb — winter grief
-      ['heavy','numb','sad','disappointed'],           // Mar — still in it
-      ['restless','searching','foggy','quiet'],        // Apr — beginning to stir
-      ['hopeful','alive','searching','restless'],      // May — turning point
-      ['hopeful','alive','grateful','light'],          // Jun — opening up
-      ['grateful','alive','tender','light'],           // Jul — full summer
-      ['calm','tender','grateful','moved'],            // Aug — settled warmth
-      ['moved','grateful','tender','calm'],            // Sep — appreciation
-      ['quiet','tender','searching','calm'],           // Oct — autumn inward
-      ['grateful','tender','heavy','moved'],           // Nov — gratitude with weight
-      ['calm','grateful','hopeful','tender'],          // Dec — year-end peace
+      ['quiet','searching','overwhelmed','lost'],       // Jan — new year weight
+      ['tender','heartbroken','exhausted','vulnerable'],// Feb — winter grief
+      ['heavy','lonely','ashamed','disappointed'],      // Mar — still in it
+      ['restless','foggy','bored','nervous'],           // Apr — beginning to stir
+      ['hopeful','inspired','anxious','yearning'],      // May — turning point
+      ['alive','focused','content','frustrated'],       // Jun — opening up
+      ['grateful','passionate','light','certain'],      // Jul — full summer
+      ['calm','relaxed','moved','tender'],              // Aug — settled warmth
+      ['sad','betrayed','numb','insecure'],             // Sep — autumn shadow
+      ['hard','upset','livid','searching'],             // Oct — season turning
+      ['grateful','tender','heavy','moved'],            // Nov — gratitude with weight
+      ['hopeful','calm','inspired','certain'],          // Dec — year-end peace
     ];
     // 50/30/10/10 distribution using LCG seed per day — deterministic, non-mechanical
     var emoWeights = [0,0,0,0,0,1,1,1,2,3];
