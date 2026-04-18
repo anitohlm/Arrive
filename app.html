@@ -123,14 +123,14 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 /* ═══ SCREEN 2 — ARRIVAL (liquid glass on dark) ═════ */
 #s-arrival{background:var(--bg);display:flex;flex-direction:column;align-items:center;padding:48px 12px calc(88px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;overflow-y:auto;overflow-x:hidden;transition:background 400ms var(--ease);position:relative}
 #s-arrival::after{content:'';position:sticky;bottom:0;left:0;right:0;height:60px;background:linear-gradient(0deg,var(--bg) 0%,transparent 100%);pointer-events:none;flex-shrink:0}
-.q-dot{width:5px;height:5px;border-radius:50%;background:var(--gold);margin-bottom:clamp(8px,2vh,20px);animation:dotP 3s ease-in-out infinite}
+/* .q-dot removed — replaced by top-left back link */
 @keyframes dotP{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
 .q-title{text-align:center;font-style:italic;font-weight:400;font-size:clamp(18px,4vw,22px);color:var(--text);letter-spacing:-.01em;line-height:1.3;margin-bottom:4px}
 /* q-agent removed */
 .emotions{display:flex;flex-direction:column;gap:0;padding:0;margin-bottom:clamp(4px,1vh,10px);width:100%;overflow:hidden}
 .emo-group-label{font-family:'DM Mono',monospace;font-size:7px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;opacity:.3;text-align:center;padding:clamp(6px,1.2vh,12px) 0 clamp(4px,.8vh,6px)}
 /* emo-group-rule removed */
-.emo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:4px 0;padding:0;justify-items:center;width:100%}
+.emo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 0;padding:0;justify-items:center;width:100%}
 
 /* ─── STEP 1 — 2×2 grid of category cards ──────────────
    Each card has an icon on top, italic serif name, and a mono hint of
@@ -162,10 +162,11 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .emo-group{animation:arrival-fade-in 350ms var(--ease)}
 .emo-group[hidden]{display:none}
 .arrival-back{
-  align-self:flex-start;background:transparent;border:none;
+  position:absolute;top:max(20px,env(safe-area-inset-top));left:20px;
+  background:transparent;border:none;
   font-family:'Fraunces',serif;font-style:italic;font-size:13px;
   color:rgba(201,148,58,0.55);padding:8px 4px;cursor:pointer;
-  transition:color 200ms var(--ease);margin:4px 0 8px;
+  transition:color 200ms var(--ease);z-index:10;
 }
 .arrival-back:hover{color:rgba(230,182,88,0.85)}
 .arrival-back[hidden]{display:none}
@@ -174,8 +175,8 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
   from{opacity:0;transform:translateY(4px)}
   to{opacity:1;transform:none}
 }
-.chip{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:6px;border-radius:12px;background:transparent;border:2px solid transparent;font-family:'Fraunces',serif;font-style:italic;font-size:9px;color:var(--chip-text);cursor:pointer;transition:all 220ms var(--ease);user-select:none;min-width:0;width:64px}
-.chip img{width:48px!important;height:48px!important;object-fit:contain;transition:transform 260ms var(--ease);filter:drop-shadow(0 2px 6px rgba(0,0,0,.12))}
+.chip{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:14px;background:transparent;border:2px solid transparent;font-family:'Fraunces',serif;font-style:italic;font-size:11px;color:var(--chip-text);cursor:pointer;transition:all 220ms var(--ease);user-select:none;min-width:0;width:78px}
+.chip img{width:64px!important;height:64px!important;object-fit:contain;transition:transform 260ms var(--ease);filter:drop-shadow(0 2px 6px rgba(0,0,0,.12))}
 .chip .emoji{font-style:normal;font-size:clamp(24px,6vw,32px);line-height:1;transition:transform 260ms var(--ease)}
 .chip:active{transform:scale(.93)}
 .chip.sel{border-color:var(--chip-border);background:var(--chip-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
@@ -206,6 +207,18 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .chip[data-c="livid"].sel{border-color:#a83832;box-shadow:0 4px 16px -6px rgba(168,56,50,.4);background:rgba(168,56,50,.12)}
 .chip[data-c="lonely"].sel{border-color:#5a6888;box-shadow:0 4px 16px -6px rgba(90,104,136,.3);background:rgba(90,104,136,.08)}
 .chip[data-c="ashamed"].sel{border-color:#7a4a5a;box-shadow:0 4px 16px -6px rgba(122,74,90,.3);background:rgba(122,74,90,.08)}
+.chip[data-c="certain"].sel{border-color:#a08860;box-shadow:0 4px 16px -6px rgba(160,136,96,.3);background:rgba(160,136,96,.08)}
+.chip[data-c="content"].sel{border-color:#a0b888;box-shadow:0 4px 16px -6px rgba(160,184,136,.3);background:rgba(160,184,136,.08)}
+.chip[data-c="focused"].sel{border-color:#5880a0;box-shadow:0 4px 16px -6px rgba(88,128,160,.3);background:rgba(88,128,160,.08)}
+.chip[data-c="inspired"].sel{border-color:#e09848;box-shadow:0 4px 16px -6px rgba(224,152,72,.35);background:rgba(224,152,72,.1)}
+.chip[data-c="lost"].sel{border-color:#7a7e88;box-shadow:0 4px 16px -6px rgba(122,126,136,.25);background:rgba(122,126,136,.07)}
+.chip[data-c="relaxed"].sel{border-color:#9ec8a0;box-shadow:0 4px 16px -6px rgba(158,200,160,.3);background:rgba(158,200,160,.08)}
+.chip[data-c="vulnerable"].sel{border-color:#dba4b2;box-shadow:0 4px 16px -6px rgba(219,164,178,.3);background:rgba(219,164,178,.08)}
+.chip[data-c="yearning"].sel{border-color:#987ba6;box-shadow:0 4px 16px -6px rgba(152,123,166,.3);background:rgba(152,123,166,.08)}
+.chip[data-c="betrayed"].sel{border-color:#8a3840;box-shadow:0 4px 16px -6px rgba(138,56,64,.35);background:rgba(138,56,64,.1)}
+.chip[data-c="bored"].sel{border-color:#8e8878;box-shadow:0 4px 16px -6px rgba(142,136,120,.25);background:rgba(142,136,120,.07)}
+.chip[data-c="insecure"].sel{border-color:#a08a90;box-shadow:0 4px 16px -6px rgba(160,138,144,.3);background:rgba(160,138,144,.08)}
+.chip[data-c="upset"].sel{border-color:#b07040;box-shadow:0 4px 16px -6px rgba(176,112,64,.3);background:rgba(176,112,64,.08)}
 .emotion-whisper{text-align:center;font-style:italic;font-size:11px;color:var(--text-muted);margin-top:-20px;margin-bottom:20px;height:16px;opacity:0;transition:opacity 400ms}
 .emotion-whisper.vis{opacity:1}
 .intent-section{width:100%;opacity:0;transform:translateY(8px);transition:opacity 400ms var(--ease),transform 400ms var(--ease);pointer-events:none;margin-bottom:clamp(8px,1.5vh,18px);display:flex;flex-direction:column;gap:8px}
@@ -999,7 +1012,6 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
 <!-- ═══ SCREEN 2: ARRIVAL ════════════════════════════ -->
 <div class="screen" id="s-arrival">
   <div class="arrival" id="arrivalInner">
-    <div class="q-dot"></div>
     <h2 class="q-title">how do you arrive today?</h2>
     <div class="emotions" id="emotions">
 
@@ -1008,22 +1020,22 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
         <button class="arrival-cat" data-group="light">
           <img class="arrival-cat-icon" src="hopeful-icon.svg" alt="">
           <span class="arrival-cat-name">arriving light</span>
-          <span class="arrival-cat-hint">grateful · tender · hopeful<br>calm · alive · light · passionate</span>
+          <span class="arrival-cat-hint">grateful · tender · hopeful · calm<br>alive · light · passionate · content<br>relaxed · focused · inspired · certain</span>
         </button>
         <button class="arrival-cat" data-group="between">
           <img class="arrival-cat-icon" src="searching-icon.svg" alt="">
           <span class="arrival-cat-name">in between</span>
-          <span class="arrival-cat-hint">quiet · numb · foggy · nervous<br>restless · searching</span>
+          <span class="arrival-cat-hint">quiet · numb · foggy · nervous<br>restless · searching · lost<br>yearning · bored</span>
         </button>
         <button class="arrival-cat" data-group="weight">
           <img class="arrival-cat-icon" src="overwhelmed-icon.svg" alt="">
           <span class="arrival-cat-name">carrying weight</span>
-          <span class="arrival-cat-hint">hard · heavy · overwhelmed · livid<br>sad · frustrated · anxious · lonely</span>
+          <span class="arrival-cat-hint">hard · heavy · overwhelmed · livid<br>sad · frustrated · anxious · lonely<br>upset · insecure</span>
         </button>
         <button class="arrival-cat" data-group="hard">
           <img class="arrival-cat-icon" src="disappointed-icon.svg" alt="">
           <span class="arrival-cat-name">hard to name</span>
-          <span class="arrival-cat-hint">heartbroken · disappointed<br>exhausted · moved · ashamed</span>
+          <span class="arrival-cat-hint">heartbroken · disappointed<br>exhausted · moved · ashamed<br>vulnerable · betrayed</span>
         </button>
       </div>
 
@@ -1040,6 +1052,11 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
           <button class="chip" data-c="hopeful"><img src="hopeful-icon.svg" alt=""> hopeful</button>
           <button class="chip" data-c="light"><img src="light-icon.svg" alt=""> light</button>
           <button class="chip" data-c="passionate"><img src="passionate-icon.svg" alt=""> passionate</button>
+          <button class="chip" data-c="content"><img src="content-icon.svg" alt=""> content</button>
+          <button class="chip" data-c="relaxed"><img src="relaxed-icon.svg" alt=""> relaxed</button>
+          <button class="chip" data-c="focused"><img src="focused-icon.svg" alt=""> focused</button>
+          <button class="chip" data-c="inspired"><img src="inspired-icon.svg" alt=""> inspired</button>
+          <button class="chip" data-c="certain"><img src="certain-icon.svg" alt=""> certain</button>
         </div>
       </div>
       <div class="emo-group" data-group="between" hidden>
@@ -1051,6 +1068,9 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
           <button class="chip" data-c="restless"><img src="restless-icon.svg" alt=""> restless</button>
           <button class="chip" data-c="searching"><img src="searching-icon.svg" alt=""> searching</button>
           <button class="chip" data-c="nervous"><img src="nervous-icon.svg" alt=""> nervous</button>
+          <button class="chip" data-c="lost"><img src="lost-icon.svg" alt=""> lost</button>
+          <button class="chip" data-c="yearning"><img src="yearning-icon.svg" alt=""> yearning</button>
+          <button class="chip" data-c="bored"><img src="bored-icon.svg" alt=""> bored</button>
         </div>
       </div>
       <div class="emo-group" data-group="weight" hidden>
@@ -1064,6 +1084,8 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
           <button class="chip" data-c="anxious"><img src="anxious-icon.svg" alt=""> anxious</button>
           <button class="chip" data-c="livid"><img src="livid-icon.svg" alt=""> livid</button>
           <button class="chip" data-c="lonely"><img src="lonely-icon.svg" alt=""> lonely</button>
+          <button class="chip" data-c="upset"><img src="upset-icon.svg" alt=""> upset</button>
+          <button class="chip" data-c="insecure"><img src="insecure-icon.svg" alt=""> insecure</button>
         </div>
       </div>
       <div class="emo-group" data-group="hard" hidden>
@@ -1074,6 +1096,8 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
           <button class="chip" data-c="exhausted"><img src="exhausted-icon.svg" alt=""> exhausted</button>
           <button class="chip" data-c="moved"><img src="moved-icon.svg" alt=""> moved</button>
           <button class="chip" data-c="ashamed"><img src="ashamed-icon.svg" alt=""> ashamed</button>
+          <button class="chip" data-c="vulnerable"><img src="vulnerable-icon.svg" alt=""> vulnerable</button>
+          <button class="chip" data-c="betrayed"><img src="betrayed-icon.svg" alt=""> betrayed</button>
         </div>
       </div>
     </div>
@@ -1523,11 +1547,13 @@ const EMO = {
 const BREATHING_EMOTIONS = new Set([
   'anxious','overwhelmed','heavy','frustrated',
   'heartbroken','restless','hard','foggy','exhausted',
-  'nervous','livid','lonely','ashamed'
+  'nervous','livid','lonely','ashamed',
+  'lost','vulnerable','betrayed','insecure','upset'
 ]);
 
 const LIGHT_EMOTIONS = new Set([
-  'grateful','alive','tender','calm','hopeful','light','passionate'
+  'grateful','alive','tender','calm','hopeful','light','passionate',
+  'certain','content','focused','inspired','relaxed'
 ]);
 
 const MEMORY_HEAVY_PHRASES = [
@@ -1582,6 +1608,18 @@ const INSIGHTS = {
   livid:'Livid is honest. Something crossed a line that matters to you. This practice doesn\u2019t ask you to forgive or soften \u2014 only to notice what the anger is protecting.',
   lonely:'Loneliness is the body asking for company. It is not weakness \u2014 it is one of the oldest, truest signals. You came here today. That is a kind of reaching toward something.',
   ashamed:'Shame makes people hide. You came here instead. That is not small. Something in you believed you were still worth showing up for \u2014 even if quietly. Start from there.',
+  certain:'Certainty is rare. Something in you is clear today \u2014 you know what you know. That clarity is a resource. Don\u2019t waste it on old doubts. Use it on what matters now.',
+  content:'Content is the hardest state to arrive at and the easiest to miss. Enough is here \u2014 not more, not less. That is the whole practice in one word. Let it be enough.',
+  focused:'Focus is attention, kept on purpose. You haven\u2019t let today scatter you yet. That is a small but real act of agency. Let\u2019s use the aim before it drifts.',
+  inspired:'Inspiration is the gap closing between what you sense and what you can do. Something just became possible. Don\u2019t let the feeling pass before you name what it pointed at.',
+  lost:'Lost is not the opposite of being somewhere \u2014 it is just being somewhere you don\u2019t have a map for. You arrived without one. That takes its own kind of courage.',
+  relaxed:'Relaxed is what the body does when it stops defending. Today something in you is not bracing. Notice it. It will not always be here. Let\u2019s be with it while it is.',
+  vulnerable:'Vulnerability is letting yourself be seen before you are ready. Something in you is open today. We won\u2019t ask you to be brave about it \u2014 only to notice the opening.',
+  yearning:'Yearning is love with its arms extended. You want something \u2014 and wanting is not a failure. It\u2019s the shape of being alive toward something. Let\u2019s name what.',
+  betrayed:'Betrayal is what happens when trust breaks in a way that matters. You are right to be hurt. This practice doesn\u2019t ask you to forgive anyone \u2014 only to name the break.',
+  bored:'Boredom is underrated. It is often where your mind goes looking for what hasn\u2019t been nourished. Something in you is asking to be fed. Let\u2019s see what.',
+  insecure:'Insecurity says \u201cwho are you to\u2026\u201d You came anyway. That is the whole point of a practice \u2014 showing up before you feel qualified to. You\u2019re already doing it.',
+  upset:'Upset is the body\u2019s way of saying something matters and something is wrong. Don\u2019t rush past it. Let\u2019s find out what it\u2019s pointing at.',
 };
 const PROMPTS = {
   calm:'In the stillness of today, what small thing revealed itself to you \u2014 something you might have missed if you\u2019d been moving faster?',
@@ -1610,6 +1648,18 @@ const PROMPTS = {
   livid:'What crossed the line today? What is the anger protecting?',
   lonely:'What kind of company does the loneliness miss? Name the specific thing.',
   ashamed:'What would you say to yourself today if shame weren\u2019t listening?',
+  certain:'What do you know today, without needing to explain it?',
+  content:'What is enough about today \u2014 exactly as it is?',
+  focused:'Where is your attention pointed today? What is it serving?',
+  inspired:'What sparked today? What does the spark want you to do with it?',
+  lost:'Without a map, what is the one small thing that is still true?',
+  relaxed:'What let you unbrace today? What feels easy that usually doesn\u2019t?',
+  vulnerable:'What are you willing to let yourself feel today \u2014 even a little?',
+  yearning:'What are you reaching for? Say it plainly, even if it scares you.',
+  betrayed:'What broke that shouldn\u2019t have? What is the honest name for it?',
+  bored:'In the flatness, what is something small that still has a pulse?',
+  insecure:'If insecurity weren\u2019t speaking, what would you write instead?',
+  upset:'What is the upset pointing at? What does it want you to see?',
 };
 const PLACEHOLDERS = {
   calm:'I notice\u2026',tender:'I felt something soft when\u2026',grateful:'Today I am most grateful for\u2026',
@@ -1622,6 +1672,12 @@ const PLACEHOLDERS = {
   disappointed:'I had hoped\u2026',exhausted:'One small mercy today\u2026',moved:'What moved me was\u2026',
   passionate:'What set me alight today\u2026',nervous:'I\u2019m nervous about\u2026',
   livid:'What crossed the line\u2026',lonely:'The company I miss\u2026',ashamed:'What I\u2019d say if shame weren\u2019t listening\u2026',
+  certain:'What I\u2019m clear about today\u2026',content:'Enough today looks like\u2026',
+  focused:'Where my attention is pointing\u2026',inspired:'What sparked\u2026',
+  lost:'Without a compass, I still notice\u2026',relaxed:'The ease today is\u2026',
+  vulnerable:'What I\u2019m willing to show today\u2026',yearning:'What I\u2019m reaching for\u2026',
+  betrayed:'The break I\u2019m naming\u2026',bored:'In the flatness, I notice\u2026',
+  insecure:'Even shaky, what\u2019s true\u2026',upset:'What\u2019s disturbing me\u2026',
 };
 const ARRIVAL_HINTS = {
 
@@ -1777,7 +1833,19 @@ const BIRTHDAY_HINTS = {
   nervous:'Birthdays come with their own flutter. The chain holds that too.',
   livid:'Even livid birthdays count. You showed up with all of it.',
   lonely:'Some birthdays arrive quietly. You\u2019re not alone here.',
-  ashamed:'Birthdays don\u2019t ask you to be proud. Just to arrive. You did.'
+  ashamed:'Birthdays don\u2019t ask you to be proud. Just to arrive. You did.',
+  certain:'A clear-eyed birthday. The chain takes your word for it.',
+  content:'Enough on your birthday \u2014 that is a rare gift.',
+  focused:'Birthdays with aim. Tell the chain where you\u2019re pointed.',
+  inspired:'Sparked on your birthday. Follow it \u2014 the chain is ready.',
+  lost:'Not every birthday brings a compass. You arrived without one. That\u2019s enough.',
+  relaxed:'An easy birthday. Let it be easy. The chain doesn\u2019t need more.',
+  vulnerable:'Birthdays open you. You came with it open. That\u2019s brave.',
+  yearning:'Some birthdays come full of wanting. The chain knows that ache.',
+  betrayed:'Even on your birthday, some wounds show. The chain holds that too.',
+  bored:'A flat birthday is still a birthday. You\u2019re here. That counts.',
+  insecure:'Birthdays can make you small. You showed up anyway.',
+  upset:'Upset on your birthday is honest. The chain takes it as it is.'
 };
 const ARRIVAL_FALLBACK = {
   calm:'A quiet arrival. Let\u2019s begin gently.',tender:'Something soft in you today.',
@@ -1796,6 +1864,18 @@ const ARRIVAL_FALLBACK = {
   livid:'Burning with it. That\u2019s information. Let\u2019s listen.',
   lonely:'Solitude showed up. The chain\u2019s here with you.',
   ashamed:'You came anyway. That is already brave.',
+  certain:'Clear today. Let\u2019s name what you know.',
+  content:'Enough is here. Let\u2019s notice it.',
+  focused:'Pointed and present. Let\u2019s use it.',
+  inspired:'Something sparked. Don\u2019t let it pass.',
+  lost:'No compass today. We\u2019ll start with one step.',
+  relaxed:'At ease. Let\u2019s honor it.',
+  vulnerable:'Something in you is open. We\u2019ll be gentle.',
+  yearning:'Wanting is honest. Let\u2019s name what.',
+  betrayed:'Something broke that shouldn\u2019t have. We\u2019ll start where you are.',
+  bored:'Flat is a weather too. It still counts.',
+  insecure:'Shaky ground today. One small solid thing.',
+  upset:'Disturbed. The chain takes it as it is.',
 };
 
 // ═══ STATE ══════════════════════════════════════════
@@ -2117,7 +2197,11 @@ var PORTRAIT_WORDS = {
   frustrated:'friction', anxious:'watchful', heartbroken:'breaking',
   disappointed:'longing', exhausted:'rest', moved:'opening',
   passionate:'flame', nervous:'tremor', livid:'burning',
-  lonely:'solitude', ashamed:'hiding'
+  lonely:'solitude', ashamed:'hiding',
+  certain:'clarity', content:'enough', focused:'aim',
+  inspired:'spark', lost:'drift', relaxed:'ease',
+  vulnerable:'opening', yearning:'reaching', betrayed:'breach',
+  bored:'flatness', insecure:'wobble', upset:'unsettled'
 };
 var PORTRAIT_MESSAGES = {
   calm:'you found stillness when the world asked for more.',
@@ -2145,7 +2229,19 @@ var PORTRAIT_MESSAGES = {
   nervous:'you stayed close to the edge and still arrived. that is bravery.',
   livid:'you were angry. it was real. the chain held that too.',
   lonely:'loneliness is honest about what it wants. the chain kept you company.',
-  ashamed:'you kept showing up when you wanted to disappear. that counts.'
+  ashamed:'you kept showing up when you wanted to disappear. that counts.',
+  certain:'you knew what you knew. that kind of steadiness is rare.',
+  content:'enough arrived, more than once. you noticed. that is the whole practice.',
+  focused:'you kept your attention where it mattered. the chain felt it.',
+  inspired:'something sparked in you. you didn\u2019t let it pass unnoticed.',
+  lost:'you didn\u2019t know the way and walked anyway. that is faith.',
+  relaxed:'ease visited. you let it stay. nothing had to be earned.',
+  vulnerable:'you let yourself be soft in a hard world. that took nerve.',
+  yearning:'you wanted something. you didn\u2019t pretend otherwise. that is honest.',
+  betrayed:'something broke that shouldn\u2019t have. you told the truth about it.',
+  bored:'the flat days counted too. you were still here.',
+  insecure:'you showed up when you doubted yourself. you came anyway.',
+  upset:'upset is real information. the chain received it all.'
 };
 var YEAR_CLOSING_LINES = {
   calm:        'a whole year of quiet. you honored it.',
@@ -2173,7 +2269,19 @@ var YEAR_CLOSING_LINES = {
   nervous:     'you stayed by the edge all year. that takes its own courage.',
   livid:       'a year that asked anger of you. you told it the truth.',
   lonely:      'a year of wanting company. the chain was here, all of it.',
-  ashamed:     'you showed up when you most wanted to hide. a whole year of that.'
+  ashamed:     'you showed up when you most wanted to hide. a whole year of that.',
+  certain:     'a year you knew what you knew. that kind of steadiness is rare.',
+  content:     'a whole year of enough. you let it be. that is the harder thing.',
+  focused:     'you kept the thread of your attention for 365 days. that matters.',
+  inspired:    'a year of sparks. you tended them. most people let theirs go out.',
+  lost:        'you walked without knowing, a whole year. arriving still counts.',
+  relaxed:     'a year of ease arriving. you didn\u2019t make it prove itself.',
+  vulnerable:  'a year of being soft. that is not weakness \u2014 that is presence.',
+  yearning:    'a year of reaching. the chain is the evidence you kept wanting.',
+  betrayed:    'a year the ground moved. you still wrote. that is not nothing.',
+  bored:       'even the flat year is held. you kept showing up for it.',
+  insecure:    'you doubted yourself and arrived anyway. 365 times over.',
+  upset:       'a year of weather. the chain rode it with you.'
 };
 
 function _buildYearCeremonyData(){
@@ -3463,6 +3571,19 @@ const KNOT_PARAMS = {
   livid:       {petals:6, sharp:0.9, round:0.15, strokeW:2.0, twist:0.7,  color:'#a83832', glow:'rgba(168,56,50,0.35)'},
   lonely:      {petals:4, sharp:0.4, round:0.5,  strokeW:1.4, twist:0.2,  color:'#5a6888', glow:'rgba(90,104,136,0.25)'},
   ashamed:     {petals:5, sharp:0.5, round:0.4,  strokeW:1.2, twist:0.35, color:'#7a4a5a', glow:'rgba(122,74,90,0.25)'},
+  // Third wave — 2026-04-18
+  certain:     {petals:5, sharp:0.5, round:0.5,  strokeW:1.4, twist:0.2,  color:'#a08860', glow:'rgba(160,136,96,0.25)'},
+  content:     {petals:6, sharp:0.3, round:0.7,  strokeW:1.2, twist:0.25, color:'#a0b888', glow:'rgba(160,184,136,0.25)'},
+  focused:     {petals:4, sharp:0.7, round:0.3,  strokeW:1.5, twist:0.1,  color:'#5880a0', glow:'rgba(88,128,160,0.25)'},
+  inspired:    {petals:9, sharp:0.8, round:0.4,  strokeW:1.2, twist:0.55, color:'#e09848', glow:'rgba(224,152,72,0.35)'},
+  lost:        {petals:5, sharp:0.35,round:0.5,  strokeW:0.9, twist:0.4,  color:'#7a7e88', glow:'rgba(122,126,136,0.22)'},
+  relaxed:     {petals:6, sharp:0.2, round:0.85, strokeW:1.1, twist:0.2,  color:'#9ec8a0', glow:'rgba(158,200,160,0.25)'},
+  vulnerable:  {petals:5, sharp:0.3, round:0.75, strokeW:0.9, twist:0.3,  color:'#dba4b2', glow:'rgba(219,164,178,0.3)'},
+  yearning:    {petals:6, sharp:0.5, round:0.6,  strokeW:1.1, twist:0.55, color:'#987ba6', glow:'rgba(152,123,166,0.25)'},
+  betrayed:    {petals:5, sharp:0.8, round:0.2,  strokeW:2.0, twist:0.3,  color:'#8a3840', glow:'rgba(138,56,64,0.35)'},
+  bored:       {petals:4, sharp:0.2, round:0.6,  strokeW:0.8, twist:0.1,  color:'#8e8878', glow:'rgba(142,136,120,0.18)'},
+  insecure:    {petals:5, sharp:0.5, round:0.4,  strokeW:1.1, twist:0.45, color:'#a08a90', glow:'rgba(160,138,144,0.25)'},
+  upset:       {petals:6, sharp:0.75,round:0.25, strokeW:1.6, twist:0.5,  color:'#b07040', glow:'rgba(176,112,64,0.3)'},
 };
 const KNOT_FALLBACK = KNOT_PARAMS.calm;
 
@@ -5166,7 +5287,19 @@ function showMonthEndCeremony(){
         nervous:'you stayed close to the edge and kept arriving.',
         livid:'anger was honest this month. you told the truth.',
         lonely:'the chain kept you company. you were not alone.',
-        ashamed:'you showed up when you wanted to hide. that counts.'
+        ashamed:'you showed up when you wanted to hide. that counts.',
+        certain:'you knew what you knew this month. that is not small.',
+        content:'enough arrived. you let it be enough.',
+        focused:'you kept the thread this month. that is a practice.',
+        inspired:'something sparked. you tended it. it stays.',
+        lost:'you walked without a map. arriving still counts.',
+        relaxed:'ease visited. you let it stay.',
+        vulnerable:'you were soft. the chain held that.',
+        yearning:'a month of reaching. the chain is the evidence.',
+        betrayed:'the break was real. you told the truth about it.',
+        bored:'flat months count. you stayed.',
+        insecure:'you doubted and showed up anyway.',
+        upset:'upset is honest. you let it be.'
       };
       var closing = closingLines[dominant] || 'you arrived this month. the chain remembers.';
       pages[4].innerHTML = '<div style="padding:120px 36px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:20px;max-width:400px;margin:0 auto;box-sizing:border-box">'
