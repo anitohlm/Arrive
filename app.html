@@ -131,6 +131,42 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .emo-group-label{font-family:'DM Mono',monospace;font-size:7px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;opacity:.3;text-align:center;padding:clamp(6px,1.2vh,12px) 0 clamp(4px,.8vh,6px)}
 /* emo-group-rule removed */
 .emo-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:clamp(2px,.5vh,6px) 0;padding:0;justify-items:center;width:100%}
+
+/* ─── STEP 1 — category cards ──────────────────────────
+   Shown first; tapping one reveals only that group's emotions.
+   Quiet visual weight — italic serif name + mono hint, soft border. */
+.arrival-cats{display:flex;flex-direction:column;gap:12px;width:100%;padding:12px 0 16px;animation:arrival-fade-in 400ms var(--ease)}
+.arrival-cats[hidden]{display:none}
+.arrival-cat{
+  display:flex;flex-direction:column;align-items:flex-start;gap:4px;
+  padding:18px 22px;width:100%;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(201,148,58,0.12);border-radius:16px;
+  font-family:'Fraunces',serif;font-style:italic;
+  color:var(--text);cursor:pointer;
+  transition:all 220ms var(--ease);
+}
+.arrival-cat:hover{background:rgba(201,148,58,0.04);border-color:rgba(201,148,58,0.22)}
+.arrival-cat:active{transform:scale(.98)}
+.arrival-cat-name{font-size:20px;font-weight:300;color:rgba(245,237,224,0.9);letter-spacing:-0.01em}
+.arrival-cat-hint{font-family:'DM Mono',monospace;font-style:normal;font-size:9px;letter-spacing:0.08em;color:rgba(201,148,58,0.4);text-transform:lowercase}
+
+/* ─── STEP 2 — revealed group + back link ──────────── */
+.emo-group{animation:arrival-fade-in 350ms var(--ease)}
+.emo-group[hidden]{display:none}
+.arrival-back{
+  align-self:flex-start;background:transparent;border:none;
+  font-family:'Fraunces',serif;font-style:italic;font-size:13px;
+  color:rgba(201,148,58,0.55);padding:8px 4px;cursor:pointer;
+  transition:color 200ms var(--ease);margin:4px 0 8px;
+}
+.arrival-back:hover{color:rgba(230,182,88,0.85)}
+.arrival-back[hidden]{display:none}
+
+@keyframes arrival-fade-in{
+  from{opacity:0;transform:translateY(4px)}
+  to{opacity:1;transform:none}
+}
 .chip{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:clamp(3px,.5vh,5px);padding:clamp(4px,.8vw,8px);border-radius:12px;background:transparent;border:2px solid transparent;font-family:'Fraunces',serif;font-style:italic;font-size:clamp(8px,1.8vw,10px);color:var(--chip-text);cursor:pointer;transition:all 220ms var(--ease);user-select:none;min-width:0;width:clamp(56px,14vw,72px)}
 .chip img{width:clamp(42px,10vw,56px)!important;height:clamp(42px,10vw,56px)!important;object-fit:contain;transition:transform 260ms var(--ease);filter:drop-shadow(0 2px 6px rgba(0,0,0,.12))}
 .chip .emoji{font-style:normal;font-size:clamp(24px,6vw,32px);line-height:1;transition:transform 260ms var(--ease)}
@@ -954,38 +990,70 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
     <div class="q-dot"></div>
     <h2 class="q-title">how do you arrive today?</h2>
     <div class="emotions" id="emotions">
-      <p class="emo-group-label">— arriving light —</p>
-      <div class="emo-grid">
-        <button class="chip" data-c="grateful"><img src="grateful-icon.svg" alt=""> grateful</button>
-        <button class="chip" data-c="alive"><img src="alive-icon.svg" alt=""> alive</button>
-        <button class="chip" data-c="tender"><img src="tender-icon.svg" alt=""> tender</button>
-        <button class="chip" data-c="calm"><img src="calm-icon.svg" alt=""> calm</button>
-        <button class="chip" data-c="hopeful"><img src="hopeful-icon.svg" alt=""> hopeful</button>
-        <button class="chip" data-c="light"><img src="light-icon.svg" alt=""> light</button>
+
+      <!-- STEP 1 — 4 category cards. One gentle ask at a time. -->
+      <div class="arrival-cats" id="arrivalCats">
+        <button class="arrival-cat" data-group="light">
+          <span class="arrival-cat-name">arriving light</span>
+          <span class="arrival-cat-hint">grateful · tender · hopeful · calm · alive · light</span>
+        </button>
+        <button class="arrival-cat" data-group="between">
+          <span class="arrival-cat-name">in between</span>
+          <span class="arrival-cat-hint">quiet · numb · foggy · restless · searching</span>
+        </button>
+        <button class="arrival-cat" data-group="weight">
+          <span class="arrival-cat-name">carrying weight</span>
+          <span class="arrival-cat-hint">hard · heavy · overwhelmed · sad · frustrated · anxious</span>
+        </button>
+        <button class="arrival-cat" data-group="hard">
+          <span class="arrival-cat-name">hard to name</span>
+          <span class="arrival-cat-hint">heartbroken · disappointed · exhausted · moved</span>
+        </button>
       </div>
-      <p class="emo-group-label">— in between —</p>
-      <div class="emo-grid">
-        <button class="chip" data-c="numb"><img src="numb-icon.svg" alt=""> numb</button>
-        <button class="chip" data-c="quiet"><img src="quiet-icon.svg" alt=""> quiet</button>
-        <button class="chip" data-c="foggy"><img src="foggy-icon.svg" alt=""> foggy</button>
-        <button class="chip" data-c="restless"><img src="restless-icon.svg" alt=""> restless</button>
-        <button class="chip" data-c="searching"><img src="searching-icon.svg" alt=""> searching</button>
+
+      <!-- STEP 2 — chosen group's emotions, revealed on category tap. -->
+      <button class="arrival-back" id="arrivalBack" type="button" hidden>← back</button>
+
+      <div class="emo-group" data-group="light" hidden>
+        <p class="emo-group-label">— arriving light —</p>
+        <div class="emo-grid">
+          <button class="chip" data-c="grateful"><img src="grateful-icon.svg" alt=""> grateful</button>
+          <button class="chip" data-c="alive"><img src="alive-icon.svg" alt=""> alive</button>
+          <button class="chip" data-c="tender"><img src="tender-icon.svg" alt=""> tender</button>
+          <button class="chip" data-c="calm"><img src="calm-icon.svg" alt=""> calm</button>
+          <button class="chip" data-c="hopeful"><img src="hopeful-icon.svg" alt=""> hopeful</button>
+          <button class="chip" data-c="light"><img src="light-icon.svg" alt=""> light</button>
+        </div>
       </div>
-      <p class="emo-group-label">— carrying weight —</p>
-      <div class="emo-grid">
-        <button class="chip" data-c="hard"><img src="hard-icon.svg" alt=""> hard</button>
-        <button class="chip" data-c="heavy"><img src="heavy-icon.svg" alt=""> heavy</button>
-        <button class="chip" data-c="overwhelmed"><img src="overwhelmed-icon.svg" alt=""> overwhelmed</button>
-        <button class="chip" data-c="sad"><img src="sad-icon.svg" alt=""> sad</button>
-        <button class="chip" data-c="frustrated"><img src="frustrated-icon.svg" alt=""> frustrated</button>
-        <button class="chip" data-c="anxious"><img src="anxious-icon.svg" alt=""> anxious</button>
+      <div class="emo-group" data-group="between" hidden>
+        <p class="emo-group-label">— in between —</p>
+        <div class="emo-grid">
+          <button class="chip" data-c="numb"><img src="numb-icon.svg" alt=""> numb</button>
+          <button class="chip" data-c="quiet"><img src="quiet-icon.svg" alt=""> quiet</button>
+          <button class="chip" data-c="foggy"><img src="foggy-icon.svg" alt=""> foggy</button>
+          <button class="chip" data-c="restless"><img src="restless-icon.svg" alt=""> restless</button>
+          <button class="chip" data-c="searching"><img src="searching-icon.svg" alt=""> searching</button>
+        </div>
       </div>
-      <p class="emo-group-label">— hard to name —</p>
-      <div class="emo-grid">
-        <button class="chip" data-c="heartbroken"><img src="heartbroken-icon.svg" alt=""> heartbroken</button>
-        <button class="chip" data-c="disappointed"><img src="disappointed-icon.svg" alt=""> disappointed</button>
-        <button class="chip" data-c="exhausted"><img src="exhausted-icon.svg" alt=""> exhausted</button>
-        <button class="chip" data-c="moved"><img src="moved-icon.svg" alt=""> moved</button>
+      <div class="emo-group" data-group="weight" hidden>
+        <p class="emo-group-label">— carrying weight —</p>
+        <div class="emo-grid">
+          <button class="chip" data-c="hard"><img src="hard-icon.svg" alt=""> hard</button>
+          <button class="chip" data-c="heavy"><img src="heavy-icon.svg" alt=""> heavy</button>
+          <button class="chip" data-c="overwhelmed"><img src="overwhelmed-icon.svg" alt=""> overwhelmed</button>
+          <button class="chip" data-c="sad"><img src="sad-icon.svg" alt=""> sad</button>
+          <button class="chip" data-c="frustrated"><img src="frustrated-icon.svg" alt=""> frustrated</button>
+          <button class="chip" data-c="anxious"><img src="anxious-icon.svg" alt=""> anxious</button>
+        </div>
+      </div>
+      <div class="emo-group" data-group="hard" hidden>
+        <p class="emo-group-label">— hard to name —</p>
+        <div class="emo-grid">
+          <button class="chip" data-c="heartbroken"><img src="heartbroken-icon.svg" alt=""> heartbroken</button>
+          <button class="chip" data-c="disappointed"><img src="disappointed-icon.svg" alt=""> disappointed</button>
+          <button class="chip" data-c="exhausted"><img src="exhausted-icon.svg" alt=""> exhausted</button>
+          <button class="chip" data-c="moved"><img src="moved-icon.svg" alt=""> moved</button>
+        </div>
       </div>
     </div>
     <p class="emotion-whisper" id="whisper">tell us how you arrive, even one word</p>
@@ -6745,12 +6813,51 @@ $('s-splash').addEventListener('click', (e) => {
   // don't trigger if tapping nav
   if(e.target.closest('.bottom-nav')) return;
   $('s-splash').classList.add('dimmed');
+  // Reset arrival to step 1 (category cards) on fresh entry so each check-in
+  // starts with a clean slate. Back-from-insight/breathing keeps their pick.
+  if(typeof _arrivalShowStep1 === 'function') _arrivalShowStep1();
   setTimeout(() => go('s-splash','s-arrival'), 400);
 });
 
 // dev helpers removed for production
 
 // ═══ SCREEN 2: ARRIVAL ═════════════════════════════
+// Step 1 (category cards) → Step 2 (one group's emotions). Progressive
+// disclosure keeps the check-in conversational rather than survey-like.
+function _arrivalShowStep1(){
+  var cats = document.getElementById('arrivalCats');
+  if(cats) cats.hidden = false;
+  var back = document.getElementById('arrivalBack');
+  if(back) back.hidden = true;
+  document.querySelectorAll('#emotions .emo-group').forEach(function(g){ g.hidden = true; });
+}
+function _arrivalShowStep2(groupName){
+  var cats = document.getElementById('arrivalCats');
+  if(cats) cats.hidden = true;
+  var back = document.getElementById('arrivalBack');
+  if(back) back.hidden = false;
+  document.querySelectorAll('#emotions .emo-group').forEach(function(g){
+    g.hidden = g.getAttribute('data-group') !== groupName;
+  });
+}
+document.querySelectorAll('.arrival-cat').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    _arrivalShowStep2(btn.getAttribute('data-group'));
+  });
+});
+document.getElementById('arrivalBack').addEventListener('click', function(){
+  _arrivalShowStep1();
+  // Deselect any emotion; retract the intent / arrive UI until a new one is picked.
+  emo = null;
+  document.querySelectorAll('.chip').forEach(function(x){ x.classList.remove('sel'); });
+  var intentSec = document.getElementById('intentSec');
+  if(intentSec) intentSec.classList.remove('vis');
+  var arriveBtn = document.getElementById('arriveBtn');
+  if(arriveBtn) arriveBtn.classList.remove('ready');
+  var hintEl = document.getElementById('arrivalHint');
+  if(hintEl) hintEl.classList.remove('vis');
+});
+
 $('emotions').addEventListener('click', e => {
   const c = e.target.closest('.chip'); if(!c) return;
   document.querySelectorAll('.chip').forEach(x=>x.classList.remove('sel'));
