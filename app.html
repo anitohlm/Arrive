@@ -84,6 +84,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .signin-input:focus{border-color:var(--gold)}
 .signin-input::placeholder{color:var(--muted)}
 .signin-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.08em;margin-top:4px}
+.signin-hint{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:11px;line-height:1.55;color:rgba(245,237,224,0.45);margin:-8px 4px 4px;padding:0;text-align:left}
 .signin-submit{width:100%;padding:14px;background:transparent;border:1px solid var(--gold);border-radius:14px;color:var(--gold);font-family:'Fraunces',serif;font-style:italic;font-size:14px;cursor:pointer;transition:all 200ms var(--ease);opacity:.4}
 .signin-submit.ready{opacity:1;background:rgba(201,148,58,.08)}
 .signin-submit:active{transform:scale(.97)}
@@ -453,8 +454,10 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .settings-btn img{width:18px;height:18px;opacity:.75;filter:brightness(0) saturate(100%) invert(71%) sepia(35%) saturate(550%) hue-rotate(2deg) brightness(95%) contrast(85%)}
 body.theme-morning .settings-btn img{filter:brightness(0) saturate(100%) invert(38%) sepia(34%) saturate(600%) hue-rotate(2deg) brightness(75%) contrast(90%);opacity:.7}
 body.in-journal .settings-btn{opacity:0;pointer-events:none}
-/* hide pre-auth (signin/profile/onboard cover at z 100-110 anyway, but be explicit) */
-body:not(.has-user) .settings-btn{display:none}
+/* Settings button is always available on every main screen (splash/held/memories/weave).
+   Pre-auth screens (signin z:110, profile z:105, onboard z:100) visually cover it anyway,
+   so no extra gating is needed — any browser where the user is mid-sign-in still sees
+   the pre-auth screen on top, but the button is there for anyone past onboard. */
 
 #s-settings{
   position:fixed;inset:0;z-index:120;
@@ -510,6 +513,12 @@ body:not(.has-user) .settings-btn{display:none}
   color:var(--muted);letter-spacing:.04em;
   text-align:right;max-width:60%;
   overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+}
+.settings-hint{
+  font-family:'Fraunces',serif;font-style:italic;font-weight:300;
+  font-size:11px;line-height:1.55;
+  color:rgba(245,237,224,0.38);
+  margin:10px 4px 0;padding:0;
 }
 
 /* pill toggle */
@@ -999,6 +1008,7 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
     <input type="text" class="signin-input" id="profileName" placeholder="what should we call you?" autocomplete="name">
     <label class="signin-label">birthday</label>
     <input type="date" class="signin-input" id="profileBday">
+    <p class="signin-hint">for your birthstone on the chain, the birthday ceremony, and the age the chain marks each year. this can't be changed later — the chain holds it as the day you began.</p>
     <button class="signin-submit" id="profileSubmit">continue</button>
   </div>
 </div>
@@ -1408,6 +1418,11 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
         <span class="settings-row-label">name</span>
         <span class="settings-row-value" id="settingsNameValue">—</span>
       </div>
+      <div class="settings-row" id="settingsBirthdayRow">
+        <span class="settings-row-label">birthday</span>
+        <span class="settings-row-value" id="settingsBirthdayValue">—</span>
+      </div>
+      <p class="settings-hint">your birthstone on the chain, the birthday ceremony, and the age the chain marks each year — set once, kept forever.</p>
       <div class="settings-row">
         <span class="settings-row-label">email</span>
         <span class="settings-row-value" id="settingsEmailValue">—</span>
@@ -1496,6 +1511,7 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
     </div>
   </div>
 </div>
+
 
 <!-- ═══ CLEAR DATA CONFIRMATION SHEET ═══ -->
 <div class="leave-sheet" id="clearDataSheet">
@@ -2029,16 +2045,28 @@ if(gcStartDate){
 let hasLogged = gcLoggedSet.has(todayISO()) || localStorage.getItem('gc_logged_today') === new Date().toDateString();
 
 // ═══ BIRTHDAY DETECTION ═══════════════════════════
+// `gc_user.birthday` is stored as "MM-DD" (month+day only). Optional
+// `gc_user.birthYear` supplies the year for age calculation; otherwise we
+// stay silent about age rather than printing a wrong number.
 var isBirthday = false;
 var birthYear = 0;
 (function(){
   try {
     var u = JSON.parse(localStorage.getItem('gc_user')||'{}');
     if(u.birthday){
-      var parts = u.birthday.split('-'); // "YYYY-MM-DD"
-      var bMonth = parseInt(parts[1],10);
-      var bDay = parseInt(parts[2],10);
-      birthYear = parseInt(parts[0],10);
+      var parts = u.birthday.split('-');
+      var bMonth, bDay;
+      if(parts.length >= 3){
+        // legacy "YYYY-MM-DD"
+        birthYear = parseInt(parts[0],10) || 0;
+        bMonth = parseInt(parts[1],10);
+        bDay   = parseInt(parts[2],10);
+      } else {
+        // canonical "MM-DD"
+        bMonth = parseInt(parts[0],10);
+        bDay   = parseInt(parts[1],10);
+      }
+      if(u.birthYear) birthYear = parseInt(u.birthYear,10) || birthYear;
       var now = new Date();
       isBirthday = (now.getMonth()+1 === bMonth && now.getDate() === bDay);
     }
@@ -3171,11 +3199,20 @@ function drawLargeWitnessArc(canvas, link){
   ctx.stroke();
   ctx.setLineDash([]);
 
+  function _witnessYearLabel(){
+    var firstISO = (loggedDates && loggedDates.length) ? loggedDates[0] : null;
+    var _sd = firstISO ? new Date(firstISO) : new Date();
+    var _sy = _sd.getFullYear();
+    var _ed = new Date(_sd); _ed.setDate(_ed.getDate() + 364);
+    var _ey = _ed.getFullYear();
+    return (_sy === _ey) ? String(_sy) : (_sy + ' \u2014 ' + _ey);
+  }
+
   if(daysLogged < 1){
     ctx.font = '400 10px "DM Mono", monospace';
     ctx.fillStyle = 'rgba(201,148,58,0.12)';
     ctx.textAlign = 'center';
-    ctx.fillText(new Date().getFullYear().toString(), cx, cy+4);
+    ctx.fillText(_witnessYearLabel(), cx, cy+4);
     return;
   }
 
@@ -3235,7 +3272,7 @@ function drawLargeWitnessArc(canvas, link){
   ctx.font = '400 10px "DM Mono", monospace';
   ctx.fillStyle = 'rgba(201,148,58,0.12)';
   ctx.textAlign = 'center';
-  ctx.fillText(new Date().getFullYear().toString(), cx, cy+4);
+  ctx.fillText(_witnessYearLabel(), cx, cy+4);
 }
 
 function openWitnessView(link){
@@ -6765,7 +6802,11 @@ function renderPortraitYear(){
 
     var label = document.createElement('p');
     label.className = 'portrait-year-month';
-    label.textContent = isCurrent ? 'NOW' : MONTH_SHORT[m];
+    // Append a 2-digit year so spanning years read clearly:
+    //   "APR '25", "MAY '25", ... "MAR '26"
+    label.textContent = isCurrent
+      ? 'NOW'
+      : MONTH_SHORT[m] + " \u2019" + String(gridYear).slice(2);
     cell.appendChild(label);
 
     var word = document.createElement('p');
@@ -7323,10 +7364,15 @@ function renderYearShareCanvas(){
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
 
-  // year label — show user's start year
+  // year label — show the actual 365-day span of the chain
   ctx.fillStyle = 'rgba(201,148,58,0.15)';
   ctx.font = '300 120px "Fraunces", serif';
-  ctx.fillText(String(yrStartYear), 540, 220);
+  (function(){
+    var _ed = new Date(yrStartObj); _ed.setDate(_ed.getDate() + 364);
+    var _ey = _ed.getFullYear();
+    var _lbl = (yrStartYear === _ey) ? String(yrStartYear) : (yrStartYear + ' \u2014 ' + _ey);
+    ctx.fillText(_lbl, 540, 220);
+  })();
 
   // 4x3 grid
   var MONTH_SHORT = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
@@ -7352,7 +7398,7 @@ function renderYearShareCanvas(){
 
     ctx.fillStyle = 'rgba(201,148,58,0.4)';
     ctx.font = '18px "DM Mono", monospace';
-    ctx.fillText(MONTH_SHORT[m], cx, cy + 130);
+    ctx.fillText(MONTH_SHORT[m] + " \u2019" + String(yrGridYear).slice(2), cx, cy + 130);
 
     ctx.fillStyle = 'rgba(245,237,224,0.35)';
     ctx.font = 'italic 20px "Fraunces", serif';
@@ -8149,6 +8195,19 @@ go = function(from, to){
     var u = {};
     try{ u = JSON.parse(localStorage.getItem('gc_user')||'{}'); }catch(e){}
     $('settingsNameValue').textContent = u.name || '—';
+    // birthday — prefer "MM-DD" canonical; accept legacy "YYYY-MM-DD"
+    var bdTxt = '—';
+    if(u.birthday){
+      var _bp = u.birthday.split('-');
+      var _m, _d;
+      if(_bp.length >= 3){ _m = parseInt(_bp[1],10); _d = parseInt(_bp[2],10); }
+      else             { _m = parseInt(_bp[0],10); _d = parseInt(_bp[1],10); }
+      var _months = ['','jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+      if(_m >= 1 && _m <= 12 && _d >= 1 && _d <= 31){
+        bdTxt = _months[_m] + ' ' + _d + (u.birthYear ? ', ' + u.birthYear : '');
+      }
+    }
+    $('settingsBirthdayValue').textContent = bdTxt;
     // no real email yet — show provider placeholder
     var emailTxt = '—';
     if(u.provider==='google') emailTxt = 'google account';
@@ -8235,6 +8294,8 @@ go = function(from, to){
   $('editNameSheet').addEventListener('click', function(e){
     if(e.target===this) this.classList.remove('open');
   });
+
+  // (birthday is set at sign-up and not editable after — no handler needed)
 
   // ── export entries ──
   $('settingsExportBtn').addEventListener('click', function(){
@@ -8647,6 +8708,20 @@ function flyKnotToChain(entry, startBtn){
     },2000);
   }
 
+  // Birthday gift — fires after the knot lands on the birthday, once per year.
+  // Runs in addition to (not instead of) the milestone if both apply.
+  if(isBirthday){
+    var _bYear = new Date().getFullYear();
+    var _bKey  = 'gc_birthday_ceremony_seen_' + _bYear;
+    if(!localStorage.getItem(_bKey)){
+      setTimeout(function(){
+        try{ runBirthdayCeremony(function(){
+          localStorage.setItem(_bKey, '1');
+        }); }catch(e){}
+      }, 2400);
+    }
+  }
+
   // Day 365/366 — close the circle after the knot lands and flashes
   var calDay365 = gcStartDate ? getDayNumber(todayISO()) : 0;
   var _cy365 = gcStartDate ? new Date(gcStartDate).getFullYear() : new Date().getFullYear();
@@ -8685,6 +8760,30 @@ function _getBirthstone(){
     return BIRTHSTONES[mm] || BIRTHSTONES['04'];
   }catch(e){ return BIRTHSTONES['04']; }
 }
+function _getBirthMonth(){
+  try{
+    var u = JSON.parse(localStorage.getItem('gc_user')||'{}');
+    return (u.birthday||'').split('-')[0] || '04';
+  }catch(e){ return '04'; }
+}
+
+// ═══ BIRTHSTONE GIFT MESSAGES — what the stone offers you this year ═══
+// Shown on the birthday ceremony that fires after the birthday entry is logged.
+// "line" — the poetic gift. "meaning" — a second, quieter line beneath.
+const BIRTHSTONE_GIFT = {
+  '01': {line:'may the garnet steady you.',        meaning:'grounded. unhurried. here.'},
+  '02': {line:'may the amethyst quiet the noise.', meaning:'clarity where there was clutter.'},
+  '03': {line:'may the aquamarine hold your calm.',meaning:'like water that has been still a long time.'},
+  '04': {line:'may the diamond mark this.',         meaning:'what you built is unbreakable now.'},
+  '05': {line:'may the emerald keep you rooted.',   meaning:'growth that does not forget the ground.'},
+  '06': {line:'may the pearl remember what held you.', meaning:'quiet layers. patient light.'},
+  '07': {line:'may the ruby keep you burning.',     meaning:'the heat is not a warning. it is a sign of life.'},
+  '08': {line:'may the peridot carry your light.',  meaning:'a small sun you can set down anywhere.'},
+  '09': {line:'may the sapphire keep your truth.',  meaning:'what you know, even when no one is asking.'},
+  '10': {line:'may the opal hold every color of this year.', meaning:'grief and joy side by side. both real.'},
+  '11': {line:'may the topaz warm what\u2019s ahead.', meaning:'the year turns. you are already in it.'},
+  '12': {line:'may the turquoise keep you whole.',  meaning:'held at the edges. unbroken.'}
+};
 
 // ═══ VISUAL EMPHASIS — 4 evenly-spaced brighter knots on the ring (20/40/60/80%)
 // Decoupled from MILESTONES so the ceremony logic stays on 7/100/200/250/300 but
@@ -8887,6 +8986,253 @@ function runMilestone(day, onDone){
     setTimeout(()=> onDone(), 400);
   };
   $('s-milestone').addEventListener('click', dismiss);
+}
+
+// ═══ BIRTHDAY CEREMONY ════════════════════════════════
+// Fires after the birthday entry is logged + lands on the chain. A brief,
+// private gift: the birthstone lights the screen, the gift line fades in,
+// a quieter meaning follows, tap to continue. One fire per birthday year
+// (guarded by gc_birthday_ceremony_seen_YYYY).
+function runBirthdayCeremony(onDone){
+  var bs   = _getBirthstone();
+  var mm   = _getBirthMonth();
+  var gift = BIRTHSTONE_GIFT[mm] || BIRTHSTONE_GIFT['04'];
+  var age  = (birthYear > 0) ? (new Date().getFullYear() - birthYear) : null;
+
+  var overlay = document.createElement('div');
+  overlay.id = 'birthdayCeremonyOverlay';
+  overlay.style.cssText = [
+    'position:fixed','inset:0','z-index:220',
+    'background:rgba(7,5,3,0)','transition:background 1200ms ease',
+    'display:flex','flex-direction:column','align-items:center','justify-content:flex-start',
+    'padding:max(48px,env(safe-area-inset-top)) 28px max(32px,env(safe-area-inset-bottom))',
+    'gap:0','cursor:default','overflow:hidden','box-sizing:border-box'
+  ].join(';');
+
+  // ── age line (top) ──
+  var ageLine = document.createElement('p');
+  ageLine.style.cssText = 'font-family:"DM Mono",monospace;font-size:10px;letter-spacing:0.2em;color:rgba(201,148,58,0.5);text-transform:lowercase;margin:0;opacity:0;transition:opacity 900ms ease;text-align:center';
+  ageLine.textContent = (age!==null) ? ('the chain marks '+age+' years of you') : 'the chain marks another year of you';
+  overlay.appendChild(ageLine);
+
+  // ── spacer before ring ──
+  var s1 = document.createElement('div'); s1.style.cssText='flex:0 0 28px'; overlay.appendChild(s1);
+
+  // ── canvas: ring trace + stone glow ──
+  var cv = document.createElement('canvas');
+  var dpr = Math.min(window.devicePixelRatio||1, 2);
+  var SIZE = 300;
+  cv.style.cssText = 'display:block;width:'+SIZE+'px;height:'+SIZE+'px;pointer-events:none;flex-shrink:0';
+  cv.width = SIZE*dpr; cv.height = SIZE*dpr;
+  var ctx = cv.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  overlay.appendChild(cv);
+
+  // ── spacer after ring ──
+  var s2 = document.createElement('div'); s2.style.cssText='flex:0 0 20px'; overlay.appendChild(s2);
+
+  // ── stone name ──
+  var stoneName = document.createElement('p');
+  stoneName.style.cssText = 'font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:40px;color:rgba('+bs.core+',0.95);letter-spacing:-0.01em;margin:0;opacity:0;transition:opacity 1000ms ease;text-align:center;line-height:1';
+  stoneName.textContent = bs.name;
+  overlay.appendChild(stoneName);
+
+  var rule = document.createElement('div');
+  rule.style.cssText = 'width:44px;height:1px;background:linear-gradient(90deg,transparent,rgba('+bs.halo+',0.75),transparent);opacity:0;transition:opacity 700ms ease;margin:14px 0';
+  overlay.appendChild(rule);
+
+  var giftLine = document.createElement('p');
+  giftLine.style.cssText = 'font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:20px;color:rgba(245,237,224,0.88);line-height:1.5;max-width:320px;margin:0;opacity:0;transition:opacity 1100ms ease;text-align:center';
+  giftLine.textContent = gift.line;
+  overlay.appendChild(giftLine);
+
+  var meaning = document.createElement('p');
+  meaning.style.cssText = 'font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:14px;color:rgba(245,237,224,0.5);line-height:1.65;max-width:300px;margin:10px 0 0;opacity:0;transition:opacity 1000ms ease;text-align:center';
+  meaning.textContent = gift.meaning;
+  overlay.appendChild(meaning);
+
+  // ── push tap-hint to the bottom ──
+  var spacer = document.createElement('div');
+  spacer.style.cssText = 'flex:1 1 auto';
+  overlay.appendChild(spacer);
+
+  var tapHint = document.createElement('p');
+  tapHint.style.cssText = 'font-family:"DM Mono",monospace;font-size:9px;letter-spacing:0.22em;color:rgba(201,148,58,0.4);text-transform:lowercase;margin:0;opacity:0;transition:opacity 600ms ease;text-align:center';
+  tapHint.textContent = 'tap to continue';
+  overlay.appendChild(tapHint);
+
+  document.body.appendChild(overlay);
+
+  // ── animation ──
+  var cx = SIZE/2, cy = SIZE/2, R = 112;
+  var start = performance.now();
+  var running = true;
+  function tick(now){
+    if(!running) return;
+    var t = (now - start) / 1000;
+    ctx.clearRect(0,0,SIZE,SIZE);
+
+    // ring trace — 1.2s from -π/2 clockwise
+    var ringP = Math.max(0, Math.min(1, t / 1.2));
+    if(ringP > 0){
+      var sa = -Math.PI/2;
+      var ea = sa + ringP * Math.PI * 2;
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, sa, ea);
+      ctx.strokeStyle = 'rgba('+bs.halo+',0.55)';
+      ctx.lineWidth = 1.4;
+      ctx.lineCap = 'round';
+      ctx.stroke();
+      // soft underglow
+      ctx.beginPath();
+      ctx.arc(cx, cy, R, sa, ea);
+      ctx.strokeStyle = 'rgba('+bs.core+',0.15)';
+      ctx.lineWidth = 8;
+      ctx.stroke();
+    }
+
+    // stone reveal at center — fades in after t=0.8
+    var stoneP = Math.max(0, Math.min(1, (t - 0.8) / 0.8));
+    if(stoneP > 0){
+      var pulse = 1 + 0.08 * Math.sin(t * Math.PI * 0.9);
+      // outer halo
+      var h = ctx.createRadialGradient(cx, cy, 0, cx, cy, 80*pulse);
+      h.addColorStop(0, 'rgba('+bs.halo+','+(0.35*stoneP)+')');
+      h.addColorStop(0.5, 'rgba('+bs.core+','+(0.18*stoneP)+')');
+      h.addColorStop(1, 'rgba(0,0,0,0)');
+      ctx.fillStyle = h;
+      ctx.beginPath(); ctx.arc(cx, cy, 80*pulse, 0, Math.PI*2); ctx.fill();
+      // core glow
+      var c = ctx.createRadialGradient(cx, cy, 0, cx, cy, 22*pulse);
+      c.addColorStop(0, 'rgba('+bs.core+','+(0.9*stoneP)+')');
+      c.addColorStop(1, 'rgba('+bs.core+',0)');
+      ctx.fillStyle = c;
+      ctx.beginPath(); ctx.arc(cx, cy, 22*pulse, 0, Math.PI*2); ctx.fill();
+      // 4 star rays
+      ctx.strokeStyle = 'rgba(255,255,255,'+(0.55*stoneP)+')';
+      ctx.lineWidth = 1.1;
+      var rl = 30*pulse;
+      ctx.beginPath(); ctx.moveTo(cx-rl,cy); ctx.lineTo(cx+rl,cy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx,cy-rl); ctx.lineTo(cx,cy+rl); ctx.stroke();
+      // the stone (solid dot)
+      ctx.fillStyle = bs.dot;
+      ctx.globalAlpha = stoneP;
+      ctx.beginPath(); ctx.arc(cx, cy, 8.5*pulse, 0, Math.PI*2); ctx.fill();
+      // white highlight
+      ctx.fillStyle = 'rgba(255,255,255,'+(0.85*stoneP)+')';
+      ctx.beginPath(); ctx.arc(cx-2.2, cy-2.2, 2.4*pulse, 0, Math.PI*2); ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+
+  // lift veil
+  requestAnimationFrame(function(){
+    overlay.style.background = 'rgba(7,5,3,0.96)';
+  });
+  // stagger text
+  setTimeout(function(){ ageLine.style.opacity = '1'; }, 1500);
+  setTimeout(function(){ stoneName.style.opacity = '1'; }, 2200);
+  setTimeout(function(){ rule.style.opacity = '1'; }, 2700);
+  setTimeout(function(){ giftLine.style.opacity = '1'; }, 3000);
+  setTimeout(function(){ meaning.style.opacity = '1'; }, 3800);
+  setTimeout(function(){ tapHint.style.opacity = '1'; overlay.style.cursor = 'pointer'; }, 5200);
+
+  function dismiss(){
+    if(!running) return;
+    overlay.removeEventListener('click', dismiss);
+    // fade the text + ring + overlay background — but keep the stone visible so
+    // it can fly to its permanent home on the chain.
+    ageLine.style.opacity = stoneName.style.opacity = rule.style.opacity =
+      giftLine.style.opacity = meaning.style.opacity = tapHint.style.opacity = '0';
+    overlay.style.transition = 'background 800ms ease';
+    overlay.style.background = 'rgba(7,5,3,0)';
+
+    // ── lift the stone into its own DOM element and fly it to the birthday knot ──
+    var cvRect = cv.getBoundingClientRect();
+    var startX = cvRect.left + cvRect.width/2;
+    var startY = cvRect.top  + cvRect.height/2;
+
+    var flyer = document.createElement('div');
+    flyer.style.cssText = [
+      'position:fixed',
+      'left:'+(startX-18)+'px','top:'+(startY-18)+'px',
+      'width:36px','height:36px','border-radius:50%',
+      'pointer-events:none','z-index:240',
+      'background:radial-gradient(circle at 50% 50%, rgba('+bs.core+',0.95) 0%, rgba('+bs.halo+',0.45) 45%, rgba('+bs.halo+',0) 75%)',
+      'box-shadow:0 0 30px 4px rgba('+bs.halo+',0.45)',
+      'transition:left 1500ms cubic-bezier(.4,.2,.2,1), top 1500ms cubic-bezier(.4,.2,.2,1), transform 1500ms cubic-bezier(.4,.2,.2,1), opacity 600ms ease 1200ms',
+      'transform:scale(1)','opacity:1'
+    ].join(';');
+    // a white center dot so it reads as a cut gem in flight
+    var core = document.createElement('div');
+    core.style.cssText = 'position:absolute;left:50%;top:50%;width:6px;height:6px;border-radius:50%;background:rgba(255,255,255,0.95);transform:translate(-50%,-50%);box-shadow:0 0 6px 2px rgba(255,255,255,0.5)';
+    flyer.appendChild(core);
+    document.body.appendChild(flyer);
+
+    // ring fade as stone lifts off — fade on the canvas separately
+    cv.style.transition = 'opacity 500ms ease';
+    cv.style.opacity = '0';
+
+    // compute target: today's knot on the chain (the entry that was just logged —
+    // which on a birthday IS the birthday knot). Using today's position means
+    // the gem settles onto whatever knot is currently pulsing.
+    setTimeout(function(){
+      var targetPt = null;
+      try{
+        // Prefer the live today-knot position (already in canvas-local coords).
+        if(typeof window._getTodayKnotPos === 'function'){
+          var tpt = window._getTodayKnotPos();
+          var splashCanvas = document.querySelector('#s-splash canvas');
+          if(tpt && splashCanvas){
+            var rect = splashCanvas.getBoundingClientRect();
+            targetPt = { x: rect.left + tpt.x, y: rect.top + tpt.y };
+          }
+        }
+        // Fallback: derive today's day number from start date and look it up.
+        if(!targetPt && typeof window._getKnotPosForDay === 'function'){
+          var sd = new Date(localStorage.getItem('gc_start_date') || new Date());
+          var today = new Date();
+          var diffMs = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+                     - new Date(sd.getFullYear(), sd.getMonth(), sd.getDate());
+          var dayNumber = Math.round(diffMs / 86400000) + 1;
+          targetPt = window._getKnotPosForDay(dayNumber);
+        }
+      }catch(e){}
+      if(!targetPt){
+        // last-resort fallback: splash-screen center
+        var sp = document.getElementById('s-splash');
+        if(sp){
+          var r = sp.getBoundingClientRect();
+          targetPt = { x: r.left + r.width/2, y: r.top + r.height*0.72 };
+        } else {
+          targetPt = { x: startX, y: startY };
+        }
+      }
+      // start the tween
+      flyer.style.left = (targetPt.x - 18) + 'px';
+      flyer.style.top  = (targetPt.y - 18) + 'px';
+      flyer.style.transform = 'scale(0.5)';
+      flyer.style.opacity = '0.1';
+    }, 150);
+
+    // remove overlay once the background has faded
+    setTimeout(function(){
+      if(overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    }, 900);
+
+    // clean up the flyer and finalise
+    setTimeout(function(){
+      running = false;
+      if(flyer.parentNode) flyer.parentNode.removeChild(flyer);
+      if(typeof onDone === 'function') onDone();
+    }, 2000);
+  }
+  overlay.addEventListener('click', dismiss);
+  // auto-dismiss after 12s if the user lingers
+  setTimeout(function(){ if(running) dismiss(); }, 12000);
 }
 
 // runPostSequence removed — slither animation replaced by flyKnotToChain
@@ -9660,14 +10006,22 @@ try{ void function(){
       // 4. pendant — chosen monthly rose hanging below clasp (only after year-end choice)
       drawPendant();
 
-      // 5. year label at center
+      // 5. year label at center — spans the actual 365-day window, so a chain
+      // that started Apr 25 2025 reads "2025 — 2026", not just "2025".
       ctx.save();
       ctx.font = '400 12px "DM Mono",monospace';
       ctx.fillStyle = 'rgba(201,148,58,0.35)';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.letterSpacing && (ctx.letterSpacing = '0.18em');
-      ctx.fillText(new Date(gcStartDate||todayISO()).getFullYear().toString(), NECKLACE_CX, NECKLACE_CY);
+      (function(){
+        var _sd = new Date(gcStartDate||todayISO());
+        var _sy = _sd.getFullYear();
+        var _ed = new Date(_sd); _ed.setDate(_ed.getDate() + 364);
+        var _ey = _ed.getFullYear();
+        var _lbl = (_sy === _ey) ? String(_sy) : (_sy + ' \u2014 ' + _ey);
+        ctx.fillText(_lbl, NECKLACE_CX, NECKLACE_CY);
+      })();
       ctx.restore();
 
       // 6. all knots around the arc
@@ -9787,6 +10141,16 @@ try{ void function(){
       return allKnotPositions[idx];
     }
     return allKnotPositions[0] || null;
+  };
+  // expose an arbitrary day's knot position (1-indexed) + the chain canvas,
+  // so the birthday ceremony can fly the stone to its permanent knot.
+  window._getKnotPosForDay = function(dayNumber){
+    var idx = dayNumber - 1;
+    if(idx < 0 || idx >= allKnotPositions.length) return null;
+    var pt = allKnotPositions[idx];
+    if(!pt) return null;
+    var rect = canvas.getBoundingClientRect();
+    return { x: rect.left + pt.x, y: rect.top + pt.y };
   };
 }();
 }catch(e){window.__KNOT_ERR=e.message+'\n'+e.stack}
