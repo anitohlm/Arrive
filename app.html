@@ -8053,17 +8053,48 @@ try{ void function(){
     placeAllKnotsOnCircle();
   }
 
-  // Day 1 starts at the bottom (6 o'clock); chain grows clockwise; Day 365 completes the circle
+  // Day 1 starts at the bottom (6 o'clock); chain grows clockwise; Day 365 completes the shape
   function dayToAngle(dayNumber){
     var fraction = (dayNumber - 1) / 364;
     return (Math.PI / 2) + (fraction * Math.PI * 2);
   }
 
-  function angleToPoint(angle){
+  // Pendant-drop silhouette.
+  // Top stays fully round (pendant hoop). Bottom half narrows horizontally AND
+  // extends vertically past the original circle, forming a long elegant drop.
+  // cy ∈ [-1, 1], where -1 is top and +1 is bottom of the base circle.
+  // Returns {widthFactor, heightFactor} to apply to the raw circle coordinates.
+  function _teardropDeform(cy){
+    if (cy <= 0) {
+      // top half: plain circle
+      return { wf: 1.0, hf: 1.0 };
+    }
+    var t = cy; // 0 at equator, 1 at base of the circle
+    // horizontal taper — stays wide, then curls to the point
+    var wf = 1 - 0.88 * Math.pow(t, 2.1);
+    // vertical stretch — pushes the tip further down past the circle boundary
+    var hf = 1 + 0.45 * Math.pow(t, 1.3);
+    return { wf: wf, hf: hf };
+  }
+
+  // All points on the "necklace" path go through this helper so the braid,
+  // the thread, the ghost outline, and the knot positions all follow the
+  // same teardrop silhouette. radiusOffset lets the braid layers sit slightly
+  // inside/outside the main path.
+  function _deformedPoint(angle, radiusOffset){
+    radiusOffset = radiusOffset || 0;
+    var cx = Math.cos(angle);
+    var cy = Math.sin(angle);
+    var d = _teardropDeform(cy);
+    var r = NECKLACE_R + radiusOffset;
     return {
-      x: NECKLACE_CX + NECKLACE_R * Math.cos(angle),
-      y: NECKLACE_CY + NECKLACE_R * Math.sin(angle)
+      x: NECKLACE_CX + r * cx * d.wf,
+      y: NECKLACE_CY + r * cy * d.hf
     };
+  }
+
+  function angleToPoint(angle){
+    return _deformedPoint(angle, 0);
   }
 
   function placeAllKnotsOnCircle(){
@@ -8171,11 +8202,17 @@ try{ void function(){
     }
   }
 
-  // ── GHOST CIRCLE — faint dashed full outline, always visible ──
+  // ── GHOST OUTLINE — faint dashed full teardrop outline, always visible ──
   function drawGhostCircle(){
     ctx.save();
     ctx.beginPath();
-    ctx.arc(NECKLACE_CX, NECKLACE_CY, NECKLACE_R, 0, Math.PI*2);
+    var steps = 180;
+    for(var s = 0; s <= steps; s++){
+      var a = (s / steps) * Math.PI * 2;
+      var p = _deformedPoint(a, 0);
+      if(s === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
     ctx.strokeStyle = 'rgba(201,148,58,0.06)';
     ctx.lineWidth = 1;
     ctx.setLineDash([3, 7]);
@@ -8184,22 +8221,34 @@ try{ void function(){
     ctx.restore();
   }
 
-  // ── CIRCLE CLOSE — Day 365 only: fills the remaining gap from today back to Day 1 ──
+  // ── TEARDROP CLOSE — Day 365 only: fills the remaining gap from today back to Day 1 ──
   function drawCircleComplete(progress){
     var calDay = gcStartDate ? getDayNumber(todayISO()) : 1;
     var startAngle = dayToAngle(calDay);
     var endAngle   = Math.PI / 2 + Math.PI * 2; // back to Day 1
-    var arcSpan = (endAngle - startAngle) * progress;
+    var span = (endAngle - startAngle) * progress;
     ctx.save();
+    // inner thin line
     ctx.beginPath();
-    ctx.arc(NECKLACE_CX, NECKLACE_CY, NECKLACE_R, startAngle, startAngle + arcSpan);
+    var steps = Math.max(20, Math.floor(span / (Math.PI * 2) * 180));
+    for(var s = 0; s <= steps; s++){
+      var a = startAngle + (s / steps) * span;
+      var p = _deformedPoint(a, 0);
+      if(s === 0) ctx.moveTo(p.x, p.y);
+      else ctx.lineTo(p.x, p.y);
+    }
     ctx.strokeStyle = 'rgba(201,148,58,' + (0.35 * progress) + ')';
     ctx.lineWidth = 1.5;
     ctx.lineCap = 'round';
     ctx.stroke();
-    // glow along the closing arc
+    // wide glow along the same path
     ctx.beginPath();
-    ctx.arc(NECKLACE_CX, NECKLACE_CY, NECKLACE_R, startAngle, startAngle + arcSpan);
+    for(var s2 = 0; s2 <= steps; s2++){
+      var a2 = startAngle + (s2 / steps) * span;
+      var p2 = _deformedPoint(a2, 0);
+      if(s2 === 0) ctx.moveTo(p2.x, p2.y);
+      else ctx.lineTo(p2.x, p2.y);
+    }
     ctx.strokeStyle = 'rgba(230,182,88,' + (0.15 * progress) + ')';
     ctx.lineWidth = 8;
     ctx.lineCap = 'round';
@@ -8207,40 +8256,45 @@ try{ void function(){
     ctx.restore();
   }
 
-  // ── NECKLACE THREAD — braided arc from Day 1 (bottom) to today ──
+  // ── NECKLACE THREAD — braided path from Day 1 (clasp) to today along teardrop ──
   function drawNecklaceThread(displayDay){
     if(displayDay < 2) return;
     var startAngle = Math.PI / 2;
     var endAngle = dayToAngle(displayDay);
+    var threadSteps = Math.max(displayDay * 4, 200);
 
     // ambient glow under the thread
     ctx.save();
     ctx.beginPath();
-    ctx.arc(NECKLACE_CX, NECKLACE_CY, NECKLACE_R, startAngle, endAngle);
+    for(var gs = 0; gs <= threadSteps; gs++){
+      var ga = startAngle + (gs / threadSteps) * (endAngle - startAngle);
+      var gp = _deformedPoint(ga, 0);
+      if(gs === 0) ctx.moveTo(gp.x, gp.y);
+      else ctx.lineTo(gp.x, gp.y);
+    }
     ctx.strokeStyle = 'rgba(201,148,58,0.07)';
     ctx.lineWidth = 10;
     ctx.lineCap = 'round';
     ctx.stroke();
     ctx.restore();
 
-    // 3 braid layers — radial offsets
+    // 3 braid layers — radial offsets, applied via _deformedPoint so offsets
+    // bend along the teardrop silhouette, not straight radial from the center.
     var braids = [
       { offset: -1.5, color: '#e6b658', alpha: 0.5,  width: 0.8 },
       { offset:  0,   color: '#c9943a', alpha: 1.0,  width: 1.5 },
       { offset:  1.5, color: '#a07830', alpha: 0.4,  width: 0.8 }
     ];
     braids.forEach(function(b){
-      var steps = Math.max(displayDay * 4, 200);
+      var steps = threadSteps;
       ctx.save();
       ctx.beginPath();
       for(var s = 0; s <= steps; s++){
         var t = s / steps;
         var angle = startAngle + t * (endAngle - startAngle);
-        var r = NECKLACE_R + b.offset;
-        var x = NECKLACE_CX + r * Math.cos(angle);
-        var y = NECKLACE_CY + r * Math.sin(angle);
-        if(s === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+        var bp = _deformedPoint(angle, b.offset);
+        if(s === 0) ctx.moveTo(bp.x, bp.y);
+        else ctx.lineTo(bp.x, bp.y);
       }
       ctx.globalAlpha = b.alpha;
       ctx.strokeStyle = b.color;
