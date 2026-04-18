@@ -130,33 +130,34 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .emotions{display:flex;flex-direction:column;gap:0;padding:0;margin-bottom:clamp(4px,1vh,10px);width:100%;overflow:hidden}
 .emo-group-label{font-family:'DM Mono',monospace;font-size:7px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;opacity:.3;text-align:center;padding:clamp(6px,1.2vh,12px) 0 clamp(4px,.8vh,6px)}
 /* emo-group-rule removed */
-.emo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 0;padding:0;justify-items:center;width:100%}
+.emo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 0;padding:0;justify-items:center;width:100%}
 
 /* ─── STEP 1 — 2×2 grid of category cards ──────────────
    Each card has an icon on top, italic serif name, and a mono hint of
    its emotions. Rounded corners, soft border, quiet gold accents. */
-.arrival-cats{display:grid;grid-template-columns:1fr 1fr;gap:12px;width:100%;padding:12px 0 16px;animation:arrival-fade-in 400ms var(--ease)}
+.arrival-cats{display:flex;flex-direction:column;gap:18px;width:100%;padding:8px 0 140px;animation:arrival-fade-in 400ms var(--ease)}
 .arrival-cats[hidden]{display:none}
 .arrival-cat{
-  display:flex;flex-direction:column;align-items:center;justify-content:flex-start;
-  gap:8px;padding:20px 14px 18px;
+  display:grid;grid-template-columns:80px 1fr;align-items:center;column-gap:22px;row-gap:6px;
+  padding:26px 24px;
   background:rgba(255,255,255,0.02);
-  border:1px solid rgba(201,148,58,0.12);border-radius:22px;
+  border:1px solid rgba(201,148,58,0.12);border-radius:20px;
   font-family:'Fraunces',serif;font-style:italic;
   color:var(--text);cursor:pointer;
   transition:all 220ms var(--ease);
-  min-height:170px;
-  text-align:center;
+  text-align:left;
+  width:100%;
 }
 .arrival-cat:hover{background:rgba(201,148,58,0.04);border-color:rgba(201,148,58,0.22)}
-.arrival-cat:active{transform:scale(.97)}
+.arrival-cat:active{transform:scale(.98)}
 .arrival-cat-icon{
-  width:52px;height:52px;object-fit:contain;
-  filter:drop-shadow(0 2px 8px rgba(0,0,0,.18));
-  margin-bottom:4px;
+  width:80px;height:80px;object-fit:contain;
+  grid-row:1 / span 2;grid-column:1;
+  filter:drop-shadow(0 2px 12px rgba(0,0,0,.25));
+  align-self:center;
 }
-.arrival-cat-name{font-size:17px;font-weight:300;color:rgba(245,237,224,0.9);letter-spacing:-0.01em;line-height:1.2}
-.arrival-cat-hint{font-family:'DM Mono',monospace;font-style:normal;font-size:8px;letter-spacing:0.08em;color:rgba(201,148,58,0.45);text-transform:lowercase;line-height:1.7;margin-top:2px}
+.arrival-cat-name{grid-column:2;grid-row:1;font-size:20px;font-weight:300;color:rgba(245,237,224,0.92);letter-spacing:-0.01em;line-height:1.2;margin:0 0 2px}
+.arrival-cat-hint{grid-column:2;grid-row:2;font-family:'DM Mono',monospace;font-style:normal;font-size:9px;letter-spacing:0.04em;color:rgba(201,148,58,0.45);text-transform:lowercase;line-height:1.9;margin-top:6px;text-align:left;padding:0;text-wrap:balance;-webkit-text-wrap:balance;word-spacing:normal}
 
 /* ─── STEP 2 — revealed group + back link ──────────── */
 .emo-group{animation:arrival-fade-in 350ms var(--ease)}
@@ -175,8 +176,8 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
   from{opacity:0;transform:translateY(4px)}
   to{opacity:1;transform:none}
 }
-.chip{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;padding:10px;border-radius:16px;background:transparent;border:2px solid transparent;font-family:'Fraunces',serif;font-style:italic;font-size:12px;color:var(--chip-text);cursor:pointer;transition:all 220ms var(--ease);user-select:none;min-width:0;width:100px}
-.chip img{width:84px!important;height:84px!important;object-fit:contain;transition:transform 260ms var(--ease);filter:drop-shadow(0 2px 6px rgba(0,0,0,.12))}
+.chip{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:4px;padding:6px;border-radius:14px;background:transparent;border:2px solid transparent;font-family:'Fraunces',serif;font-style:italic;font-size:11px;color:var(--chip-text);cursor:pointer;transition:all 220ms var(--ease);user-select:none;min-width:0;width:84px}
+.chip img{width:64px!important;height:64px!important;object-fit:contain;transition:transform 260ms var(--ease);filter:drop-shadow(0 2px 6px rgba(0,0,0,.12))}
 /* These icons have more internal margin in their SVG artwork, so visually
    they read as smaller than the rest of the set at the same box size.
    Scale them up inside their chip to match the rest. */
@@ -249,6 +250,8 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .arrive-footer{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:0;right:0;width:100%;max-width:520px;margin:0 auto;padding:8px 24px;z-index:55;background:transparent;text-align:center}
 .knot-btn{display:inline-flex;flex-direction:column;align-items:center;width:auto;height:auto;background:none;border:none;color:var(--gold);font-family:'Fraunces',serif;font-style:italic;font-size:11px;cursor:pointer;filter:drop-shadow(0 0 12px rgba(201,148,58,0.3));transition:opacity 300ms,transform 200ms,filter 200ms;padding:0;gap:8px}
 .knot-btn .knot-icon{display:block;width:60px;height:60px;background:url('logogchain.svg') center/contain no-repeat}
+.arrive-btn{flex-direction:row;gap:10px;padding:10px 22px;border:1px solid rgba(201,148,58,0.35);border-radius:999px;background:rgba(201,148,58,0.06);font-size:14px}
+.arrive-btn .knot-icon{width:22px;height:22px}
 .knot-btn:active{transform:scale(.92);filter:drop-shadow(0 0 18px rgba(230,182,88,0.5))}
 .arrive-btn{opacity:.35}
 .arrive-btn.ready{opacity:1;filter:drop-shadow(0 0 16px rgba(201,148,58,0.4))}
@@ -269,14 +272,16 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .breathing-skip:hover{color:var(--text-muted)}
 
 /* ═══ SCREEN 3 — EMOTION INSIGHT ════════════════════ */
-#s-insight{display:flex;flex-direction:column;align-items:center;padding:max(48px,env(safe-area-inset-top)) 32px max(28px,env(safe-area-inset-bottom));max-width:480px;margin:0 auto;background:var(--bg)}
-.insight-memory{text-align:center;padding:0 24px;opacity:0;transform:translateY(8px);transition:opacity 600ms var(--ease),transform 600ms var(--ease)}
+#s-insight{display:flex;flex-direction:column;align-items:center;padding:max(56px,env(safe-area-inset-top)) 28px max(28px,env(safe-area-inset-bottom));max-width:480px;margin:0 auto;background:var(--bg);gap:0}
+.insight-memory{position:relative;text-align:center;max-width:320px;margin:28px auto 8px;padding:20px 22px 18px;background:rgba(255,255,255,0.015);border:1px solid rgba(201,148,58,0.10);border-radius:18px;opacity:0;transform:translateY(10px);transition:opacity 700ms var(--ease),transform 700ms var(--ease)}
 .insight-memory.vis{opacity:1;transform:translateY(0)}
-.memory-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.12em;color:var(--muted);text-transform:lowercase;margin:0 0 8px}
-.memory-quote{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:13px;color:var(--text-dim);line-height:1.7;margin:0}
+.insight-memory::before{content:'';position:absolute;top:-1px;left:50%;transform:translateX(-50%);width:44px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,148,58,0.55),transparent)}
+.memory-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.16em;color:var(--muted);text-transform:lowercase;margin:0 0 10px;opacity:.8;line-height:1.5}
+.memory-quote{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:13px;color:var(--text-dim);line-height:1.65;margin:0}
+.memory-quote:empty{display:none}
 .insight-back{position:absolute;top:max(20px,env(safe-area-inset-top));left:20px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);opacity:.75;cursor:pointer;padding:6px 12px 6px 8px;z-index:2;background:var(--glass);border:1px solid var(--glass-border);border-radius:20px}
 .insight-back:hover{opacity:.7}
-.insight-emoji{font-size:56px;margin-top:clamp(20px,8vh,80px);margin-bottom:16px;animation:emojiP 3s ease-in-out infinite;filter:drop-shadow(0 4px 12px var(--emo-shadow,rgba(201,148,58,.3)));--emo-shadow:rgba(201,148,58,.3)}
+.insight-emoji{font-size:44px;margin-top:clamp(8px,3vh,28px);margin-bottom:14px;animation:emojiP 3s ease-in-out infinite;filter:drop-shadow(0 4px 12px var(--emo-shadow,rgba(201,148,58,.3)));--emo-shadow:rgba(201,148,58,.3)}
 /* each emotion gets a layered gradient shadow matching its icon palette */
 .insight-emoji.emo-calm{filter:drop-shadow(0 6px 20px rgba(74,140,90,.35)) drop-shadow(0 12px 40px rgba(120,170,80,.2)) drop-shadow(0 2px 8px rgba(60,110,70,.4))}
 .insight-emoji.emo-tender{filter:drop-shadow(0 6px 20px rgba(194,98,122,.35)) drop-shadow(0 12px 40px rgba(220,140,160,.2)) drop-shadow(0 2px 8px rgba(170,70,100,.4))}
@@ -300,8 +305,8 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .insight-emoji.emo-exhausted{filter:drop-shadow(0 6px 20px rgba(120,110,130,.35)) drop-shadow(0 12px 40px rgba(150,140,160,.2)) drop-shadow(0 2px 8px rgba(95,85,105,.4))}
 .insight-emoji.emo-moved{filter:drop-shadow(0 6px 20px rgba(180,100,130,.35)) drop-shadow(0 12px 40px rgba(210,130,160,.2)) drop-shadow(0 2px 8px rgba(155,75,105,.4))}
 @keyframes emojiP{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
-.insight-word{font-size:28px;font-weight:300;color:var(--text);letter-spacing:-.02em;margin-bottom:16px}
-.gold-rule{width:48px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:0 auto 28px;opacity:0;transition:opacity 400ms}
+.insight-word{font-size:26px;font-weight:300;color:var(--text);letter-spacing:-.02em;margin-bottom:14px;font-family:'Fraunces',serif;font-style:italic}
+.gold-rule{width:36px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:0 auto 24px;opacity:0;transition:opacity 400ms}
 .gold-rule.vis{opacity:1}
 .loading-dots{display:flex;gap:6px;justify-content:center;margin-bottom:20px;height:20px}
 .loading-dots span{width:5px;height:5px;border-radius:50%;background:var(--gold);animation:dotBounce 1.2s ease-in-out infinite}
@@ -309,16 +314,17 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .loading-dots span:nth-child(3){animation-delay:.3s}
 @keyframes dotBounce{0%,100%{opacity:.3;transform:scale(.8)}50%{opacity:1;transform:scale(1.2)}}
 .loading-dots.hide{opacity:0;transition:opacity 300ms}
-.insight-text{text-align:center;font-style:italic;font-weight:300;font-size:17px;color:var(--text-muted);line-height:1.75;padding:0 8px;max-width:380px;opacity:0;transform:translateY(8px);transition:opacity 600ms var(--ease),transform 600ms var(--ease)}
+.insight-text{text-align:center;font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:15px;color:var(--text-muted);line-height:1.7;padding:0 4px;max-width:340px;margin:0 auto;opacity:0;transform:translateY(8px);transition:opacity 600ms var(--ease),transform 600ms var(--ease)}
 .insight-text.vis{opacity:1;transform:translateY(0)}
 /* insight-agent removed */
-.bridge-rule{width:48px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:24px auto 20px;opacity:0;transition:opacity 400ms}
+.bridge-rule{width:36px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);margin:28px auto 18px;opacity:0;transition:opacity 400ms}
 .bridge-rule.vis{opacity:1}
-.bridge-q{text-align:center;font-style:italic;font-size:15px;color:var(--muted);opacity:0;transform:translateY(6px);transition:opacity 400ms var(--ease),transform 400ms var(--ease)}
+.bridge-q{text-align:center;font-family:'Fraunces',serif;font-style:italic;font-size:15px;color:var(--text-muted);line-height:1.6;max-width:320px;margin:0 auto;opacity:0;transform:translateY(6px);transition:opacity 400ms var(--ease),transform 400ms var(--ease)}
 .bridge-q.vis{opacity:1;transform:translateY(0)}
-.begin-footer{width:100%;margin-top:auto;padding-top:20px;opacity:0;transform:translateY(12px);transition:opacity 400ms var(--ease),transform 400ms var(--ease);text-align:center}
+.begin-footer{width:100%;margin-top:auto;padding-top:32px;opacity:0;transform:translateY(12px);transition:opacity 400ms var(--ease),transform 400ms var(--ease);text-align:center}
 .begin-footer.vis{opacity:1;transform:translateY(0)}
-.begin-btn{margin:0 auto}
+.begin-btn{margin:0 auto;flex-direction:row;gap:10px;padding:10px 22px;border:1px solid rgba(201,148,58,0.35);border-radius:999px;background:rgba(201,148,58,0.06);font-size:14px}
+.begin-btn .knot-icon{width:22px;height:22px}
 .begin-btn:active{transform:scale(.92);filter:drop-shadow(0 0 18px rgba(230,182,88,0.5))}
 
 /* ═══ SCREEN 4 — JOURNAL ════════════════════════════ */
@@ -1011,10 +1017,6 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
   <p class="day-counter" id="dayCounter" style="display:none"></p>
   <p class="touch-hint">tap to begin today's knot</p>
   <p class="brand-mark">GratitudeChain</p>
-  <div class="theme-toggle" id="themeToggle">
-    <button data-theme="dark" class="active">night</button>
-    <button data-theme="morning">morning</button>
-  </div>
   <p class="logged-tap-msg" id="loggedTapMsg">you've already arrived today. come back tomorrow.</p>
   <div class="home-status">
     <div class="streak" id="homeStreak">DAY 047 · CHAIN HELD</div>
@@ -1033,24 +1035,24 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
       <!-- STEP 1 — 4 category cards in a 2×2 grid. One gentle ask at a time. -->
       <div class="arrival-cats" id="arrivalCats">
         <button class="arrival-cat" data-group="light">
-          <img class="arrival-cat-icon" src="hopeful-icon.svg" alt="">
+          <img class="arrival-cat-icon" src="arriving-light-card.svg" alt="">
           <span class="arrival-cat-name">arriving light</span>
-          <span class="arrival-cat-hint">grateful · tender · hopeful · calm<br>alive · light · passionate · content<br>relaxed · focused · inspired · certain</span>
+          <span class="arrival-cat-hint">grateful&nbsp;· tender&nbsp;· hopeful&nbsp;· calm&nbsp;· alive&nbsp;· light&nbsp;· passionate&nbsp;· content&nbsp;· relaxed&nbsp;· focused&nbsp;· inspired&nbsp;· certain</span>
         </button>
         <button class="arrival-cat" data-group="between">
-          <img class="arrival-cat-icon" src="searching-icon.svg" alt="">
+          <img class="arrival-cat-icon" src="in-between-card.svg" alt="">
           <span class="arrival-cat-name">in between</span>
-          <span class="arrival-cat-hint">quiet · numb · foggy · nervous<br>restless · searching · lost<br>yearning · bored</span>
+          <span class="arrival-cat-hint">quiet&nbsp;· numb&nbsp;· foggy&nbsp;· nervous&nbsp;· restless&nbsp;· searching&nbsp;· lost&nbsp;· yearning&nbsp;· bored</span>
         </button>
         <button class="arrival-cat" data-group="weight">
-          <img class="arrival-cat-icon" src="overwhelmed-icon.svg" alt="">
+          <img class="arrival-cat-icon" src="carrying-weight-card.svg" alt="">
           <span class="arrival-cat-name">carrying weight</span>
-          <span class="arrival-cat-hint">hard · heavy · overwhelmed · livid<br>sad · frustrated · anxious · lonely<br>upset · insecure</span>
+          <span class="arrival-cat-hint">hard&nbsp;· heavy&nbsp;· overwhelmed&nbsp;· livid&nbsp;· sad&nbsp;· frustrated&nbsp;· anxious&nbsp;· lonely&nbsp;· upset&nbsp;· insecure</span>
         </button>
         <button class="arrival-cat" data-group="hard">
-          <img class="arrival-cat-icon" src="disappointed-icon.svg" alt="">
+          <img class="arrival-cat-icon" src="hard-to-name-card.svg" alt="">
           <span class="arrival-cat-name">hard to name</span>
-          <span class="arrival-cat-hint">heartbroken · disappointed<br>exhausted · moved · ashamed<br>vulnerable · betrayed</span>
+          <span class="arrival-cat-hint">heartbroken&nbsp;· disappointed&nbsp;· exhausted&nbsp;· moved&nbsp;· ashamed&nbsp;· vulnerable&nbsp;· betrayed</span>
         </button>
       </div>
 
@@ -1129,7 +1131,7 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
     </div>
     <p class="agent-hint" id="arrivalHint"></p>
     <div class="arrive-footer">
-      <button class="knot-btn arrive-btn" id="arriveBtn"><span class="knot-icon"></span>arrive</button>
+      <button class="knot-btn arrive-btn" id="arriveBtn">arrive</button>
       <p class="btn-sub" style="display:none">your entry will be shaped around how you feel</p>
     </div>
   </div>
@@ -1174,7 +1176,7 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
   <button class="journal-back" id="journalBack">← back</button>
   <p class="journal-label" id="journalLabel">shaped for your calm today</p>
   <div class="prompt-card" id="promptCard">
-    <p class="prompt-label">today's reflection</p>
+    <p class="prompt-label">a prompt for today</p>
     <p class="prompt-text" id="promptText"></p>
   </div>
   <div class="journal-entry">
@@ -1413,17 +1415,6 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
     </div>
   </div>
 
-  <!-- APPEARANCE -->
-  <div class="settings-section">
-    <div class="settings-label">appearance</div>
-    <div class="settings-card">
-      <div class="settings-row">
-        <span class="settings-row-label" id="settingsThemeLabel">night</span>
-        <div class="settings-toggle" id="settingsThemeToggle" role="switch" aria-label="theme"></div>
-      </div>
-    </div>
-  </div>
-
   <!-- NOTIFICATIONS -->
   <div class="settings-section">
     <div class="settings-label">notifications</div>
@@ -1585,16 +1576,16 @@ const MEMORY_HEAVY_PHRASES = [
 ];
 
 const MEMORY_LIGHT_LABELS = [
-  "you once wrote, feeling {emo}:",
-  "the last time you felt {emo}, you wrote:",
-  "something you left here, from a {emo} day:",
-  "you were {emo} once, and wrote this:",
-  "a {emo} day, captured:",
-  "from a day you felt {emo}:",
-  "you left this here on a {emo} day:",
-  "this is what {emo} looked like for you once:",
-  "you were here before, feeling {emo}:",
-  "a note from a {emo} version of you:"
+  "you\u2019ve been {emo} before. you wrote:",
+  "you\u2019ve felt {emo} before. you left this:",
+  "you\u2019ve been here, feeling {emo}. you wrote:",
+  "you\u2019ve arrived {emo} before. you wrote this:",
+  "you know {emo}. the last time, you wrote:",
+  "you\u2019ve carried {emo} before. you wrote:",
+  "you\u2019ve sat with {emo} before. you left this:",
+  "you\u2019ve felt this. on a {emo} day, you wrote:",
+  "you\u2019ve been {emo}. you left this here:",
+  "you\u2019ve met {emo} before. you wrote:"
 ];
 const INSIGHTS = {
   calm:'Calm is not the absence of feeling. It is the presence of something steady underneath. You arrived today with ground beneath your feet \u2014 that is not nothing. Let\u2019s begin from here.',
@@ -2000,34 +1991,11 @@ populateMemories();
 // Held + Portrait population deferred — see after hasLogged declaration
 
 // ═══ THEME ══════════════════════════════════════════
-const savedTheme = localStorage.getItem('gc_theme') || 'dark';
-document.body.className = `theme-${savedTheme}`;
-// update toggle active state
-// ── unified theme setter — keeps themeToggle AND settings toggle in sync ──
-function setTheme(theme){
-  if(theme!=='morning' && theme!=='dark') theme='dark';
-  document.body.className = document.body.className.replace(/\s?theme-\w+/g,'').trim() + ' theme-' + theme;
-  localStorage.setItem('gc_theme', theme);
-  // sync splash themeToggle buttons
-  document.querySelectorAll('#themeToggle button').forEach(b => {
-    b.classList.toggle('active', b.dataset.theme === theme);
-  });
-  // sync settings appearance toggle (if present in DOM)
-  var st = document.getElementById('settingsThemeToggle');
-  if(st) st.classList.toggle('on', theme === 'morning');
-  var stLabel = document.getElementById('settingsThemeLabel');
-  if(stLabel) stLabel.textContent = theme === 'morning' ? 'morning' : 'night';
-  // refresh portrait shadows (they depend on theme for opacity)
-  // guarded by a runtime flag because populatePortrait is hoisted but its deps (PORTRAIT_WORDS etc.) are not
-  if(window.__portraitReady) populatePortrait();
-}
-setTheme(savedTheme);
-$('themeToggle').addEventListener('click', (e) => {
-  e.stopPropagation();
-  const btn = e.target.closest('button');
-  if (!btn) return;
-  setTheme(btn.dataset.theme);
-});
+// Dark mode only — theme switching removed. Keep setTheme as a no-op
+// so any leftover callers don't throw.
+document.body.className = 'theme-dark';
+localStorage.setItem('gc_theme', 'dark');
+function setTheme(){ /* dark-only; no-op */ }
 
 // ═══ CALENDAR-BASED STREAK TRACKING ═══════════════
 // gc_start_date: ISO date string of user's first day (e.g. "2026-04-10")
@@ -5132,9 +5100,7 @@ function showMonthEndCeremony(){
       grd.addColorStop(0.6, 'rgba('+glowRgb+','+(glowBaseA * glowScale * 0.3)+')');
       grd.addColorStop(1,   'rgba(0,0,0,0)');
       weaveCtx.fillStyle = grd;
-      weaveCtx.beginPath();
-      weaveCtx.arc(cx,cy,glowR,0,Math.PI*2);
-      weaveCtx.fill();
+      weaveCtx.fillRect(0,0,W_CVS,H_CVS);
 
       // per-layer progressive stroke
       layerCfg.forEach(function(cfg, i){
@@ -5535,6 +5501,9 @@ function showMonthEndCeremony(){
       d.style.background = i === currentPage ? 'rgba(201,148,58,0.9)' : 'rgba(201,148,58,0.3)';
       d.style.transform = i === currentPage ? 'scale(1.3)' : 'scale(1)';
     });
+    // hide dots on the last page so they don't collide with the carry-forward button
+    dotsWrap.style.transition = 'opacity 260ms ease';
+    dotsWrap.style.opacity = currentPage === 5 ? '0' : '1';
     // enter/leave callbacks
     if(prev === 0 && currentPage !== 0){
       rotationLoopActive = false;
@@ -7553,6 +7522,9 @@ function _arrivalShowStep1(){
   var back = document.getElementById('arrivalBack');
   if(back){ back.hidden = false; back.dataset.arrivalStep = '1'; }
   document.querySelectorAll('#emotions .emo-group').forEach(function(g){ g.hidden = true; });
+  // hide the arrive footer on step 1 (category select) — it only belongs on step 2
+  var footer = document.querySelector('.arrive-footer');
+  if(footer) footer.style.display = 'none';
 }
 function _arrivalShowStep2(groupName){
   var cats = document.getElementById('arrivalCats');
@@ -7562,6 +7534,9 @@ function _arrivalShowStep2(groupName){
   document.querySelectorAll('#emotions .emo-group').forEach(function(g){
     g.hidden = g.getAttribute('data-group') !== groupName;
   });
+  // restore the arrive footer for the emotion-pick step
+  var footer = document.querySelector('.arrive-footer');
+  if(footer) footer.style.display = '';
 }
 document.querySelectorAll('.arrival-cat').forEach(function(btn){
   btn.addEventListener('click', function(){
@@ -7620,33 +7595,11 @@ function updateArrivalHint(){
   },200);
 }
 var _openAppCache = null; // cached /open-app response for current session
+var _openAppFetch = null; // in-flight promise — used to late-bind AI data if fetch is slow
 
 // ── offline indicator ─────────────────────────────────────────────
 var _offlineBannerTimer = null;
-function _showOfflineBanner(){
-  var b = document.getElementById('offlineBanner');
-  if(!b){
-    b = document.createElement('div');
-    b.id = 'offlineBanner';
-    b.textContent = 'AI unavailable \u00B7 your entries are safe';
-    b.style.cssText = [
-      'position:fixed','top:0','left:0','right:0','z-index:9999',
-      'padding:8px 16px','background:rgba(14,11,7,0.94)',
-      'border-bottom:1px solid rgba(201,148,58,0.12)',
-      'text-align:center','font-family:"DM Mono",monospace',
-      'font-size:10px','letter-spacing:0.1em','color:rgba(201,148,58,0.5)',
-      'opacity:0','transition:opacity 400ms ease','pointer-events:none'
-    ].join(';');
-    document.body.appendChild(b);
-  }
-  b.style.display = 'block';
-  requestAnimationFrame(function(){ b.style.opacity = '1'; });
-  clearTimeout(_offlineBannerTimer);
-  _offlineBannerTimer = setTimeout(function(){
-    b.style.opacity = '0';
-    setTimeout(function(){ b.style.display = 'none'; }, 400);
-  }, 4500);
-}
+function _showOfflineBanner(){ /* banner intentionally removed — fail quietly */ }
 $('arriveBtn').addEventListener('click',()=>{
   if(!emo){
     $('arrivalInner').classList.remove('shake');void $('arrivalInner').offsetWidth;
@@ -7661,13 +7614,14 @@ $('arriveBtn').addEventListener('click',()=>{
     $('arriveBtn').style.pointerEvents='';
     // kick off /open-app for emotions the backend handles — cache result for breathing + memory
     _openAppCache = null;
+    _openAppFetch = null;
     if(BREATHING_EMOTIONS.has(emo)){
       var userId = localStorage.getItem('gc_user_id') || 'demo-user';
-      fetch('/open-app', {
+      _openAppFetch = fetch('/open-app', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({user_id:userId, mood:emo, intention:intent||'', hours_absent:0})
-      }).then(function(r){ return r.json(); }).then(function(data){ _openAppCache = data; }).catch(function(){ _showOfflineBanner(); });
+      }).then(function(r){ return r.json(); }).then(function(data){ _openAppCache = data; _openAppFetch = null; }).catch(function(){ _openAppFetch = null; _showOfflineBanner(); });
     }
     if(BREATHING_EMOTIONS.has(emo)){
       go('s-arrival','s-breathing');
@@ -7926,15 +7880,24 @@ function showInsightMemory(currentEmo){
     var snippet = pick.text.length > 120 ? pick.text.slice(0, 117) + '\u2026' : pick.text;
     quoteEl.textContent = '\u201C' + snippet + '\u201D';
   } else {
-    // heavy / middle — prefer Memory Agent message if available, else local uplifting nudge
+    // heavy / middle — render as a quoted whisper, same card shape as light
+    var recent = matches[matches.length - 1];
+    var phrase = MEMORY_HEAVY_PHRASES[Math.floor(Math.random() * MEMORY_HEAVY_PHRASES.length)];
+    var localNudge = phrase + ' \u2014 day ' + recent.day + '. the chain held, and so did you.';
+    labelEl.textContent = 'a note from before';
+    function _setQuote(msg){ quoteEl.textContent = msg; }
     if(_openAppCache && _openAppCache.memories && _openAppCache.memories.message){
-      labelEl.textContent = _openAppCache.memories.message;
+      _setQuote(_openAppCache.memories.message);
+    } else if(_openAppFetch){
+      _setQuote(localNudge);
+      _openAppFetch.then(function(){
+        if(_openAppCache && _openAppCache.memories && _openAppCache.memories.message){
+          _setQuote(_openAppCache.memories.message);
+        }
+      });
     } else {
-      var recent = matches[matches.length - 1];
-      var phrase = MEMORY_HEAVY_PHRASES[Math.floor(Math.random() * MEMORY_HEAVY_PHRASES.length)];
-      labelEl.textContent = phrase + ' \u2014 day ' + recent.day + '. the chain held, and so did you.';
+      _setQuote(localNudge);
     }
-    quoteEl.textContent = '';
   }
 
   requestAnimationFrame(function(){
@@ -7955,11 +7918,14 @@ function runInsightSequence(){
   $('memoryLabel').textContent = '';
   $('memoryQuote').textContent = '';
   $('loadingDots').classList.remove('hide');
+  var _pib = $('postInsightBtn');
+  _pib.disabled = false; _pib.style.opacity = ''; _pib.style.transition = '';
+  if(_pib.lastChild) _pib.lastChild.textContent = 'carry it forward';
 
   const e = EMO[emo];
   // set emotion visuals
   $('insightEmoji').className = 'insight-emoji emo-' + emo;
-  $('insightEmoji').innerHTML = '<img src="logogchain.svg" alt="' + emo + '" style="width:125px;height:125px;object-fit:contain;filter:drop-shadow(0 0 20px rgba(201,148,58,0.5))">';
+  $('insightEmoji').innerHTML = '<img src="' + emo + '-icon.svg" alt="' + emo + '" style="width:84px;height:84px;object-fit:contain;filter:drop-shadow(0 4px 14px rgba(201,148,58,0.35))">';
   $('insightEmoji').style.setProperty('--emo-shadow', e.shadow);
   $('insightWord').textContent = emo;
   var bgBase=getComputedStyle(document.body).getPropertyValue('--bg').trim()||'#f5ede0';
@@ -8036,7 +8002,7 @@ $('journalBack').addEventListener('click',()=>{
   if(!text){
     $('journalArea').value='';
     $('journalCount').textContent='0 / 500';$('journalCount').classList.remove('vis');
-    go('s-journal','s-arrival');
+    go('s-journal','s-insight');
     return;
   }
   $('leaveSheet').classList.add('open');
@@ -8218,10 +8184,6 @@ go = function(from, to){
     var graceNudge = localStorage.getItem('gc_grace_nudge')!=='false'; // default on
     $('settingsGraceToggle').classList.toggle('on', graceNudge);
 
-    // theme toggle state synced via setTheme(), but ensure initial render
-    var t = localStorage.getItem('gc_theme') || 'dark';
-    $('settingsThemeToggle').classList.toggle('on', t==='morning');
-    $('settingsThemeLabel').textContent = t==='morning' ? 'morning' : 'night';
   }
 
   // ── open / close ──
@@ -8234,12 +8196,6 @@ go = function(from, to){
   }
   $('settingsBtn').addEventListener('click', openSettings);
   $('settingsBack').addEventListener('click', closeSettings);
-
-  // ── appearance toggle ──
-  $('settingsThemeToggle').addEventListener('click', function(){
-    var current = localStorage.getItem('gc_theme') || 'dark';
-    setTheme(current==='morning' ? 'dark' : 'morning');
-  });
 
   // ── notifications ──
   $('settingsNotifToggle').addEventListener('click', function(){
@@ -8443,7 +8399,7 @@ $('journalSubmit').addEventListener('click',()=>{
   const entry = $('journalArea').value.trim();
   if(!entry || !emo) return; // guard: need both text and an emotion
   // populate (but don't save yet — save happens on "carry it forward")
-  $('postInsightIcon').src = 'logogchain.svg';
+  $('postInsightIcon').src = emo + '-icon.svg';
   $('postInsightEmo').textContent = emo;
   var displayEntry = entry.length > 150 ? entry.slice(0,147) + '\u2026' : entry;
   $('postInsightEntry').textContent = '\u201C' + displayEntry + '\u201D';
@@ -8482,8 +8438,11 @@ $('journalSubmit').addEventListener('click',()=>{
 // post-insight "carry it forward" button — commits the entry and triggers fly-to-chain
 $('postInsightBtn').addEventListener('click',function(){
   if(this.disabled) return;
+  var _btnRect = this.getBoundingClientRect(); // capture before any DOM mutations
+  this.style.transition = 'none';
   this.disabled = true;
-  this.style.opacity = '0.5';
+  this.style.opacity = '0.4';
+  if(this.lastChild) this.lastChild.textContent = '\u2026';
   var entry = window._pendingEntry || '';
   if(!entry){ this.disabled = false; this.style.opacity = ''; return; }
   var pendingEmo = window._pendingEmo || emo;
@@ -8538,7 +8497,7 @@ $('postInsightBtn').addEventListener('click',function(){
   window._pendingIntent = null;
   window._pendingPhotos = false;
   window._pendingVoice = false;
-  flyKnotToChain(entry);
+  flyKnotToChain(entry, _btnRect);
   // invalidate the pendant-entries cache — new entry might be in the chosen month
   if(typeof window._invalidatePendantCache === 'function') window._invalidatePendantCache();
 
@@ -8586,9 +8545,8 @@ $('postInsightBack').addEventListener('click',function(){
 });
 
 // ── fly-knot-to-chain animation (replaces post-submit slither) ──
-function flyKnotToChain(entry){
-  // capture button position before any DOM mutations or screen transitions
-  var startBtn=$('postInsightBtn').getBoundingClientRect();
+function flyKnotToChain(entry, startBtn){
+  startBtn = startBtn || $('postInsightBtn').getBoundingClientRect();
 
   // create a floating Sacred Knot overlay
   // dark overlay for smooth transition
@@ -9503,23 +9461,13 @@ try{ void function(){
 
   function drawFilledKnot(x,y,dayNumber){
     if(!KNOT_IMG.complete||!KNOT_IMG.naturalWidth) return;
-    const isEmphasized=VISUAL_EMPHASIS_SET.has(dayNumber);
-    const isMilestone=MILESTONES_SET.has(dayNumber);
-    var sz=20;
+    // Symmetry rule: every past knot on the chain renders identically.
+    // Milestones (7/100/200/250/300) still fire the ceremony screen, but
+    // once placed on the braided thread they are indistinguishable from
+    // any other held morning. Only today and birthdays differ visually.
     var isBdayKnot=gcBirthdayKnotsSet.has(dayNumber);
-    if(isEmphasized){
-      // 4 quarter-year emphasis knots — uniform size for symmetry
-      sz=22;
-    } else if(isMilestone){
-      // Fallback for legacy milestone rendering paths (ceremony previews, etc.)
-      if(dayNumber>=300) sz=26;
-      else if(dayNumber>=250) sz=24;
-      else if(dayNumber>=200) sz=22;
-      else if(dayNumber>=100) sz=21;
-      else sz=18;
-    } else if(isBdayKnot){
-      sz=36; // birthday knots are noticeably larger
-    }
+    var sz = isBdayKnot ? 36 : 20;
+    var isMilestone = false; // intentionally suppressed for chain symmetry
     ctx.save();
     ctx.globalAlpha=0.85;
     // birthday knot — bright white glow + star sparkle
@@ -9704,9 +9652,8 @@ try{ void function(){
         if(dayNumber === 1) continue;
 
         var logged = isDayLogged(dayNumber);
-        // Visual emphasis on the closed ring uses VISUAL_EMPHASIS_DAYS (symmetric
-        // quarters), NOT MILESTONES — ceremony logic still keyed to MILESTONES.
-        var isEmphasized = VISUAL_EMPHASIS_SET.has(dayNumber);
+        // Chain symmetry rule: no visual emphasis on specific days — every past
+        // morning looks the same. Birthdays are the only exception.
         var isBdayDay = gcBirthdayKnotsSet.has(dayNumber);
         var isToday = dayNumber === displayDay;
 
@@ -9737,7 +9684,7 @@ try{ void function(){
             updateParticles(pt.x, pt.y);
           }
         } else if(logged){
-          if(isEmphasized || isBdayDay){
+          if(isBdayDay){
             drawFilledKnot(pt.x, pt.y, dayNumber);
           } else {
             drawSmallKnot(pt.x, pt.y, dayNumber, displayDay);
@@ -9871,6 +9818,107 @@ if (typeof window !== 'undefined') {
     localStorage.removeItem('gc_year_complete_'+year);
     localStorage.removeItem('gc_annual_pending');
     return { entries: 365, startDate: iso(start), today: iso(today) };
+  };
+
+  // ── Second demo set — 12 distinct dominant emotions across the year ──
+  // Produces a different ceremony result per month: no dominant repeats.
+  // Mapping (month → dominant):
+  //   Jan hopeful · Feb heartbroken · Mar restless · Apr grateful ·
+  //   May passionate · Jun content · Jul alive · Aug moved ·
+  //   Sep yearning · Oct frustrated · Nov tender · Dec calm
+  window._DEV.demoAnnualAlt = function(year){
+    year = year || new Date().getFullYear();
+    var pad = function(n){ return String(n).padStart(2,'0'); };
+    var iso = function(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+
+    // Each month: first item is the guaranteed dominant (weighted heaviest),
+    // then three supporting emotions from diverse groups for 3-layer weave variety.
+    var monthEmos = [
+      ['hopeful',     'quiet',       'searching',  'inspired'],   // Jan — a soft turn
+      ['heartbroken', 'tender',      'exhausted',  'vulnerable'], // Feb — valentine shadow
+      ['restless',    'foggy',       'bored',      'yearning'],   // Mar — end-of-winter itch
+      ['grateful',    'light',       'moved',      'calm'],       // Apr — birthday bloom
+      ['passionate',  'alive',       'focused',    'nervous'],    // May — bloom hot
+      ['content',     'relaxed',     'certain',    'grateful'],   // Jun — settled
+      ['alive',       'passionate',  'inspired',   'light'],      // Jul — midsummer full
+      ['moved',       'tender',      'ashamed',    'yearning'],   // Aug — tender late warmth
+      ['yearning',    'sad',         'searching',  'lonely'],     // Sep — autumn longing
+      ['frustrated',  'hard',        'upset',      'livid'],      // Oct — season turn
+      ['tender',      'grateful',    'heavy',      'moved'],      // Nov — gratitude with weight
+      ['calm',        'hopeful',     'quiet',      'relaxed']     // Dec — year-end peace
+    ];
+    // Weight the first pool item so it always wins dominance (dominant ≈ 60%, rest split ~20/13/7)
+    var emoWeights = [0,0,0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,3,3];
+
+    var today = new Date();
+    var start = new Date(year, 0, 1); // Jan 1 of target year
+    var daysInYear = ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 366 : 365;
+
+    var logged = [], entries = [];
+    for (var i = 0; i < daysInYear; i++) {
+      var d = new Date(start); d.setDate(start.getDate() + i);
+      var date = iso(d);
+      logged.push(date);
+      var mIdx = d.getMonth();
+      var pool = monthEmos[mIdx];
+      // deterministic but non-mechanical pick
+      var lseed = (((d.getDate() * 2654435761) ^ (mIdx * 40503) ^ (year * 2246822519)) + 12345) >>> 0;
+      var r = ((lseed >> 12) ^ (lseed >> 6)) % emoWeights.length;
+      var emo = pool[emoWeights[r]];
+      entries.push({day: i+1, date: date, emo: emo, intent:'carry-forward', text: 'day '+(i+1)+' — '+emo+'.', ts: d.getTime()});
+    }
+
+    localStorage.setItem('gc_user', JSON.stringify({name:'Dev', birthday:'04-25', email:'d@test'}));
+    localStorage.setItem('gc_onboard_seen', '1');
+    localStorage.setItem('gc_start_date', iso(start));
+    localStorage.setItem('gc_logged_dates', JSON.stringify(logged));
+    localStorage.setItem('gc_logged_today', today.toDateString());
+    localStorage.setItem('gc_day', String(logged.length));
+    localStorage.setItem('gc_entries', JSON.stringify(entries));
+    localStorage.setItem('gc_birthday_knots', '[]');
+    // clear any seen-ceremony flags so each month can replay fresh
+    for (var m = 0; m < 12; m++) {
+      localStorage.removeItem('gc_ceremony_seen_'+year+'-'+pad(m+1));
+      localStorage.removeItem('gc_portrait_seen_'+year+'-'+pad(m+1));
+    }
+    localStorage.removeItem('gc_year_complete_'+year);
+    localStorage.removeItem('gc_annual_pending');
+
+    // summary: confirm every month has a distinct dominant
+    var summary = [];
+    for (var mi = 0; mi < 12; mi++){
+      var ct = {};
+      entries.filter(function(e){ return e.date.slice(5,7) === pad(mi+1); })
+             .forEach(function(e){ ct[e.emo] = (ct[e.emo]||0)+1; });
+      var top = Object.keys(ct).sort(function(a,b){ return ct[b]-ct[a]; })[0] || '—';
+      summary.push(pad(mi+1)+': '+top);
+    }
+    return { entries: entries.length, startDate: iso(start), monthDominants: summary };
+  };
+
+  // ── Step through any month's ceremony by stubbing Date to that month-end ──
+  // Usage: _DEV.playCeremony(2026, 6)  → fires the July 2026 ceremony.
+  // Restores real Date when the overlay closes.
+  window._DEV.playCeremony = function(year, monthNum){
+    year = year || new Date().getFullYear();
+    monthNum = monthNum || (new Date().getMonth() + 1);
+    var pad = function(n){ return String(n).padStart(2,'0'); };
+    var lastDay = new Date(year, monthNum, 0).getDate();
+    var stubISO = year+'-'+pad(monthNum)+'-'+pad(lastDay)+'T23:00:00';
+    var Real = window.__RealDate || Date;
+    window.__RealDate = Real;
+    var Stub = function(){
+      if(arguments.length===0) return new Real(stubISO);
+      return new (Function.prototype.bind.apply(Real, [null].concat(Array.from(arguments))));
+    };
+    Stub.now = function(){ return new Real(stubISO).getTime(); };
+    Stub.parse = Real.parse;
+    Stub.UTC = Real.UTC;
+    Stub.prototype = Real.prototype;
+    window.Date = Stub;
+    localStorage.removeItem('gc_ceremony_seen_'+year+'-'+pad(monthNum));
+    if(typeof showMonthEndCeremony === 'function') showMonthEndCeremony();
+    return 'stubbed to '+stubISO;
   };
 }
 </script>
