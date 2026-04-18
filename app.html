@@ -130,7 +130,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .emotions{display:flex;flex-direction:column;gap:0;padding:0;margin-bottom:clamp(4px,1vh,10px);width:100%;overflow:hidden}
 .emo-group-label{font-family:'DM Mono',monospace;font-size:7px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;opacity:.3;text-align:center;padding:clamp(6px,1.2vh,12px) 0 clamp(4px,.8vh,6px)}
 /* emo-group-rule removed */
-.emo-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px 0;padding:0;justify-items:center;width:100%}
+.emo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px 0;padding:0;justify-items:center;width:100%}
 
 /* ─── STEP 1 — 2×2 grid of category cards ──────────────
    Each card has an icon on top, italic serif name, and a mono hint of
@@ -175,8 +175,23 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
   from{opacity:0;transform:translateY(4px)}
   to{opacity:1;transform:none}
 }
-.chip{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;padding:8px;border-radius:14px;background:transparent;border:2px solid transparent;font-family:'Fraunces',serif;font-style:italic;font-size:11px;color:var(--chip-text);cursor:pointer;transition:all 220ms var(--ease);user-select:none;min-width:0;width:78px}
-.chip img{width:64px!important;height:64px!important;object-fit:contain;transition:transform 260ms var(--ease);filter:drop-shadow(0 2px 6px rgba(0,0,0,.12))}
+.chip{display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;padding:10px;border-radius:16px;background:transparent;border:2px solid transparent;font-family:'Fraunces',serif;font-style:italic;font-size:12px;color:var(--chip-text);cursor:pointer;transition:all 220ms var(--ease);user-select:none;min-width:0;width:100px}
+.chip img{width:84px!important;height:84px!important;object-fit:contain;transition:transform 260ms var(--ease);filter:drop-shadow(0 2px 6px rgba(0,0,0,.12))}
+/* These icons have more internal margin in their SVG artwork, so visually
+   they read as smaller than the rest of the set at the same box size.
+   Scale them up inside their chip to match the rest. */
+.chip[data-c="bored"] img,
+.chip[data-c="lost"] img,
+.chip[data-c="betrayed"] img,
+.chip[data-c="vulnerable"] img,
+.chip[data-c="upset"] img,
+.chip[data-c="insecure"] img{transform:scale(1.13)}
+.chip[data-c="bored"].sel img,
+.chip[data-c="lost"].sel img,
+.chip[data-c="betrayed"].sel img,
+.chip[data-c="vulnerable"].sel img,
+.chip[data-c="upset"].sel img,
+.chip[data-c="insecure"].sel img{transform:scale(1.13) scale(1.12)}
 .chip .emoji{font-style:normal;font-size:clamp(24px,6vw,32px);line-height:1;transition:transform 260ms var(--ease)}
 .chip:active{transform:scale(.93)}
 .chip.sel{border-color:var(--chip-border);background:var(--chip-bg);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
@@ -231,7 +246,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .agent-hint{text-align:center;font-style:italic;font-size:12px;color:var(--gold);line-height:1.5;padding:0 8px;margin-bottom:clamp(8px,1.5vh,18px);min-height:54px;opacity:0;transform:translateY(6px);transition:opacity 400ms var(--ease) 200ms,transform 400ms var(--ease) 200ms}
 .agent-hint.vis{opacity:.9;transform:translateY(0)}
 .agent-hint::before{content:'';display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--gold);vertical-align:middle;margin-right:8px;opacity:.6}
-.arrive-footer{position:fixed;bottom:0;left:0;right:0;width:100%;max-width:520px;margin:0 auto;padding:8px 24px max(20px,env(safe-area-inset-bottom));z-index:55;background:linear-gradient(0deg,var(--bg) 60%,transparent);text-align:center}
+.arrive-footer{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:0;right:0;width:100%;max-width:520px;margin:0 auto;padding:8px 24px;z-index:55;background:transparent;text-align:center}
 .knot-btn{display:inline-flex;flex-direction:column;align-items:center;width:auto;height:auto;background:none;border:none;color:var(--gold);font-family:'Fraunces',serif;font-style:italic;font-size:11px;cursor:pointer;filter:drop-shadow(0 0 12px rgba(201,148,58,0.3));transition:opacity 300ms,transform 200ms,filter 200ms;padding:0;gap:8px}
 .knot-btn .knot-icon{display:block;width:60px;height:60px;background:url('logogchain.svg') center/contain no-repeat}
 .knot-btn:active{transform:scale(.92);filter:drop-shadow(0 0 18px rgba(230,182,88,0.5))}
