@@ -1419,6 +1419,7 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
     <div class="settings-card" style="padding:12px 16px">
       <button class="settings-action gold" id="settingsExportBtn">export entries</button>
       <button class="settings-action danger" id="settingsClearBtn">clear all data</button>
+      <p style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:11px;color:var(--muted);opacity:0.6;margin:10px 0 2px;text-align:center;line-height:1.6">your entries never leave this device.</p>
     </div>
   </div>
 
@@ -2025,7 +2026,7 @@ function showGracePrompt(missedDay){
       var el = document.getElementById('graceMsg');
       if(el) el.textContent = data.message;
     }
-  }).catch(function(){/* keep fallback */});
+  }).catch(function(){ _showOfflineBanner(); });
 
   overlay.querySelector('#graceUse').addEventListener('click',function(){
     // fill the missed day
@@ -2663,26 +2664,31 @@ function populateHeld(){
 }
 
 // ═══ WALKING ALONGSIDE — presence only, no content ═══════════
-// Clean expired pending invites (48h) on load
+// Mark expired pending invites (48h) on load — keep them so user can refresh the code
 (function cleanExpiredLinks(){
   try{
     var links = JSON.parse(localStorage.getItem('gc_links')||'[]');
     var now = new Date();
-    links = links.filter(function(l){
-      if(l.status !== 'pending') return true;
+    var changed = false;
+    links = links.map(function(l){
+      if(l.status !== 'pending') return l;
       var created = new Date(l.created_at);
-      if(isNaN(created)) return false;
-      var hoursOld = (now - created) / 3600000;
-      return hoursOld < 48;
+      if(isNaN(created)) return l;
+      if((now - created) / 3600000 >= 48){
+        changed = true;
+        return Object.assign({}, l, {status:'expired'});
+      }
+      return l;
     });
-    localStorage.setItem('gc_links', JSON.stringify(links));
+    if(changed) localStorage.setItem('gc_links', JSON.stringify(links));
   }catch(e){}
 })();
 
 function populateWalkingSection(){
   var links = JSON.parse(localStorage.getItem('gc_links')||'[]');
-  var activeLinks = links.filter(function(l){ return l.status === 'active'; });
+  var activeLinks  = links.filter(function(l){ return l.status === 'active'; });
   var pendingLinks = links.filter(function(l){ return l.status === 'pending'; });
+  var expiredLinks = links.filter(function(l){ return l.status === 'expired'; });
   var totalLinks = links.length;
 
   var container = $('witnessCards');
@@ -2694,6 +2700,9 @@ function populateWalkingSection(){
   });
   pendingLinks.forEach(function(link){
     container.appendChild(buildPendingCard(link));
+  });
+  expiredLinks.forEach(function(link){
+    container.appendChild(buildExpiredCard(link));
   });
 
   var addBtn = $('linkAddBtn');
@@ -2889,6 +2898,63 @@ function buildPendingCard(link){
 
   card.appendChild(left);
   card.appendChild(resend);
+  return card;
+}
+
+function buildExpiredCard(link){
+  var card = document.createElement('div');
+  card.style.cssText = [
+    'padding:14px 16px',
+    'background:var(--glass)',
+    'border:1px dashed rgba(201,148,58,0.08)',
+    'border-radius:14px',
+    'margin-bottom:12px',
+    'display:flex','align-items:center','justify-content:space-between','gap:10px'
+  ].join(';');
+
+  var left = document.createElement('div');
+  left.style.cssText = 'flex:1;min-width:0';
+
+  var name = document.createElement('p');
+  name.style.cssText = [
+    'font-family:"Fraunces",serif','font-style:italic',
+    'font-size:15px','color:rgba(245,237,224,0.25)',
+    'margin:0 0 3px','overflow:hidden','text-overflow:ellipsis','white-space:nowrap'
+  ].join(';');
+  name.textContent = link.nickname;
+
+  var expiredLabel = document.createElement('p');
+  expiredLabel.style.cssText = [
+    'font-family:"DM Mono",monospace','font-size:9px',
+    'letter-spacing:0.08em','color:rgba(201,148,58,0.2)','margin:0'
+  ].join(';');
+  expiredLabel.textContent = 'code expired';
+
+  left.appendChild(name);
+  left.appendChild(expiredLabel);
+
+  var refreshBtn = document.createElement('button');
+  refreshBtn.textContent = 'new code';
+  refreshBtn.style.cssText = [
+    'background:none','border:1px solid rgba(201,148,58,0.15)',
+    'border-radius:10px','padding:5px 10px',
+    'font-family:"DM Mono",monospace','font-size:8px','letter-spacing:0.06em',
+    'color:rgba(201,148,58,0.35)','cursor:pointer','flex-shrink:0'
+  ].join(';');
+  refreshBtn.addEventListener('click', function(e){
+    e.stopPropagation();
+    var newCode = generateLinkCode();
+    var links = JSON.parse(localStorage.getItem('gc_links')||'[]');
+    links = links.map(function(l){
+      if(l.id !== link.id) return l;
+      return Object.assign({}, l, {code: newCode, status: 'pending', created_at: todayISO()});
+    });
+    localStorage.setItem('gc_links', JSON.stringify(links));
+    populateWalkingSection();
+  });
+
+  card.appendChild(left);
+  card.appendChild(refreshBtn);
   return card;
 }
 
@@ -5470,7 +5536,7 @@ function showYearClosingCeremony(){
         openClaspChoice();
       }, 400);
     });
-  }, 6000);
+  }, 16000);
 }
 
 // ── CLASP CHOICE — pick a month to immortalize as the necklace clasp ──
@@ -5867,15 +5933,7 @@ function drawCurrentMonthCell(canvas, monthEntries, monthIndex, state){
   // ghost opacity per state
   var ghostOpacity = state === 'almost' ? 0.18 : 0.06;
 
-  // resolve dominant emotion from entries so far (fallback to calm)
-  var emoCounts = {};
-  (monthEntries||[]).forEach(function(e){
-    if(e.emo) emoCounts[e.emo] = (emoCounts[e.emo]||0) + 1;
-  });
-  var dominant = Object.keys(emoCounts).sort(
-    function(a,b){ return emoCounts[b]-emoCounts[a]; }
-  )[0] || 'calm';
-  var p = KNOT_PARAMS[dominant] || KNOT_FALLBACK;
+  var p = _blendKnotParams(monthEntries, monthIndex).full;
 
   var cx = W/2, cy = H/2;
   var R = Math.min(W,H) * 0.36;
@@ -6186,8 +6244,8 @@ function renderPortraitMonth(){
   var morning = document.body.classList.contains('theme-morning');
   canvas.style.filter = knotShadowFilter(stats.topEmo, 32, morning ? 0.45 : 0.3);
 
-  // portrait is complete — reveal share button
-  $('shareMonthBtn').style.display = '';
+  // portrait is complete — reveal share button (only when not still gathering)
+  $('shareMonthBtn').style.display = (currentState === 'gathering') ? 'none' : '';
 
   // text state always updates (below), canvas state depends on lifecycle
   $('portraitWord').textContent = stats.word || '';
@@ -6368,8 +6426,20 @@ function renderPortraitYear(){
           dctx.drawImage(off, 0, 0, 76, 76);
         });
       })(c, stats.entries, m);
+    } else if(isFuture){
+      // future month — dashed ring at higher opacity so it reads as intentional, not a bug
+      c.width = 76 * dpr;
+      c.height = 76 * dpr;
+      var gctx = c.getContext('2d');
+      gctx.setTransform(dpr,0,0,dpr,0,0);
+      gctx.strokeStyle = 'rgba(201,148,58,0.45)';
+      gctx.lineWidth = 1;
+      gctx.setLineDash([3, 5]);
+      gctx.beginPath();
+      gctx.arc(38, 38, 26, 0, Math.PI * 2);
+      gctx.stroke();
     } else {
-      // no entries (past or future) → dashed ghost
+      // past month with no entries → faint ghost
       c.width = 76 * dpr;
       c.height = 76 * dpr;
       var gctx = c.getContext('2d');
@@ -6839,14 +6909,14 @@ function _arrivalShowStep1(){
   var cats = document.getElementById('arrivalCats');
   if(cats) cats.hidden = false;
   var back = document.getElementById('arrivalBack');
-  if(back) back.hidden = true;
+  if(back){ back.hidden = false; back.dataset.arrivalStep = '1'; }
   document.querySelectorAll('#emotions .emo-group').forEach(function(g){ g.hidden = true; });
 }
 function _arrivalShowStep2(groupName){
   var cats = document.getElementById('arrivalCats');
   if(cats) cats.hidden = true;
   var back = document.getElementById('arrivalBack');
-  if(back) back.hidden = false;
+  if(back){ back.hidden = false; back.dataset.arrivalStep = '2'; }
   document.querySelectorAll('#emotions .emo-group').forEach(function(g){
     g.hidden = g.getAttribute('data-group') !== groupName;
   });
@@ -6857,6 +6927,11 @@ document.querySelectorAll('.arrival-cat').forEach(function(btn){
   });
 });
 document.getElementById('arrivalBack').addEventListener('click', function(){
+  if(this.dataset.arrivalStep === '1'){
+    go('s-arrival','s-splash');
+    $('s-splash').classList.remove('dimmed');
+    return;
+  }
   _arrivalShowStep1();
   // Deselect any emotion; retract the intent / arrive UI until a new one is picked.
   emo = null;
@@ -6903,6 +6978,33 @@ function updateArrivalHint(){
   },200);
 }
 var _openAppCache = null; // cached /open-app response for current session
+
+// ── offline indicator ─────────────────────────────────────────────
+var _offlineBannerTimer = null;
+function _showOfflineBanner(){
+  var b = document.getElementById('offlineBanner');
+  if(!b){
+    b = document.createElement('div');
+    b.id = 'offlineBanner';
+    b.textContent = 'AI unavailable \u00B7 your entries are safe';
+    b.style.cssText = [
+      'position:fixed','top:0','left:0','right:0','z-index:9999',
+      'padding:8px 16px','background:rgba(14,11,7,0.94)',
+      'border-bottom:1px solid rgba(201,148,58,0.12)',
+      'text-align:center','font-family:"DM Mono",monospace',
+      'font-size:10px','letter-spacing:0.1em','color:rgba(201,148,58,0.5)',
+      'opacity:0','transition:opacity 400ms ease','pointer-events:none'
+    ].join(';');
+    document.body.appendChild(b);
+  }
+  b.style.display = 'block';
+  requestAnimationFrame(function(){ b.style.opacity = '1'; });
+  clearTimeout(_offlineBannerTimer);
+  _offlineBannerTimer = setTimeout(function(){
+    b.style.opacity = '0';
+    setTimeout(function(){ b.style.display = 'none'; }, 400);
+  }, 4500);
+}
 $('arriveBtn').addEventListener('click',()=>{
   if(!emo){
     $('arrivalInner').classList.remove('shake');void $('arrivalInner').offsetWidth;
@@ -6923,7 +7025,7 @@ $('arriveBtn').addEventListener('click',()=>{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({user_id:userId, mood:emo, intention:intent||'', hours_absent:0})
-      }).then(function(r){ return r.json(); }).then(function(data){ _openAppCache = data; }).catch(function(){});
+      }).then(function(r){ return r.json(); }).then(function(data){ _openAppCache = data; }).catch(function(){ _showOfflineBanner(); });
     }
     if(BREATHING_EMOTIONS.has(emo)){
       go('s-arrival','s-breathing');
@@ -7292,7 +7394,7 @@ $('journalBack').addEventListener('click',()=>{
   if(!text){
     $('journalArea').value='';
     $('journalCount').textContent='0 / 500';$('journalCount').classList.remove('vis');
-    go('s-journal','s-insight');
+    go('s-journal','s-arrival');
     return;
   }
   $('leaveSheet').classList.add('open');
@@ -7311,7 +7413,7 @@ $('leaveConfirm').addEventListener('click',()=>{
     setActiveTab(target);
     if(target==='s-splash') $('s-splash').classList.remove('dimmed');
   } else {
-    go('s-journal','s-insight');
+    go('s-journal','s-arrival');
   }
 });
 $('leaveStay').addEventListener('click',()=>{
@@ -7582,7 +7684,11 @@ go = function(from, to){
     if(e.target===this) this.classList.remove('open');
   });
   $('signOutConfirm').addEventListener('click', function(){
-    localStorage.removeItem('gc_user');
+    var keysToRemove = [];
+    for(var i = 0; i < localStorage.length; i++){
+      if(localStorage.key(i).startsWith('gc_')) keysToRemove.push(localStorage.key(i));
+    }
+    keysToRemove.forEach(function(k){ localStorage.removeItem(k); });
     $('signOutSheet').classList.remove('open');
     location.reload();
   });
@@ -7727,13 +7833,17 @@ $('journalSubmit').addEventListener('click',()=>{
   }).catch(function(){
     clearTimeout(aiTimeout);
     $('aiLoadingDot').classList.remove('vis');
+    _showOfflineBanner();
   });
 });
 
 // post-insight "carry it forward" button — commits the entry and triggers fly-to-chain
 $('postInsightBtn').addEventListener('click',function(){
+  if(this.disabled) return;
+  this.disabled = true;
+  this.style.opacity = '0.5';
   var entry = window._pendingEntry || '';
-  if(!entry) return;
+  if(!entry){ this.disabled = false; this.style.opacity = ''; return; }
   var pendingEmo = window._pendingEmo || emo;
   var pendingIntent = window._pendingIntent || intent;
   // set start date on first ever entry
@@ -7800,11 +7910,13 @@ $('postInsightBtn').addEventListener('click',function(){
     setTimeout(function(){ showMonthEndCeremony(); }, 3200);
   }
 
-  // year-close trigger — fires when day 365 completes the necklace
+  // year-close trigger — fires when the final day of the chain year completes the necklace
   var calDay = gcStartDate ? getDayNumber(todayISO()) : dayNum;
-  var isYearComplete = calDay === 365;
+  var _chainYear = gcStartDate ? new Date(gcStartDate).getFullYear() : new Date().getFullYear();
+  var _yearDays = (_chainYear%4===0&&(_chainYear%100!==0||_chainYear%400===0)) ? 366 : 365;
+  var isYearComplete = calDay === _yearDays;
   if(isYearComplete && gcStartDate){
-    var yearCompleteKey = 'gc_year_complete_' + new Date(gcStartDate).getFullYear();
+    var yearCompleteKey = 'gc_year_complete_' + _chainYear;
     if(!localStorage.getItem(yearCompleteKey)){
       localStorage.setItem(yearCompleteKey, '1');
       // Ordering rule: if today is also the last day of the month, the monthly
@@ -7833,6 +7945,9 @@ $('postInsightBack').addEventListener('click',function(){
 
 // ── fly-knot-to-chain animation (replaces post-submit slither) ──
 function flyKnotToChain(entry){
+  // capture button position before any DOM mutations or screen transitions
+  var startBtn=$('postInsightBtn').getBoundingClientRect();
+
   // create a floating Sacred Knot overlay
   // dark overlay for smooth transition
   var overlay=document.createElement('div');
@@ -7842,7 +7957,6 @@ function flyKnotToChain(entry){
 
   // flying knot
   var knot=document.createElement('div');
-  var startBtn=$('postInsightBtn').getBoundingClientRect();
   knot.style.cssText='position:fixed;z-index:200;pointer-events:none;'+
     'width:80px;height:80px;'+
     'background:url(logogchain.svg) center/contain no-repeat;'+
@@ -7888,6 +8002,23 @@ function flyKnotToChain(entry){
     knot.style.transform='scale(0.2)';
   },2000);
 
+  // Day 1 only: a quiet moment marking the chain's beginning
+  if(dayNum - 1 === 1){
+    var day1Card = document.createElement('div');
+    day1Card.style.cssText = [
+      'position:fixed','inset:0','z-index:100','pointer-events:none',
+      'display:flex','flex-direction:column','align-items:center','justify-content:center',
+      'gap:8px','opacity:0','transition:opacity 900ms ease'
+    ].join(';');
+    day1Card.innerHTML =
+      '<p style="font-family:\'Fraunces\',serif;font-style:italic;font-weight:300;font-size:24px;color:rgba(245,237,224,0.88);margin:0;text-align:center">day one.</p>'+
+      '<p style="font-family:\'Fraunces\',serif;font-style:italic;font-weight:300;font-size:14px;color:rgba(201,148,58,0.65);margin:0;text-align:center">the chain begins.</p>';
+    document.body.appendChild(day1Card);
+    setTimeout(function(){ day1Card.style.opacity = '1'; }, 1800);
+    setTimeout(function(){ day1Card.style.opacity = '0'; }, 4000);
+    setTimeout(function(){ day1Card.remove(); }, 4900);
+  }
+
   setTimeout(function(){
     knot.remove();
     // reset arrival state for next session
@@ -7916,9 +8047,11 @@ function flyKnotToChain(entry){
     },2000);
   }
 
-  // Day 365 — close the circle after the knot lands and flashes
+  // Day 365/366 — close the circle after the knot lands and flashes
   var calDay365 = gcStartDate ? getDayNumber(todayISO()) : 0;
-  if(calDay365 === 365 && window._startCircleClose){
+  var _cy365 = gcStartDate ? new Date(gcStartDate).getFullYear() : new Date().getFullYear();
+  var _yd365 = (_cy365%4===0&&(_cy365%100!==0||_cy365%400===0)) ? 366 : 365;
+  if(calDay365 === _yd365 && window._startCircleClose){
     setTimeout(function(){
       window._startCircleClose();
     }, 2200);
@@ -8201,7 +8334,8 @@ try{ void function(){
   let W,H,frame=0,time=0;
   var todayFillTime=hasLogged?99:-1; // -1=ghost, 0+=filling, 99=already filled on reload
   var circleCloseProgress = -1; // -1=inactive, 0→1=animating
-  const TOTAL_DAYS=365;
+  var _startYear = gcStartDate ? new Date(gcStartDate).getFullYear() : new Date().getFullYear();
+  const TOTAL_DAYS = (_startYear%4===0&&(_startYear%100!==0||_startYear%400===0)) ? 366 : 365;
 
   // ── KNOT SVG IMAGE ──
   var KNOT_IMG=new Image();
@@ -9051,13 +9185,34 @@ if (typeof window !== 'undefined') {
     var pad = function(n){ return String(n).padStart(2,'0'); };
     var iso = function(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
     var start = new Date(today); start.setDate(start.getDate() - 364);
-    var emoRot = ['grateful','alive','tender','calm','hopeful','light','moved','quiet','searching','restless','sad','heavy','foggy','heartbroken','exhausted','frustrated','anxious','overwhelmed','numb','disappointed','hard'];
+    // handcrafted 12-month emotional arc matching the designed narrative
+    var monthEmos = [
+      ['quiet','searching','overwhelmed','restless'],  // Jan — new year weight
+      ['tender','heartbroken','exhausted','heavy'],    // Feb — winter grief
+      ['heavy','numb','sad','disappointed'],           // Mar — still in it
+      ['restless','searching','foggy','quiet'],        // Apr — beginning to stir
+      ['hopeful','alive','searching','restless'],      // May — turning point
+      ['hopeful','alive','grateful','light'],          // Jun — opening up
+      ['grateful','alive','tender','light'],           // Jul — full summer
+      ['calm','tender','grateful','moved'],            // Aug — settled warmth
+      ['moved','grateful','tender','calm'],            // Sep — appreciation
+      ['quiet','tender','searching','calm'],           // Oct — autumn inward
+      ['grateful','tender','heavy','moved'],           // Nov — gratitude with weight
+      ['calm','grateful','hopeful','tender'],          // Dec — year-end peace
+    ];
+    // 50/30/10/10 distribution using LCG seed per day — deterministic, non-mechanical
+    var emoWeights = [0,0,0,0,0,1,1,1,2,3];
     var logged = [], entries = [];
     for (var i = 0; i < 365; i++) {
       var d = new Date(start); d.setDate(start.getDate() + i);
       var date = iso(d);
       logged.push(date);
-      entries.push({day: i+1, date: date, emo: emoRot[i % emoRot.length], intent:'carry-forward', text: 'day '+(i+1)+'.', ts: d.getTime()});
+      var mIdx = d.getMonth();
+      var pool = monthEmos[mIdx];
+      var lseed = (((d.getDate() * 1103515245) ^ (mIdx * 22695477)) + 12345) >>> 0;
+      var r = ((lseed >> 8) ^ (lseed >> 4)) % 10;
+      var emo = pool[emoWeights[r]];
+      entries.push({day: i+1, date: date, emo: emo, intent:'carry-forward', text: 'day '+(i+1)+'.', ts: d.getTime()});
     }
     localStorage.setItem('gc_user', JSON.stringify({name:'Dev', birthday:'04-25', email:'d@test'}));
     localStorage.setItem('gc_onboard_seen', '1');
