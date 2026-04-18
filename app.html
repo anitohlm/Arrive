@@ -3651,25 +3651,35 @@ function _blendKnotParams(entries, monthIndex){
   blended.glow = 'rgba('+r+','+g+','+b+',0.25)';
   blended.seed = (monthIndex||0) * 137.5;
 
-  // top-2 blend for the middle layer; color defaults to #1 emotion
+  // top-2 blend for the middle layer; color blended from #1 + #2 emotion colors
   var p0 = KNOT_PARAMS[top[0]] || KNOT_FALLBACK;
   var p1 = KNOT_PARAMS[top[1]||top[0]] || KNOT_FALLBACK;
   var top2Total = (emoCounts[top[0]]||0) + (emoCounts[top[1]||top[0]]||0);
   var w0 = emoCounts[top[0]] / top2Total;
   var w1 = (emoCounts[top[1]||top[0]]||0) / top2Total;
+  var h0 = p0.color.replace('#',''), h1 = p1.color.replace('#','');
+  var mR = Math.round(parseInt(h0.slice(0,2),16)*w0 + parseInt(h1.slice(0,2),16)*w1);
+  var mG = Math.round(parseInt(h0.slice(2,4),16)*w0 + parseInt(h1.slice(2,4),16)*w1);
+  var mB = Math.round(parseInt(h0.slice(4,6),16)*w0 + parseInt(h1.slice(4,6),16)*w1);
+  var midColor = '#'+mR.toString(16).padStart(2,'0')+mG.toString(16).padStart(2,'0')+mB.toString(16).padStart(2,'0');
   var mid = {
     petals:  Math.round(p0.petals*w0 + p1.petals*w1),
     sharp:   p0.sharp*w0  + p1.sharp*w1,
     round:   p0.round*w0  + p1.round*w1,
     strokeW: p0.strokeW*w0+ p1.strokeW*w1,
     twist:   p0.twist*w0  + p1.twist*w1,
-    color:   p0.color,
-    glow:    p0.glow,
+    color:   midColor,
+    glow:    'rgba('+mR+','+mG+','+mB+',0.25)',
     seed:    blended.seed,
   };
   if(mid.petals < 2) mid.petals = 2;
 
   var dom = KNOT_PARAMS[top[0]] || KNOT_FALLBACK;
+
+  // expose the count + sorted keys so downstream renderers can assign
+  // per-layer emotion colors (e.g. outer=top-4 blend, mid=#2, inner=#3)
+  blended._emoCounts = emoCounts;
+  blended._topEmos = top.slice();
 
   return {
     full:     blended,
@@ -3695,12 +3705,20 @@ function _drawKnotGeometry(ctx, cx, cy, R, entries, monthIndex){
   ctx.arc(cx,cy,R*1.6,0,Math.PI*2);
   ctx.fill();
 
-  // 3-layer rose-curve — each layer uses a different blend depth
-  // layers rotated so petals interlace through the gaps (Option A — chosen design)
+  // 3-layer rose-curve — each layer uses a different blend depth.
+  // Per-layer emotion colors: outer = top-4 blend, mid = #2 emotion pure,
+  // inner = #3 emotion pure (fall back up when fewer emotions exist).
+  var _topEmos = blend.full._topEmos || [];
+  function _emoColor(emo){ return (KNOT_PARAMS[emo]||KNOT_FALLBACK).color; }
+  var layerColors = [
+    blend.full.color,
+    _topEmos[1] ? _emoColor(_topEmos[1]) : blend.mid.color,
+    _topEmos[2] ? _emoColor(_topEmos[2]) : (_topEmos[1] ? _emoColor(_topEmos[1]) : blend.dom.color)
+  ];
   var layers = [
-    { params: blend.full, rMult: 0.95, alpha: 1.00, layerOff: 0.00 },
-    { params: blend.mid,  rMult: 0.80, alpha: 0.75, layerOff: Math.PI/12 },
-    { params: blend.dom,  rMult: 0.65, alpha: 0.55, layerOff: Math.PI/6  },
+    { params: blend.full, rMult: 0.95, alpha: 1.00, layerOff: 0.00,       color: layerColors[0] },
+    { params: blend.mid,  rMult: 0.80, alpha: 0.75, layerOff: Math.PI/12, color: layerColors[1] },
+    { params: blend.dom,  rMult: 0.65, alpha: 0.55, layerOff: Math.PI/6,  color: layerColors[2] },
   ];
 
   layers.forEach(function(L){
@@ -3721,18 +3739,87 @@ function _drawKnotGeometry(ctx, cx, cy, R, entries, monthIndex){
       if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
     }
     ctx.closePath();
+    var lc = L.color || p.color;
     ctx.globalAlpha = L.alpha * 0.08;
-    ctx.fillStyle = p.color;
+    ctx.fillStyle = lc;
     ctx.fill();
     ctx.globalAlpha = L.alpha;
-    ctx.strokeStyle = p.color;
+    ctx.strokeStyle = lc;
     ctx.lineWidth = p.strokeW*(1-L.layerOff*2)*sizeBoost;
     ctx.lineCap = 'round';
     ctx.stroke();
   });
 
-  // (center spark removed — the filled inner dot serves as the centerpiece
-  //  now that the knot geometry is concentric rings.)
+  // Static center diamond (non-pulsing — this function is also used for
+  // year-grid tiles where 12 pulsing diamonds would be visually noisy).
+  // Derive glowRgb locally from the outer-blend color.
+  var _ch = blend.full.color.replace('#','');
+  var _glowRgb = parseInt(_ch.slice(0,2),16)+','+parseInt(_ch.slice(2,4),16)+','+parseInt(_ch.slice(4,6),16);
+  var _dR = Math.max(2.2, R * 0.055);
+
+  // bloom
+  var _dBloom = ctx.createRadialGradient(cx, cy, 0, cx, cy, _dR * 6);
+  _dBloom.addColorStop(0,   'rgba('+_glowRgb+',0.15)');
+  _dBloom.addColorStop(0.45,'rgba('+_glowRgb+',0.05)');
+  _dBloom.addColorStop(1,   'rgba(0,0,0,0)');
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = _dBloom;
+  ctx.beginPath();
+  ctx.arc(cx, cy, _dR * 6, 0, Math.PI*2);
+  ctx.fill();
+
+  // mid glow
+  var _dMid = ctx.createRadialGradient(cx, cy, 0, cx, cy, _dR * 2.8);
+  _dMid.addColorStop(0,   'rgba(255,252,230,0.45)');
+  _dMid.addColorStop(0.5, 'rgba(230,182,88,0.20)');
+  _dMid.addColorStop(1,   'rgba(201,148,58,0)');
+  ctx.fillStyle = _dMid;
+  ctx.beginPath();
+  ctx.arc(cx, cy, _dR * 2.8, 0, Math.PI*2);
+  ctx.fill();
+
+  // white core
+  var _dCore = ctx.createRadialGradient(cx, cy, 0, cx, cy, _dR * 1.2);
+  _dCore.addColorStop(0,    'rgba(255,255,255,1.0)');
+  _dCore.addColorStop(0.45, 'rgba(255,252,230,0.85)');
+  _dCore.addColorStop(0.8,  'rgba(230,182,88,0.4)');
+  _dCore.addColorStop(1,    'rgba(201,148,58,0)');
+  ctx.fillStyle = _dCore;
+  ctx.beginPath();
+  ctx.arc(cx, cy, _dR, 0, Math.PI*2);
+  ctx.fill();
+
+  // 4 primary cross rays
+  var _rl = _dR * 4.0;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.65)';
+  ctx.lineWidth = Math.max(0.5, sizeBoost * 0.8);
+  ctx.globalAlpha = 0.75;
+  ctx.beginPath(); ctx.moveTo(cx-_rl,cy); ctx.lineTo(cx+_rl,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx,cy-_rl); ctx.lineTo(cx,cy+_rl); ctx.stroke();
+  ctx.restore();
+
+  // 4 diagonal rays — softer, shorter
+  var _rd = _rl * 0.55;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+  ctx.lineWidth = Math.max(0.4, sizeBoost * 0.5);
+  ctx.globalAlpha = 0.45;
+  [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(function(d){
+    ctx.beginPath();
+    ctx.moveTo(cx + d[0]*_rd, cy + d[1]*_rd);
+    ctx.lineTo(cx - d[0]*_rd, cy - d[1]*_rd);
+    ctx.stroke();
+  });
+  ctx.restore();
+
+  // tiny solid white center dot
+  ctx.globalAlpha = 1;
+  ctx.fillStyle = 'rgba(255,255,255,1.0)';
+  ctx.beginPath();
+  ctx.arc(cx, cy, _dR * 0.26, 0, Math.PI*2);
+  ctx.fill();
+
   ctx.restore();
 }
 
@@ -3782,10 +3869,29 @@ function startKnotRotation(canvas, entries, monthIndex){
 
   // Option A layering — layers interlaced through rotation, alphas raised so
   // mid and dom colors breathe through the outer silhouette.
+  //
+  // layerColors — three DISTINCT emotion colors per layer so the knot
+  // reads as a real emotional chord (same pattern the monthly ceremony uses).
+  // outer = top-4 blend color, middle = #2 emotion, inner = #3 emotion (falls
+  // back up the chain when fewer than 3 emotions exist in the month).
+  var _topEmos = Object.keys(blend.full._emoCounts||{}).sort(function(a,b){
+    return (blend.full._emoCounts[b]||0) - (blend.full._emoCounts[a]||0);
+  });
+  function _emoColor(emo){ return (KNOT_PARAMS[emo]||KNOT_FALLBACK).color; }
+  var layerColors = [
+    blend.full.color,
+    _topEmos[1] ? _emoColor(_topEmos[1]) : blend.mid.color,
+    _topEmos[2] ? _emoColor(_topEmos[2]) : (_topEmos[1] ? _emoColor(_topEmos[1]) : blend.dom.color)
+  ];
+
+  // glowRgb for the center diamond bloom — derived from the outer-blend color
+  var _ch = blend.full.color.replace('#','');
+  var glowRgb = parseInt(_ch.slice(0,2),16)+','+parseInt(_ch.slice(2,4),16)+','+parseInt(_ch.slice(4,6),16);
+
   var rotLayers = [
-    { params: blend.full, rMult: 0.95, alpha: 1.00, layerOff: 0.00 },
-    { params: blend.mid,  rMult: 0.80, alpha: 0.75, layerOff: Math.PI/12 },
-    { params: blend.dom,  rMult: 0.65, alpha: 0.55, layerOff: Math.PI/6  },
+    { params: blend.full, rMult: 0.95, alpha: 1.00, layerOff: 0.00,       color: layerColors[0] },
+    { params: blend.mid,  rMult: 0.80, alpha: 0.75, layerOff: Math.PI/12, color: layerColors[1] },
+    { params: blend.dom,  rMult: 0.65, alpha: 0.55, layerOff: Math.PI/6,  color: layerColors[2] },
   ];
 
   function drawFrame(){
@@ -3834,18 +3940,89 @@ function startKnotRotation(canvas, entries, monthIndex){
       var strokeMult = layerIdx === 0 ? 1.15
                     : layerIdx === 1 ? 0.90
                     : 0.55;
+      // Use the layer's explicit color (outer=blend, mid=top-2 blend, inner=dom/#3)
+      // so all three emotion identities breathe through the composite.
+      var lc = L.color || p.color;
       ctx.globalAlpha = L.alpha * 0.04;
-      ctx.fillStyle = p.color;
+      ctx.fillStyle = lc;
       ctx.fill();
       ctx.globalAlpha = L.alpha;
-      ctx.strokeStyle = p.color;
+      ctx.strokeStyle = lc;
       ctx.lineWidth = p.strokeW * strokeMult * sizeBoost;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.stroke();
     });
 
-    // (center spark removed — filled inner dot is the centerpiece now)
+    // ── center diamond (compact version of the monthly-ceremony centerpiece)
+    // 8-point star (4 primary rays + 4 diagonal shorter) + white core.
+    // Gentle 2s heartbeat pulse, no drifting particles (those are reserved
+    // for the ceremony itself to avoid visual noise on the portrait tab).
+    var _dt = Date.now();
+    var _beat = 1 + 0.10 * Math.sin(_dt / 1000 * Math.PI);
+    var _dR = Math.max(2.5, R * 0.055) * _beat;
+
+    // outer bloom
+    var _dBloom = ctx.createRadialGradient(cx, cy, 0, cx, cy, _dR * 6);
+    _dBloom.addColorStop(0,   'rgba('+glowRgb+',0.16)');
+    _dBloom.addColorStop(0.4, 'rgba('+glowRgb+',0.06)');
+    _dBloom.addColorStop(1,   'rgba(0,0,0,0)');
+    ctx.fillStyle = _dBloom;
+    ctx.beginPath();
+    ctx.arc(cx, cy, _dR * 6, 0, Math.PI*2);
+    ctx.fill();
+
+    // mid glow
+    var _dMid = ctx.createRadialGradient(cx, cy, 0, cx, cy, _dR * 3);
+    _dMid.addColorStop(0,   'rgba(255,252,230,0.50)');
+    _dMid.addColorStop(0.45,'rgba(230,182,88,0.25)');
+    _dMid.addColorStop(1,   'rgba(201,148,58,0)');
+    ctx.fillStyle = _dMid;
+    ctx.beginPath();
+    ctx.arc(cx, cy, _dR * 3, 0, Math.PI*2);
+    ctx.fill();
+
+    // white core
+    var _dCore = ctx.createRadialGradient(cx, cy, 0, cx, cy, _dR * 1.3);
+    _dCore.addColorStop(0,    'rgba(255,255,255,1.0)');
+    _dCore.addColorStop(0.4,  'rgba(255,252,230,0.9)');
+    _dCore.addColorStop(0.75, 'rgba(230,182,88,0.45)');
+    _dCore.addColorStop(1,    'rgba(201,148,58,0)');
+    ctx.fillStyle = _dCore;
+    ctx.beginPath();
+    ctx.arc(cx, cy, _dR, 0, Math.PI*2);
+    ctx.fill();
+
+    // 4 primary cross rays
+    var _rl = _dR * 4.2 * _beat;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.70)';
+    ctx.lineWidth = 0.8;
+    ctx.globalAlpha = 0.8;
+    ctx.beginPath(); ctx.moveTo(cx-_rl,cy); ctx.lineTo(cx+_rl,cy); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx,cy-_rl); ctx.lineTo(cx,cy+_rl); ctx.stroke();
+    ctx.restore();
+
+    // 4 diagonal rays — softer, shorter
+    var _rd = _rl * 0.55;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+    ctx.lineWidth = 0.5;
+    ctx.globalAlpha = 0.45;
+    [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(function(d){
+      ctx.beginPath();
+      ctx.moveTo(cx + d[0]*_rd, cy + d[1]*_rd);
+      ctx.lineTo(cx - d[0]*_rd, cy - d[1]*_rd);
+      ctx.stroke();
+    });
+    ctx.restore();
+
+    // tiny solid white center dot
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = 'rgba(255,255,255,1.0)';
+    ctx.beginPath();
+    ctx.arc(cx, cy, _dR * 0.26, 0, Math.PI*2);
+    ctx.fill();
 
     rotation += SPEED;
     canvas._lastRotation = rotation;
