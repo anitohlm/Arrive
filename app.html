@@ -102,8 +102,8 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .screen.active{opacity:1;pointer-events:auto}
 
 /* ═══ SCREEN 1 — SPLASH (chain) ═════════════════════ */
-#s-splash{background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 400ms var(--ease)}
-#s-splash.dimmed{filter:brightness(.45) blur(2px);cursor:default;transition:filter 800ms var(--ease)}
+#s-splash{background:var(--bg);cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background 400ms var(--ease),filter 800ms var(--ease)}
+#s-splash.dimmed{filter:brightness(.45) blur(2px);cursor:default}
 #s-splash.logged .touch-hint{display:none}
 #s-splash.logged .brand-mark{display:none}
 .home-status{position:absolute;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);text-align:center;opacity:0;pointer-events:none;transition:opacity 600ms var(--ease)}
@@ -115,11 +115,11 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .logged-tap-msg.vis{opacity:.8}
 #splashCanvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
 .day-counter{position:absolute;left:52%;top:22%;transform:translateX(-50%);font-family:'DM Mono',monospace;font-size:10px;color:var(--gold);letter-spacing:.18em;opacity:0;animation:fadeU 800ms ease-out 4.2s forwards;pointer-events:none;white-space:nowrap}
-.touch-hint{position:absolute;left:50%;top:68%;transform:translateX(-50%);font-style:italic;font-weight:300;font-size:13px;color:var(--gold);letter-spacing:.02em;opacity:0;animation:fadeU 800ms ease-out 3s forwards;pointer-events:none;white-space:nowrap}
-.brand-mark{position:absolute;bottom:max(28px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);font-weight:400;font-size:16px;color:var(--gold);letter-spacing:.08em;opacity:0;animation:fadeUFull 1s ease-out 5.5s forwards;pointer-events:none}
+.touch-hint{position:absolute;left:50%;top:68%;transform:translateX(-50%);font-style:italic;font-weight:300;font-size:13px;color:var(--gold);letter-spacing:.02em;opacity:0;animation:fadeU 800ms ease-out 3s forwards;transition:opacity 600ms var(--ease);pointer-events:none;white-space:nowrap}
+.brand-mark{position:absolute;bottom:max(28px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);font-weight:400;font-size:16px;color:var(--gold);letter-spacing:.08em;opacity:0;animation:fadeUFull 1s ease-out 5.5s forwards;transition:opacity 600ms var(--ease);pointer-events:none}
 @keyframes fadeU{from{opacity:0;transform:translateX(-50%) translateY(6px)}to{opacity:.85;transform:translateX(-50%) translateY(0)}}
 @keyframes fadeUFull{from{opacity:0;transform:translateX(-50%) translateY(6px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
-#s-splash.dimmed .touch-hint,#s-splash.dimmed .brand-mark{opacity:0!important;transition:opacity .3s}
+#s-splash.dimmed .touch-hint,#s-splash.dimmed .brand-mark{opacity:0!important}
 
 /* ═══ SCREEN 2 — ARRIVAL (liquid glass on dark) ═════ */
 #s-arrival{background:var(--bg);display:flex;flex-direction:column;align-items:center;padding:48px 12px calc(88px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;overflow-y:auto;overflow-x:hidden;transition:background 400ms var(--ease);position:relative}
@@ -1570,7 +1570,7 @@ const BREATHING_EMOTIONS = new Set([
   'anxious','overwhelmed','heavy','frustrated',
   'heartbroken','restless','hard','foggy','exhausted',
   'nervous','livid','lonely','ashamed',
-  'lost','vulnerable','betrayed','insecure','upset'
+  'lost','vulnerable','betrayed','insecure','upset','yearning'
 ]);
 
 const LIGHT_EMOTIONS = new Set([
@@ -1828,6 +1828,108 @@ const ARRIVAL_HINTS = {
   'moved|peace':     'Being moved is its own kind of peace. Let\u2019s stay with it.',
   'moved|gratitude': 'To be moved is to be grateful for being alive. Let\u2019s honor what touched you.',
   'moved|courage':   'Letting yourself be moved takes courage. You did that.',
+
+  // ── passionate ──
+  'passionate|clarity':   'This fire in you \u2014 let\u2019s see what it\u2019s really about.',
+  'passionate|peace':     'Passion this strong deserves a quiet moment to breathe.',
+  'passionate|gratitude': 'To feel this alive about something is a gift. Let\u2019s hold it.',
+  'passionate|courage':   'Passion asks you to act on it. Let\u2019s begin with why.',
+
+  // ── livid ──
+  'livid|clarity':   'Livid is loud. Let\u2019s find what the noise is really saying.',
+  'livid|peace':     'Burning and looking for quiet. Let\u2019s hear what the fire needs.',
+  'livid|gratitude': 'Anger this real means something matters deeply. Let\u2019s name it.',
+  'livid|courage':   'You showed up with all of this. That takes more than you think.',
+
+  // ── nervous ──
+  'nervous|clarity':   'Something has your nervous system\u2019s attention. Let\u2019s find out what.',
+  'nervous|peace':     'Nervous is just anticipation with no anchor yet. Let\u2019s find one.',
+  'nervous|gratitude': 'Nerves mean you care. That caring is worth something.',
+  'nervous|courage':   'You showed up nervous. That\u2019s the whole definition of courage.',
+
+  // ── lonely ──
+  'lonely|clarity':   'Loneliness is asking for something. Let\u2019s hear what it needs.',
+  'lonely|peace':     'Even alone, you arrived. That quiet presence is enough.',
+  'lonely|gratitude': 'That you still seek connection shows how alive you are.',
+  'lonely|courage':   'Sitting with loneliness without running \u2014 that\u2019s not nothing.',
+
+  // ── ashamed ──
+  'ashamed|clarity':   'Shame is rarely accurate. Let\u2019s look at it slowly.',
+  'ashamed|peace':     'You don\u2019t have to carry this alone. Let\u2019s set it down here.',
+  'ashamed|gratitude': 'The fact that you feel this shows how much you care about who you are.',
+  'ashamed|courage':   'Shame tries to make you hide. You came here instead.',
+
+  // ── certain ──
+  'certain|clarity':   'Certainty is rare. Let\u2019s name exactly what you know.',
+  'certain|peace':     'To be certain is to rest in something solid. Stay a moment.',
+  'certain|gratitude': 'Knowing your own mind is a quiet kind of power. Let\u2019s honor it.',
+  'certain|courage':   'Certainty can ask things of you. Let\u2019s see where it leads.',
+
+  // ── content ──
+  'content|clarity':   'Contentment is easy to overlook. Let\u2019s name what\u2019s here.',
+  'content|peace':     'This is the feeling people spend years chasing. You\u2019re in it.',
+  'content|gratitude': 'Contentment and gratitude live close to each other. Let\u2019s stay.',
+  'content|courage':   'Letting yourself simply be okay \u2014 that takes more than it sounds.',
+
+  // ── focused ──
+  'focused|clarity':   'You\u2019re already sharp. Let\u2019s make sure it\u2019s aimed at the right thing.',
+  'focused|peace':     'Focus like this is a kind of stillness. Let\u2019s not disrupt it.',
+  'focused|gratitude': 'The ability to focus is worth pausing to appreciate.',
+  'focused|courage':   'What you\u2019re focused on is asking something of you. Let\u2019s name it.',
+
+  // ── inspired ──
+  'inspired|clarity':   'Inspiration is fleeting. Let\u2019s catch what it\u2019s pointing at.',
+  'inspired|peace':     'When something lights you up, the world gets quieter. Stay here.',
+  'inspired|gratitude': 'To be genuinely inspired is rare. Let\u2019s honor what sparked it.',
+  'inspired|courage':   'Inspiration without action fades. Let\u2019s see what it\u2019s asking.',
+
+  // ── lost ──
+  'lost|clarity':   'Lost is asking a real question. Let\u2019s try to hear it.',
+  'lost|peace':     'Not knowing where you are is still somewhere. You\u2019re here.',
+  'lost|gratitude': 'The fact that you want to find your way shows you still care.',
+  'lost|courage':   'You showed up even when you don\u2019t know the direction. That counts.',
+
+  // ── relaxed ──
+  'relaxed|clarity':   'From this quieter place, what do you actually see?',
+  'relaxed|peace':     'Relaxed is what peace feels like in the body. Stay.',
+  'relaxed|gratitude': 'This ease is worth noticing. Let\u2019s not let it pass unnamed.',
+  'relaxed|courage':   'Allowing yourself to fully rest \u2014 that\u2019s its own kind of brave.',
+
+  // ── vulnerable ──
+  'vulnerable|clarity':   'Vulnerability opens things. Let\u2019s see what\u2019s underneath.',
+  'vulnerable|peace':     'To be open is to be exactly where healing starts. Stay.',
+  'vulnerable|gratitude': 'That you can still be vulnerable means nothing has closed in you.',
+  'vulnerable|courage':   'You arrived open. Most people don\u2019t. That matters.',
+
+  // ── yearning ──
+  'yearning|clarity':   'Yearning is reaching for something real. Let\u2019s find its name.',
+  'yearning|peace':     'That ache is also a kind of love. Let\u2019s sit with it.',
+  'yearning|gratitude': 'To yearn is to still believe something better is possible.',
+  'yearning|courage':   'Longing this deeply takes a kind of courage. Let\u2019s honor it.',
+
+  // ── betrayed ──
+  'betrayed|clarity':   'Betrayal scrambles everything. Let\u2019s start by naming what happened.',
+  'betrayed|peace':     'You don\u2019t have to forgive right now. You just have to breathe.',
+  'betrayed|gratitude': 'That this hurt you means you trusted. That trust was real.',
+  'betrayed|courage':   'You didn\u2019t run from what happened. You showed up to face it.',
+
+  // ── bored ──
+  'bored|clarity':   'Boredom is often restlessness with no target yet. Let\u2019s find one.',
+  'bored|peace':     'There\u2019s something almost honest about boredom. Let\u2019s sit in it.',
+  'bored|gratitude': 'Even an empty day means you\u2019re still here. That\u2019s worth something.',
+  'bored|courage':   'Staying present when nothing pulls you \u2014 that\u2019s harder than it looks.',
+
+  // ── insecure ──
+  'insecure|clarity':   'Insecurity is pointing at something. Let\u2019s look at it without flinching.',
+  'insecure|peace':     'You don\u2019t have to be certain of yourself to belong here.',
+  'insecure|gratitude': 'The fact that you want to grow shows something right about you.',
+  'insecure|courage':   'You arrived doubting yourself and came anyway. That\u2019s the whole thing.',
+
+  // ── upset ──
+  'upset|clarity':   'Upset means something matters. Let\u2019s find out what.',
+  'upset|peace':     'You don\u2019t have to resolve this right now. Just let it settle.',
+  'upset|gratitude': 'Even when things go wrong, you came here to process it. That\u2019s care.',
+  'upset|courage':   'Staying with what upset you instead of pushing it away \u2014 that\u2019s brave.',
 };
 const BIRTHDAY_HINTS = {
   calm:'Today the chain marks a year of you. Arrive gently.',
@@ -2211,7 +2313,7 @@ var PORTRAIT_WORDS = {
   lonely:'solitude', ashamed:'hiding',
   certain:'clarity', content:'enough', focused:'aim',
   inspired:'spark', lost:'drift', relaxed:'ease',
-  vulnerable:'opening', yearning:'reaching', betrayed:'breach',
+  vulnerable:'unguarded', yearning:'reaching', betrayed:'breach',
   bored:'flatness', insecure:'wobble', upset:'unsettled'
 };
 var PORTRAIT_MESSAGES = {
@@ -8067,7 +8169,7 @@ $('leaveConfirm').addEventListener('click',()=>{
     setActiveTab(target);
     if(target==='s-splash') $('s-splash').classList.remove('dimmed');
   } else {
-    go('s-journal','s-arrival');
+    go('s-journal','s-insight');
   }
 });
 $('leaveStay').addEventListener('click',()=>{
@@ -10242,8 +10344,8 @@ if (typeof window !== 'undefined') {
     var emoWeights = [0,0,0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,3,3];
 
     var today = new Date();
-    var start = new Date(year, 0, 1); // Jan 1 of target year
-    var daysInYear = ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 366 : 365;
+    var start = new Date(today); start.setDate(start.getDate() - 364); // rolling window, same as demoAnnual
+    var daysInYear = 365;
 
     var logged = [], entries = [];
     for (var i = 0; i < daysInYear; i++) {
