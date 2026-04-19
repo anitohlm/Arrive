@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>GratitudeChain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- ═══ ONBOARDING (Day 1 only) ═══════════════════════ -->
+<!-- ═══ SCREEN 0A: SIGN IN (OAuth) ═══════════════════ -->
+<div id="s-signin" style="display:none">
+  <img src="assets/logogchain.svg" alt="" class="signin-logo">
+  <h1 class="signin-title">GratitudeChain</h1>
+  <p class="signin-sub">your daily gratitude journey</p>
+  <div class="signin-buttons">
+    <button class="signin-btn signin-google" id="signinGoogle">
+      <svg width="18" height="18" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+      continue with Google
+    </button>
+    <button class="signin-btn signin-apple" id="signinApple">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.54 4.09zM12.03 7.25c-.15-2.23 1.66-4.07 3.74-4.25.29 2.58-2.34 4.5-3.74 4.25z"/></svg>
+      continue with Apple
+    </button>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 0B: PROFILE SETUP (name + birthday) ══ -->
+<div id="s-profile" style="display:none">
+  <img src="assets/logogchain.svg" alt="" class="signin-logo">
+  <h1 class="signin-title">welcome</h1>
+  <p class="signin-sub">tell us a little about you</p>
+  <div class="signin-form" id="profileForm">
+    <input type="text" class="signin-input" id="profileName" placeholder="what should we call you?" autocomplete="name">
+    <label class="signin-label">birthday</label>
+    <input type="date" class="signin-input" id="profileBday">
+    <p class="signin-hint">for your birthstone on the chain, the birthday ceremony, and the age the chain marks each year. this can't be changed later — the chain holds it as the day you began.</p>
+    <button class="signin-submit" id="profileSubmit">continue</button>
+  </div>
+</div>
+
+<div id="s-onboard" style="display:none">
+  <p class="onboard-line" id="ob1">one moment per day.</p>
+  <p class="onboard-line" id="ob2">a chain that grows with you.</p>
+  <p class="onboard-line" id="ob3">the knot is today.</p>
+  <img class="onboard-line" id="ob4" src="assets/logogchain.svg" alt="" style="width:64px;height:64px;object-fit:contain;margin-top:12px;filter:drop-shadow(0 0 16px rgba(201,148,58,0.4))">
+</div>
+
+<!-- ═══ SCREEN 1: SPLASH ═════════════════════════════ -->
+<div class="screen active" id="s-splash">
+  <canvas id="splashCanvas"></canvas>
+  <!-- day counter moved to home-status only -->
+  <p class="day-counter" id="dayCounter" style="display:none"></p>
+  <p class="touch-hint">tap to begin today's knot</p>
+  <p class="brand-mark">GratitudeChain</p>
+  <p class="logged-tap-msg" id="loggedTapMsg">you've already arrived today. come back tomorrow.</p>
+  <div class="home-status">
+    <div class="streak" id="homeStreak">DAY 047 · CHAIN HELD</div>
+    <div class="logged-msg" id="loggedMsg">logged today. the chain grew.</div>
+    <div class="whisper">carry it gently — one day at a time</div>
+  </div>
+<!-- homeStreak is the only visible day counter now -->
+</div>
+
+<!-- ═══ SCREEN 2: ARRIVAL ════════════════════════════ -->
+<div class="screen" id="s-arrival">
+  <div class="arrival" id="arrivalInner">
+    <h2 class="q-title">how do you arrive today?</h2>
+    <div class="emotions" id="emotions">
+
+      <!-- STEP 1 — 4 category cards in a 2×2 grid. One gentle ask at a time. -->
+      <div class="arrival-cats" id="arrivalCats">
+        <button class="arrival-cat" data-group="light">
+          <img class="arrival-cat-icon" src="assets/arrivinglight.svg" alt="">
+          <span class="arrival-cat-name">arriving light</span>
+          <span class="arrival-cat-hint">grateful&nbsp;· tender&nbsp;· hopeful&nbsp;· calm&nbsp;· alive&nbsp;· light&nbsp;· passionate&nbsp;· content&nbsp;· relaxed&nbsp;· focused&nbsp;· inspired&nbsp;· certain</span>
+        </button>
+        <button class="arrival-cat" data-group="between">
+          <img class="arrival-cat-icon" src="assets/inbetween.svg" alt="">
+          <span class="arrival-cat-name">in between</span>
+          <span class="arrival-cat-hint">quiet&nbsp;· numb&nbsp;· foggy&nbsp;· nervous&nbsp;· restless&nbsp;· searching&nbsp;· lost&nbsp;· yearning&nbsp;· bored</span>
+        </button>
+        <button class="arrival-cat" data-group="weight">
+          <img class="arrival-cat-icon" src="assets/carryingweight.svg" alt="">
+          <span class="arrival-cat-name">carrying weight</span>
+          <span class="arrival-cat-hint">hard&nbsp;· heavy&nbsp;· overwhelmed&nbsp;· livid&nbsp;· sad&nbsp;· frustrated&nbsp;· anxious&nbsp;· lonely&nbsp;· upset&nbsp;· insecure</span>
+        </button>
+        <button class="arrival-cat" data-group="hard">
+          <img class="arrival-cat-icon" src="assets/hardtoname.svg" alt="">
+          <span class="arrival-cat-name">hard to name</span>
+          <span class="arrival-cat-hint">heartbroken&nbsp;· disappointed&nbsp;· exhausted&nbsp;· moved&nbsp;· ashamed&nbsp;· vulnerable&nbsp;· betrayed</span>
+        </button>
+      </div>
+
+      <!-- STEP 2 — chosen group's emotions, revealed on category tap. -->
+      <button class="arrival-back" id="arrivalBack" type="button" hidden>← back</button>
+
+      <div class="emo-group" data-group="light" hidden>
+        <p class="emo-group-label">— arriving light —</p>
+        <div class="emo-grid">
+          <button class="chip" data-c="grateful"><img src="assets/grateful-icon.svg" alt=""> grateful</button>
+          <button class="chip" data-c="alive"><img src="assets/alive-icon.svg" alt=""> alive</button>
+          <button class="chip" data-c="tender"><img src="assets/tender-icon.svg" alt=""> tender</button>
+          <button class="chip" data-c="calm"><img src="assets/calm-icon.svg" alt=""> calm</button>
+          <button class="chip" data-c="hopeful"><img src="assets/hopeful-icon.svg" alt=""> hopeful</button>
+          <button class="chip" data-c="light"><img src="assets/light-icon.svg" alt=""> light</button>
+          <button class="chip" data-c="passionate"><img src="assets/passionate.svg" alt=""> passionate</button>
+          <button class="chip" data-c="content"><img src="assets/content.svg" alt=""> content</button>
+          <button class="chip" data-c="relaxed"><img src="assets/relaxed.svg" alt=""> relaxed</button>
+          <button class="chip" data-c="focused"><img src="assets/focused.svg" alt=""> focused</button>
+          <button class="chip" data-c="inspired"><img src="assets/inspired.svg" alt=""> inspired</button>
+          <button class="chip" data-c="certain"><img src="assets/certain.svg" alt=""> certain</button>
+        </div>
+      </div>
+      <div class="emo-group" data-group="between" hidden>
+        <p class="emo-group-label">— in between —</p>
+        <div class="emo-grid">
+          <button class="chip" data-c="numb"><img src="assets/numb-icon.svg" alt=""> numb</button>
+          <button class="chip" data-c="quiet"><img src="assets/quiet-icon.svg" alt=""> quiet</button>
+          <button class="chip" data-c="foggy"><img src="assets/foggy-icon.svg" alt=""> foggy</button>
+          <button class="chip" data-c="restless"><img src="assets/restless-icon.svg" alt=""> restless</button>
+          <button class="chip" data-c="searching"><img src="assets/searching-icon.svg" alt=""> searching</button>
+          <button class="chip" data-c="nervous"><img src="assets/nervous.svg" alt=""> nervous</button>
+          <button class="chip" data-c="lost"><img src="assets/lost.svg" alt=""> lost</button>
+          <button class="chip" data-c="yearning"><img src="assets/yearning.svg" alt=""> yearning</button>
+          <button class="chip" data-c="bored"><img src="assets/bored.svg" alt=""> bored</button>
+        </div>
+      </div>
+      <div class="emo-group" data-group="weight" hidden>
+        <p class="emo-group-label">— carrying weight —</p>
+        <div class="emo-grid">
+          <button class="chip" data-c="hard"><img src="assets/hard-icon.svg" alt=""> hard</button>
+          <button class="chip" data-c="heavy"><img src="assets/heavy-icon.svg" alt=""> heavy</button>
+          <button class="chip" data-c="overwhelmed"><img src="assets/overwhelmed-icon.svg" alt=""> overwhelmed</button>
+          <button class="chip" data-c="sad"><img src="assets/sad-icon.svg" alt=""> sad</button>
+          <button class="chip" data-c="frustrated"><img src="assets/frustrated-icon.svg" alt=""> frustrated</button>
+          <button class="chip" data-c="anxious"><img src="assets/anxious-icon.svg" alt=""> anxious</button>
+          <button class="chip" data-c="livid"><img src="assets/livid.svg" alt=""> livid</button>
+          <button class="chip" data-c="lonely"><img src="assets/lonely.svg" alt=""> lonely</button>
+          <button class="chip" data-c="upset"><img src="assets/upset.svg" alt=""> upset</button>
+          <button class="chip" data-c="insecure"><img src="assets/insecure.svg" alt=""> insecure</button>
+        </div>
+      </div>
+      <div class="emo-group" data-group="hard" hidden>
+        <p class="emo-group-label">— hard to name —</p>
+        <div class="emo-grid">
+          <button class="chip" data-c="heartbroken"><img src="assets/heartbroken-icon.svg" alt=""> heartbroken</button>
+          <button class="chip" data-c="disappointed"><img src="assets/disappointed-icon.svg" alt=""> disappointed</button>
+          <button class="chip" data-c="exhausted"><img src="assets/exhausted-icon.svg" alt=""> exhausted</button>
+          <button class="chip" data-c="moved"><img src="assets/moved-icon.svg" alt=""> moved</button>
+          <button class="chip" data-c="ashamed"><img src="assets/ashamed.svg" alt=""> ashamed</button>
+          <button class="chip" data-c="vulnerable"><img src="assets/vulnerable.svg" alt=""> vulnerable</button>
+          <button class="chip" data-c="betrayed"><img src="assets/betrayed.svg" alt=""> betrayed</button>
+        </div>
+      </div>
+    </div>
+    <p class="emotion-whisper" id="whisper">tell us how you arrive, even one word</p>
+    <div class="intent-section" id="intentSec">
+      <p class="intent-q">what do you hope to carry with you today?</p>
+      <div class="intent-row">
+        <button class="intent-pill" data-i="clarity">clarity</button>
+        <button class="intent-pill" data-i="peace">peace</button>
+        <button class="intent-pill" data-i="gratitude">gratitude</button>
+        <button class="intent-pill" data-i="courage">courage</button>
+        <span class="skip-link" id="skipIntent">skip</span>
+      </div>
+    </div>
+    <p class="agent-hint" id="arrivalHint"></p>
+    <div class="arrive-footer">
+      <button class="knot-btn arrive-btn" id="arriveBtn">arrive</button>
+      <p class="btn-sub" style="display:none">your entry will be shaped around how you feel</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 2b: BREATHING EXERCISE ════════════════ -->
+<div class="screen" id="s-breathing">
+  <button class="insight-back" id="breathingBack">← back</button>
+  <div class="breathing-wrap">
+    <p class="breathing-label" id="breathingLabel">breathe with me</p>
+    <canvas id="breathingCanvas" class="breathing-canvas"></canvas>
+    <p class="breathing-ai-guide" id="breathingAiGuide"></p>
+    <p class="breathing-instruction" id="breathingInstruction">inhale</p>
+    <p class="breathing-count" id="breathingCount">4</p>
+    <p class="breathing-skip" id="breathingSkip">skip · continue to journal</p>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 3: EMOTION INSIGHT ════════════════════ -->
+<div class="screen" id="s-insight">
+  <button class="insight-back" id="insightBack">← back</button>
+  <div class="insight-emoji" id="insightEmoji">😌</div>
+  <div class="insight-word" id="insightWord">calm</div>
+  <div class="gold-rule" id="insightRule1"></div>
+  <div class="loading-dots" id="loadingDots"><span></span><span></span><span></span></div>
+  <p class="insight-text" id="insightText"></p>
+  <div class="insight-memory" id="insightMemory">
+    <p class="memory-label" id="memoryLabel"></p>
+    <p class="memory-quote" id="memoryQuote"></p>
+  </div>
+  <div class="bridge-rule" id="bridgeRule"></div>
+  <p class="bridge-q" id="bridgeQ">now — what are you grateful for today?</p>
+  <p id="birthdayLine" style="font-family:Fraunces,serif;font-style:italic;font-size:12px;color:var(--gold);opacity:0;text-align:center;margin-top:16px;transition:opacity 600ms var(--ease)"></p>
+  <div class="begin-footer" id="beginFooter">
+    <button class="knot-btn begin-btn" id="beginBtn"><span class="knot-icon"></span>begin writing</button>
+    <p class="btn-sub" style="display:none">your prompt has been shaped around how you feel today</p>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 4: JOURNAL ════════════════════════════ -->
+<div class="screen" id="s-journal">
+  <button class="journal-back" id="journalBack">← back</button>
+  <p class="journal-label" id="journalLabel">shaped for your calm today</p>
+  <div class="prompt-card" id="promptCard">
+    <p class="prompt-label">a prompt for today</p>
+    <p class="prompt-text" id="promptText"></p>
+  </div>
+  <div class="journal-entry">
+    <textarea id="journalArea" placeholder="I notice…"></textarea>
+  </div>
+  <div class="journal-attachments">
+    <div class="attach-preview" id="attachPreview"></div>
+    <div class="attach-buttons">
+      <button class="attach-btn" id="attachPhotoBtn" title="Add photo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        <span>photo</span>
+      </button>
+      <button class="attach-btn" id="attachVoiceBtn" title="Record voice">
+        <span class="rec-dot"></span>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+        <span class="rec-timer" id="recTimer">voice</span>
+      </button>
+    </div>
+    <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none">
+  </div>
+  <div class="journal-footer">
+    <span class="journal-count" id="journalCount">0 / 500</span>
+    <button class="knot-btn journal-submit" id="journalSubmit"><span class="knot-icon"></span>the chain grows</button>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 4B: POST-JOURNAL INSIGHTS ═══════════════ -->
+<div class="screen" id="s-post-insight">
+  <button class="post-insight-back" id="postInsightBack">← edit entry</button>
+  <div class="post-insight-wrap">
+    <img class="post-insight-icon" id="postInsightIcon" src="" alt="">
+    <p class="post-insight-emo" id="postInsightEmo"></p>
+    <div class="post-insight-rule"></div>
+    <p class="post-insight-entry" id="postInsightEntry"></p>
+    <div class="post-insight-rule"></div>
+    <div class="post-insight-ai-wrap">
+      <span class="ai-loading-dot" id="aiLoadingDot"></span>
+      <p class="post-insight-ai" id="postInsightAi"></p>
+    </div>
+    <button class="knot-btn post-insight-btn" id="postInsightBtn"><span class="knot-icon"></span>carry it forward</button>
+  </div>
+</div>
+
+
+<!-- ═══ SCREEN: MILESTONE CELEBRATION ═════════════════ -->
+<div class="screen" id="s-milestone">
+  <canvas id="msCanvas"></canvas>
+  <div class="ms-overlay">
+    <div class="ms-number" id="msNumber">7</div>
+    <div class="ms-days" id="msDays">days</div>
+  </div>
+  <div class="ms-bottom">
+    <p class="ms-whisper" id="msWhisper">one week of light</p>
+    <p class="ms-insight" id="msInsight"></p>
+    <p class="ms-tap" id="msTap">tap to continue</p>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 6: HELD (today's insights + streak) ═══ -->
+<div class="screen placeholder-screen" id="s-held">
+  <div class="ph-wrap" style="gap:0">
+
+    <!-- Tab toggle -->
+    <div class="held-tabs" id="heldTabs">
+      <button class="held-tab active" id="heldTabToday" onclick="setHeldTab('today')">held</button>
+      <button class="held-tab" id="heldTabAlongside" onclick="setHeldTab('alongside')">alongside</button>
+    </div>
+
+    <!-- TAB 1: held -->
+    <div id="heldToday" style="width:100%;display:flex;flex-direction:column">
+      <p class="ph-day" id="heldDay">DAY 000</p>
+      <h2 class="ph-title">held</h2>
+      <div class="ph-card">
+        <p class="ph-entry empty" id="heldEntry">your first entry will rest here.</p>
+        <p class="ph-emo-tag" id="heldEmo"></p>
+      </div>
+      <p class="ph-insight empty" id="heldInsight">the chain is waiting to begin.</p>
+      <div class="ph-stats" style="justify-content:center;align-items:baseline;gap:6px;flex-wrap:wrap">
+        <span class="ph-stat-num" id="heldMornings" style="font-size:28px">0</span>
+        <span class="ph-stat-lbl" style="letter-spacing:0.12em">mornings</span>
+        <span class="ph-stat-lbl" style="opacity:0.3;margin:0 4px">·</span>
+        <span class="ph-stat-lbl" id="heldMonthContext" style="letter-spacing:0.1em">this april</span>
+      </div>
+      <p class="held-whisper">the thread holds. so do you.</p>
+    </div>
+
+    <!-- TAB 2: alongside -->
+    <div id="heldAlongside" style="width:100%;display:none;flex-direction:column;gap:0">
+
+      <!-- Philosophy (first-time only) -->
+      <div id="alongsidePhilosophy" style="display:none;text-align:center;padding:16px 8px">
+        <p style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:16px;color:rgba(245,237,224,0.75);line-height:1.85;margin:0 auto 16px;max-width:280px">
+          your practice is yours alone.<br>always.
+        </p>
+        <p style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px;color:rgba(245,237,224,0.4);line-height:1.85;margin:0 auto 16px;max-width:280px">
+          but some people choose to walk<br>with someone —<br>not sharing their words,<br>just their presence.
+        </p>
+        <p style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px;color:rgba(245,237,224,0.4);line-height:1.85;margin:0 auto 40px;max-width:280px">
+          they will see that you showed up.<br>nothing more.<br><br>up to three people.
+        </p>
+        <button class="knot-btn" id="philosLinkBtn" style="margin-bottom:20px">
+          <span class="knot-icon"></span>link someone
+        </button>
+        <br>
+        <button id="philosLaterBtn" style="background:none;border:none;font-family:'Fraunces',serif;font-style:italic;font-size:12px;color:rgba(245,237,224,0.2);cursor:pointer;padding:8px">maybe later</button>
+      </div>
+
+      <!-- Active state -->
+      <div id="alongsideActive" style="display:none;width:100%">
+        <p style="font-family:'DM Mono',monospace;font-size:8px;letter-spacing:0.18em;color:rgba(201,148,58,0.3);text-transform:uppercase;margin:0 0 20px">walking alongside</p>
+
+        <div id="witnessCards"></div>
+
+        <button class="link-add-btn" id="linkAddBtn" style="display:none">+ link someone</button>
+
+        <div style="width:100%;height:1px;background:linear-gradient(90deg,transparent,rgba(201,148,58,0.1),transparent);margin:28px 0"></div>
+
+        <p style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:13px;color:rgba(245,237,224,0.3);margin:0 0 14px">have a code?</p>
+        <div style="display:flex;gap:10px;width:100%">
+          <input id="acceptCodeInput" placeholder="tender · gold · 47" style="flex:1;padding:12px 16px;background:var(--glass);border:1px solid var(--glass-border);border-radius:12px;font-family:'Fraunces',serif;font-style:italic;font-size:13px;color:var(--text);outline:none;transition:border-color 200ms;min-width:0">
+          <button id="acceptCodeBtn" style="background:rgba(201,148,58,0.08);border:1px solid rgba(201,148,58,0.2);border-radius:12px;padding:12px 16px;font-family:'Fraunces',serif;font-style:italic;font-size:12px;color:rgba(201,148,58,0.5);cursor:pointer;white-space:nowrap;transition:all 200ms ease">accept</button>
+        </div>
+        <p id="acceptCodeMsg" style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;color:rgba(201,148,58,0.4);margin:10px 0 0;min-height:16px"></p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══ SCREEN 7: MEMORIES ═══════════════════════════ -->
+<div class="screen placeholder-screen" id="s-memories" style="justify-content:flex-start;padding-top:max(56px,env(safe-area-inset-top))">
+  <div class="ph-wrap">
+    <h2 class="ph-title" style="text-align:center">memories</h2>
+
+    <!-- SEARCH BAR -->
+    <label class="mem-search" id="memSearch">
+      <svg class="mem-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input type="text" id="memSearchInput" placeholder="search your chain…" autocomplete="off">
+      <button class="mem-search-clear" id="memSearchClear" aria-label="clear" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </label>
+
+    <!-- FILTER CHIPS — horizontal scroll -->
+    <div class="mem-chips" id="memChips">
+      <button class="mem-chip active" data-filter="all">all</button>
+      <button class="mem-chip" data-filter="mood">by mood</button>
+      <button class="mem-chip" data-filter="person">by person</button>
+      <button class="mem-chip" data-filter="month">by month</button>
+      <button class="mem-chip" data-filter="photos">with photos</button>
+    </div>
+
+    <!-- ACTIVE FILTER PILLS — only shown when a filter is set -->
+    <div class="mem-active-filters" id="memActiveFilters" hidden></div>
+
+    <!-- ON THIS DAY — only shown if there are date-matches -->
+    <div class="mem-on-this-day" id="memOnThisDay" hidden>
+      <p class="mem-section-label">on this day</p>
+      <div class="mem-otd-row" id="memOtdRow"></div>
+    </div>
+
+    <div class="mem-results-label" id="memResultsLabel" hidden>your recent entries</div>
+    <div class="mem-results" id="memResults"></div>
+
+    <div class="memories-empty" id="memoriesEmpty" style="text-align:center;padding:40px 20px">
+      <p style="font-style:italic;font-weight:300;font-size:14px;color:var(--text-muted);line-height:1.7">your entries will live here —<br>start your first one today.</p>
+    </div>
+
+    <!-- FILTER PICKER SHEET (mood / person / month) -->
+    <div class="mem-picker-sheet" id="memPickerSheet" hidden>
+      <div class="mem-picker-card">
+        <p class="mem-picker-sub" id="memPickerSub">filter</p>
+        <p class="mem-picker-title" id="memPickerTitle">by mood</p>
+        <div class="mem-picker-list" id="memPickerList"></div>
+        <button class="mem-picker-close" id="memPickerClose">close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SCREEN 8: PORTRAIT — two-tab redesign ═══════ -->
+<div class="screen placeholder-screen" id="s-portrait">
+  <div class="ph-wrap">
+    <!-- pill toggle -->
+    <div class="portrait-tabs" id="portraitTabs">
+      <button class="portrait-tab active" data-view="month">your month</button>
+      <button class="portrait-tab" data-view="year">your year</button>
+    </div>
+
+    <!-- TAB 1: YOUR MONTH -->
+    <div class="portrait-view active" id="portraitMonthView">
+      <canvas id="portraitKnotCanvas" width="520" height="520"></canvas>
+      <p class="portrait-month-label" id="portraitMonth">—</p>
+      <p class="portrait-word" id="portraitWord"></p>
+      <p class="portrait-msg" id="portraitMessage"></p>
+      <div class="portrait-divider"></div>
+      <p class="portrait-stats" id="portraitStats"></p>
+      <p class="portrait-stats-sub" id="portraitStatsSub"></p>
+      <button class="portrait-share-btn" id="shareMonthBtn">share this portrait</button>
+    </div>
+
+    <!-- TAB 2: YOUR YEAR -->
+    <div class="portrait-view" id="portraitYearView">
+      <p class="portrait-year-label" id="portraitYearLabel">—</p>
+      <div class="portrait-year-grid" id="portraitGrid"></div>
+      <p class="portrait-year-hint">tap a knot to unravel it</p>
+      <button class="portrait-share-btn" id="shareYearBtn">share your year</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MONTH DETAIL SHEET (for year-grid taps) ═══ -->
+<div class="leave-sheet month-sheet" id="monthSheet">
+  <div class="leave-card">
+    <div class="month-sheet-header">
+      <canvas id="monthSheetKnot" width="80" height="80"></canvas>
+      <div class="month-sheet-head-text">
+        <p class="month-sheet-title" id="monthSheetTitle">—</p>
+        <p class="month-sheet-word" id="monthSheetWord"></p>
+      </div>
+    </div>
+    <div class="month-sheet-entries" id="monthSheetEntries"></div>
+    <button class="leave-btn leave-btn-stay" id="monthSheetClose" style="width:100%">close</button>
+  </div>
+</div>
+
+<!-- ═══ SCREEN: UNFOLD (time capsules) ═══════════════ -->
+<div class="screen" id="s-unfold">
+
+  <!-- EMPTY STATE — shown when no capsules exist at all -->
+  <div id="unfoldEmpty" class="unfold-empty" hidden>
+    <div class="unfold-empty-icon">
+      <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg" width="72" height="72">
+        <rect x="8" y="14" width="48" height="36" rx="4" stroke="#c9943a" stroke-width="1.5" fill="none" opacity="0.4"/>
+        <path d="M8 22l24 16 24-16" stroke="#c9943a" stroke-width="1.5" stroke-linecap="round" fill="none" opacity="0.6"/>
+        <circle cx="32" cy="32" r="7" stroke="#c9943a" stroke-width="1.5" fill="none" opacity="0.35"/>
+        <circle cx="32" cy="32" r="3" fill="#c9943a" opacity="0.25"/>
+      </svg>
+    </div>
+    <h2 class="unfold-empty-title">your future self is waiting</h2>
+    <p class="unfold-empty-body">write something now for them to find later.</p>
+    <button class="unfold-fab-inline" id="unfoldWriteFirstBtn">+ write your first capsule</button>
+  </div>
+
+  <!-- MAIN CONTENT — shown when at least one capsule exists -->
+  <div id="unfoldContent" class="unfold-content" hidden>
+
+    <!-- ① READY TO OPEN — conditional, only when a capsule has matured -->
+    <section id="unfoldReady" class="unfold-section" hidden>
+      <p class="unfold-section-label">ready to open</p>
+      <div id="unfoldReadyList" class="unfold-ready-list"></div>
+    </section>
+
+    <!-- ② SEALED — active capsules not yet unlocked -->
+    <section id="unfoldSealed" class="unfold-section" hidden>
+      <p class="unfold-section-label">sealed</p>
+      <div id="unfoldSealedList" class="unfold-sealed-list"></div>
+    </section>
+
+    <!-- ③ OPENED — archive of read capsules -->
+    <section id="unfoldOpened" class="unfold-section" hidden>
+      <p class="unfold-section-label">opened</p>
+      <div id="unfoldOpenedList" class="unfold-opened-list"></div>
+    </section>
+
+  </div>
+
+  <!-- FLOATING ACTION BUTTON -->
+  <button class="unfold-fab" id="unfoldFab" hidden>+ write to future self</button>
+
+</div>
+
+<!-- ═══ CAPSULE COMPOSER ═══════════════════════════════ -->
+<div id="capsuleComposer" class="capsule-composer" hidden>
+
+  <!-- Step 1: The Message -->
+  <div id="capsuleStep1" class="capsule-step">
+    <div class="capsule-step-header">
+      <button class="capsule-back" id="capsuleBack1" aria-label="close">✕</button>
+      <p class="capsule-step-eyebrow">step 1 of 3</p>
+    </div>
+    <div class="capsule-step-body">
+      <h2 class="capsule-step-title">what do you want your<br>future self to know?</h2>
+      <textarea id="capsuleMessage" class="capsule-textarea" placeholder="write freely. they'll read it when it's time." maxlength="1000"></textarea>
+      <div class="capsule-char-row" id="capsuleCharRow" hidden>
+        <span id="capsuleCharCount">0</span><span class="capsule-char-limit"> / 1000</span>
+      </div>
+    </div>
+    <div class="capsule-step-footer">
+      <button class="capsule-next" id="capsuleNext1" disabled>next</button>
+    </div>
+  </div>
+
+  <!-- Step 2: Unlock Date -->
+  <div id="capsuleStep2" class="capsule-step" hidden>
+    <div class="capsule-step-header">
+      <button class="capsule-back" id="capsuleBack2" aria-label="back">←</button>
+      <p class="capsule-step-eyebrow">step 2 of 3</p>
+    </div>
+    <div class="capsule-step-body">
+      <h2 class="capsule-step-title">when should it unlock?</h2>
+      <div class="capsule-date-chips" id="capsuleDateChips">
+        <button class="capsule-date-chip" data-months="1">in 1 month</button>
+        <button class="capsule-date-chip" data-months="3">in 3 months</button>
+        <button class="capsule-date-chip" data-months="6">in 6 months</button>
+        <button class="capsule-date-chip" data-months="12">in 1 year</button>
+        <button class="capsule-date-chip" data-months="0">custom date</button>
+      </div>
+      <input type="date" id="capsuleCustomDate" class="capsule-date-input" hidden>
+      <p class="capsule-date-hint">this is when your future self gets to read it</p>
+    </div>
+    <div class="capsule-step-footer">
+      <button class="capsule-next" id="capsuleNext2" disabled>next</button>
+    </div>
+  </div>
+
+  <!-- Step 3: Mood Trigger (optional) -->
+  <div id="capsuleStep3" class="capsule-step" hidden>
+    <div class="capsule-step-header">
+      <button class="capsule-back" id="capsuleBack3" aria-label="back">←</button>
+      <p class="capsule-step-eyebrow">step 3 of 3 · optional</p>
+    </div>
+    <div class="capsule-step-body">
+      <h2 class="capsule-step-title">should it wait for<br>a specific feeling?</h2>
+      <p class="capsule-mood-hint">your capsule can unlock only when you log this feeling on or after the date. a gift for your hardest or happiest days.</p>
+      <div class="capsule-mood-chips" id="capsuleMoodChips">
+        <!-- populated by JS -->
+      </div>
+    </div>
+    <div class="capsule-step-footer" style="flex-direction:column;gap:10px">
+      <button class="capsule-next" id="capsuleNext3">seal it</button>
+      <button class="capsule-skip" id="capsuleSkip3">skip · seal now</button>
+    </div>
+  </div>
+
+  <!-- Step 4: Confirmation -->
+  <div id="capsuleStep4" class="capsule-step" hidden>
+    <div class="capsule-step-body capsule-confirm-body">
+      <div class="capsule-seal-anim" id="capsuleSealAnim">
+        <svg viewBox="0 0 80 80" width="80" height="80" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="40" cy="40" r="36" stroke="#c9943a" stroke-width="1.5" opacity="0.4"/>
+          <circle cx="40" cy="40" r="24" stroke="#c9943a" stroke-width="1.5" opacity="0.6"/>
+          <circle cx="40" cy="40" r="10" fill="#c9943a" fill-opacity="0.25" stroke="#c9943a" stroke-width="1"/>
+        </svg>
+      </div>
+      <h2 class="capsule-step-title" id="capsuleConfirmTitle">sealed.</h2>
+      <p class="capsule-confirm-sub" id="capsuleConfirmSub"></p>
+    </div>
+    <div class="capsule-step-footer">
+      <button class="capsule-done" id="capsuleDoneBtn">done</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ BOTTOM NAV ═══════════════════════════════════ -->
+<nav class="bottom-nav dark" id="bottomNav">
+  <button class="nav-tab" data-screen="s-unfold">
+    <span class="icon"><img src="assets/unfold-icon.svg" alt="" style="width:20px;height:20px;object-fit:contain"></span><span class="label">unfold</span>
+  </button>
+  <button class="nav-tab" data-screen="s-held">
+    <span class="icon"><img src="assets/held.svg" alt="" style="width:20px;height:20px;object-fit:contain"></span><span class="label">held</span>
+  </button>
+  <button class="nav-tab active" data-screen="s-splash">
+    <span class="icon"><img src="assets/logogchain.svg" alt="" style="width:20px;height:20px;object-fit:contain"></span><span class="label">chain</span>
+  </button>
+  <button class="nav-tab" data-screen="s-memories">
+    <span class="icon"><img src="assets/memories.svg" alt="" style="width:20px;height:20px;object-fit:contain"></span><span class="label">memories</span>
+  </button>
+  <button class="nav-tab" data-screen="s-portrait">
+    <span class="icon">◎</span><span class="label">weave</span>
+  </button>
+</nav>
+
+<div class="leave-sheet" id="leaveSheet">
+  <div class="leave-card">
+    <p class="leave-title">leave without saving?</p>
+    <p class="leave-sub">your words will be lost.</p>
+    <div class="leave-buttons">
+      <button class="leave-btn leave-btn-go" id="leaveConfirm">yes, leave</button>
+      <button class="leave-btn leave-btn-stay" id="leaveStay">stay & finish</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SETTINGS BUTTON (fixed, top-right of every screen) ═══ -->
+<button class="settings-btn" id="settingsBtn" aria-label="settings">
+  <img src="assets/settings.svg" alt="">
+</button>
+
+<!-- ═══ SETTINGS SCREEN (slide-in from right) ═══ -->
+<div id="s-settings">
+  <button class="settings-back" id="settingsBack">← back</button>
+  <h2 class="settings-title">settings</h2>
+
+  <!-- ACCOUNT -->
+  <div class="settings-section">
+    <div class="settings-label">account</div>
+    <div class="settings-card">
+      <div class="settings-row tappable" id="settingsNameRow">
+        <span class="settings-row-label">name</span>
+        <span class="settings-row-value" id="settingsNameValue">—</span>
+      </div>
+      <div class="settings-row" id="settingsBirthdayRow">
+        <span class="settings-row-label">birthday</span>
+        <span class="settings-row-value" id="settingsBirthdayValue">—</span>
+      </div>
+      <p class="settings-hint">your birthstone on the chain, the birthday ceremony, and the age the chain marks each year — set once, kept forever.</p>
+      <div class="settings-row">
+        <span class="settings-row-label">email</span>
+        <span class="settings-row-value" id="settingsEmailValue">—</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- NOTIFICATIONS -->
+  <div class="settings-section">
+    <div class="settings-label">notifications</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <span class="settings-row-label">daily reminder</span>
+        <div class="settings-toggle" id="settingsNotifToggle" role="switch"></div>
+      </div>
+      <div class="settings-row hidden" id="settingsNotifTimeRow">
+        <span class="settings-row-label">at</span>
+        <input type="time" class="settings-time" id="settingsNotifTime" value="08:00">
+      </div>
+      <div class="settings-row">
+        <span class="settings-row-label">grace day nudge</span>
+        <div class="settings-toggle" id="settingsGraceToggle" role="switch"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CHAIN -->
+  <div class="settings-section">
+    <div class="settings-label">chain</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <span class="settings-row-label">start date</span>
+        <span class="settings-row-value" id="settingsStartDate">—</span>
+      </div>
+      <div class="settings-row">
+        <span class="settings-row-label">grace days used</span>
+        <span class="settings-row-value" id="settingsGraceUsed">0</span>
+      </div>
+      <div class="settings-row">
+        <span class="settings-row-label">total entries</span>
+        <span class="settings-row-value" id="settingsTotalEntries">0</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA -->
+  <div class="settings-section">
+    <div class="settings-label">data</div>
+    <div class="settings-card" style="padding:12px 16px">
+      <button class="settings-action gold" id="settingsExportBtn">export entries</button>
+      <button class="settings-action danger" id="settingsClearBtn">clear all data</button>
+      <p style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:11px;color:var(--muted);opacity:0.6;margin:10px 0 2px;text-align:center;line-height:1.6">your entries never leave this device.</p>
+    </div>
+  </div>
+
+  <!-- ABOUT -->
+  <div class="settings-section">
+    <div class="settings-label">about</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <span class="settings-row-label">version</span>
+        <span class="settings-row-value">v1.0</span>
+      </div>
+      <div class="settings-row tappable">
+        <span class="settings-row-label">leave a token</span>
+        <span class="settings-row-value">✦</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- SIGN OUT -->
+  <div class="settings-section" style="margin-bottom:8px">
+    <p class="settings-signout" id="settingsSignOutBtn">sign out</p>
+  </div>
+</div>
+
+<!-- ═══ EDIT NAME SHEET ═══ -->
+<div class="leave-sheet" id="editNameSheet">
+  <div class="leave-card">
+    <p class="leave-title">your name</p>
+    <p class="leave-sub">how the chain greets you.</p>
+    <input type="text" class="edit-name-input" id="editNameInput" maxlength="40" placeholder="your name">
+    <div class="leave-buttons">
+      <button class="leave-btn leave-btn-go" id="editNameCancel">cancel</button>
+      <button class="leave-btn leave-btn-stay" id="editNameSave">save</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ CLEAR DATA CONFIRMATION SHEET ═══ -->
+<div class="leave-sheet" id="clearDataSheet">
+  <div class="leave-card">
+    <p class="leave-title">clear everything?</p>
+    <p class="leave-sub">every knot, every word — gone.<br>this cannot be undone.</p>
+    <div class="leave-buttons">
+      <button class="leave-btn leave-btn-danger" id="clearDataConfirm">yes, clear</button>
+      <button class="leave-btn leave-btn-stay" id="clearDataCancel">it's okay, keep it</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ SIGN OUT CONFIRMATION SHEET ═══ -->
+<div class="leave-sheet" id="signOutSheet">
+  <div class="leave-card">
+    <p class="leave-title">sign out?</p>
+    <p class="leave-sub">your chain stays on this device.</p>
+    <div class="leave-buttons">
+      <button class="leave-btn leave-btn-danger" id="signOutConfirm">yes, sign out</button>
+      <button class="leave-btn leave-btn-stay" id="signOutCancel">stay</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ═══ SCRIPTS (loaded in dependency order) ═══════════ -->
+<script src="js/data.js"></script>
+<script src="js/state.js"></script>
+<script src="js/onboarding.js"></script>
+<script src="js/memories.js"></script>
+<script src="js/streak.js"></script>
+<script src="js/held.js"></script>
+<script src="js/portrait.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/screens.js"></script>
+<script src="js/attachments.js"></script>
+<script src="js/ceremonies.js"></script>
+<script src="js/entry-detail.js"></script>
+<script src="js/capsule.js"></script>
+</body>
+</html>
