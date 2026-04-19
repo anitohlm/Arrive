@@ -4,17 +4,20 @@ const $ = id => document.getElementById(id);
 
 // Backend API base.
 // Priority:
-//   1. localStorage.gc_api_base (override — e.g. 'http://localhost:8766')
-//   2. localhost dev detection → http://localhost:8000
+//   1. localStorage.gc_api_base (override — handy if you swap dev ports)
+//   2. localhost dev detection → http://localhost:8766 (uvicorn dev port)
 //   3. '' (same-origin, used in production)
-// To change port at runtime without editing source:
-//   localStorage.setItem('gc_api_base', 'http://localhost:8766')
+// To change the default, edit DEV_API_BASE below.
+const DEV_API_BASE = 'http://localhost:8766';
 const API_BASE = (function(){
   try{
     var override = localStorage.getItem('gc_api_base');
     if(override) return override;
     if(location.hostname === 'localhost' || location.hostname === '127.0.0.1'){
-      if(location.port && location.port !== '8000') return 'http://localhost:8000';
+      // any local preview port → dev backend port
+      if(location.port && ('http://localhost:' + location.port) !== DEV_API_BASE){
+        return DEV_API_BASE;
+      }
     }
   }catch(e){}
   return '';

@@ -244,7 +244,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 #s-splash.dimmed .touch-hint,#s-splash.dimmed .brand-mark{opacity:0!important}
 
 /* ═══ SCREEN 2 — ARRIVAL (liquid glass on dark) ═════ */
-#s-arrival{background:var(--bg);display:flex;flex-direction:column;align-items:center;padding:48px 12px calc(88px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;overflow-y:auto;overflow-x:hidden;transition:background 400ms var(--ease);position:relative}
+#s-arrival{background:var(--bg);display:flex;flex-direction:column;align-items:center;padding:48px 12px calc(88px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;overflow-y:auto;overflow-x:hidden;transition:background 400ms var(--ease);position:relative;scrollbar-gutter:stable}
 #s-arrival::after{content:'';position:sticky;bottom:0;left:0;right:0;height:60px;background:linear-gradient(0deg,var(--bg) 0%,transparent 100%);pointer-events:none;flex-shrink:0}
 /* .q-dot removed — replaced by top-left back link */
 @keyframes dotP{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.4)}}
@@ -253,7 +253,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .emotions{display:flex;flex-direction:column;gap:0;padding:0;margin-bottom:clamp(4px,1vh,10px);width:100%;overflow:hidden}
 .emo-group-label{font-family:'DM Mono',monospace;font-size:7px;color:var(--gold);letter-spacing:.18em;text-transform:uppercase;opacity:.3;text-align:center;padding:clamp(6px,1.2vh,12px) 0 clamp(4px,.8vh,6px)}
 /* emo-group-rule removed */
-.emo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 0;padding:0;justify-items:center;width:100%}
+.emo-grid{display:grid;grid-template-columns:repeat(3,1fr);row-gap:14px;column-gap:0;padding:0;justify-items:center;width:100%}
 
 /* ─── STEP 1 — 2×2 grid of category cards ──────────────
    Each card has an icon on top, italic serif name, and a mono hint of
@@ -360,14 +360,14 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .chip[data-c="upset"].sel{border-color:#b07040;box-shadow:0 4px 16px -6px rgba(176,112,64,.3);background:rgba(176,112,64,.08)}
 .emotion-whisper{text-align:center;font-style:italic;font-size:11px;color:var(--text-muted);margin-top:-20px;margin-bottom:20px;height:16px;opacity:0;transition:opacity 400ms}
 .emotion-whisper.vis{opacity:1}
-.intent-section{width:100%;opacity:0;transform:translateY(8px);transition:opacity 400ms var(--ease),transform 400ms var(--ease);pointer-events:none;margin-bottom:clamp(8px,1.5vh,18px);display:flex;flex-direction:column;gap:8px}
+.intent-section{width:100%;opacity:0;transform:translateY(8px);transition:opacity 400ms var(--ease),transform 400ms var(--ease);pointer-events:none;margin-bottom:14px;display:flex;flex-direction:column;gap:8px}
 .intent-section.vis{opacity:1;transform:translateY(0);pointer-events:auto}
 .intent-q{text-align:center;font-style:italic;font-size:13px;color:var(--text-muted);margin-bottom:14px}
 .intent-row{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap}
 .intent-pill{padding:7px 14px;border-radius:16px;background:transparent;border:1px solid var(--chip-border);font-family:'DM Sans',sans-serif;font-size:11px;font-weight:400;color:var(--text-muted);cursor:pointer;transition:all 220ms var(--ease)}
 .intent-pill.sel{background:rgba(201,148,58,.1);border-color:var(--gold);color:var(--gold)}
 .skip-link{font-family:'DM Mono',monospace;font-size:9px;color:var(--text-dim);letter-spacing:.08em;cursor:pointer;padding:7px 8px}
-.agent-hint{text-align:center;font-style:italic;font-size:12px;color:var(--gold);line-height:1.5;padding:0 8px;margin-bottom:clamp(8px,1.5vh,18px);min-height:54px;opacity:0;transform:translateY(6px);transition:opacity 400ms var(--ease) 200ms,transform 400ms var(--ease) 200ms}
+.agent-hint{text-align:center;font-style:italic;font-size:12px;color:var(--gold);line-height:1.5;padding:0 8px;margin-bottom:clamp(8px,1.5vh,18px);height:54px;min-height:54px;max-height:54px;overflow:hidden;display:flex;align-items:center;justify-content:center;opacity:0;transform:translateY(6px);transition:opacity 400ms var(--ease) 200ms,transform 400ms var(--ease) 200ms}
 .agent-hint.vis{opacity:.9;transform:translateY(0)}
 .agent-hint::before{content:'';display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--gold);vertical-align:middle;margin-right:8px;opacity:.6}
 .arrive-footer{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:0;right:0;width:100%;max-width:520px;margin:0 auto;padding:8px 24px;z-index:55;background:transparent;text-align:center}
@@ -451,24 +451,130 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .begin-btn:active{transform:scale(.92);filter:drop-shadow(0 0 18px rgba(230,182,88,0.5))}
 
 /* ═══ SCREEN 4 — JOURNAL ════════════════════════════ */
-#s-journal{display:flex;flex-direction:column;padding:max(48px,env(safe-area-inset-top)) 28px 0;max-width:480px;margin:0 auto;overflow-y:auto;overflow-x:hidden}
-.journal-back{position:absolute;top:max(20px,env(safe-area-inset-top));left:20px;font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);opacity:.75;cursor:pointer;padding:6px 12px 6px 8px;background:var(--glass);border:1px solid var(--glass-border);border-radius:20px;z-index:2}
-.journal-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:.14em;text-transform:uppercase;margin-bottom:20px;opacity:.7}
-.prompt-card{padding:24px 24px 24px 28px;border-radius:20px;margin-bottom:24px;position:relative;border-left:3px solid var(--gold)}
-.prompt-card .prompt-label{font-family:'DM Mono',monospace;font-size:9px;color:var(--gold);letter-spacing:.12em;text-transform:uppercase;margin-bottom:12px;opacity:.7}
-.prompt-card .prompt-text{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:22px;line-height:1.5;color:var(--ink)}
-.journal-entry{flex:1;display:flex;flex-direction:column;margin-bottom:16px}
-.journal-entry textarea{flex:1;width:100%;border:none;outline:none;resize:none;background:transparent;font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:15px;line-height:1.8;color:var(--ink);padding:0;min-height:120px}
-.journal-entry textarea::placeholder{color:var(--dim)}
+#s-journal{
+  display:flex;flex-direction:column;
+  padding:max(56px,env(safe-area-inset-top)) 28px 0;
+  max-width:520px;margin:0 auto;
+  height:100%;
+  overflow:hidden;
+}
+.journal-back{
+  position:absolute;top:max(20px,env(safe-area-inset-top));left:20px;
+  font-family:'DM Mono',monospace;font-size:11px;
+  color:var(--muted);opacity:.75;cursor:pointer;
+  padding:6px 12px 6px 8px;
+  background:var(--glass);border:1px solid var(--glass-border);border-radius:20px;
+  z-index:2;transition:all 200ms var(--ease);
+}
+.journal-back:hover{opacity:1;border-color:rgba(201,148,58,0.25)}
+.journal-label{display:none} /* retained class for legacy JS safety */
+
+/* ── Prompt card — softer, narrower accent, tinted by emotion ── */
+.prompt-card{
+  position:relative;
+  padding:18px 20px 18px 22px;
+  border-radius:16px;
+  margin:4px 0 20px;
+  background:rgba(255,255,255,0.015);
+  border:1px solid rgba(201,148,58,0.12);
+  overflow:hidden;
+}
+.prompt-card::before{
+  content:'';position:absolute;left:0;top:14%;bottom:14%;
+  width:1.5px;
+  background:linear-gradient(180deg, transparent 0%, rgba(201,148,58,0.65) 20%, rgba(201,148,58,0.65) 80%, transparent 100%);
+  border-radius:999px;
+}
+.prompt-card .prompt-text{
+  font-family:'Fraunces',serif;font-style:italic;font-weight:300;
+  font-size:17px;line-height:1.55;
+  color:rgba(245,237,224,0.85);
+  letter-spacing:-0.003em;
+  margin:0;
+}
+
+/* thin gold hairline between prompt and the writing surface */
+.prompt-card + .journal-entry::before{
+  content:'';display:block;
+  width:28px;height:1px;
+  margin:4px auto 18px;
+  background:linear-gradient(90deg, transparent, rgba(201,148,58,0.35), transparent);
+}
+
+/* ── Writing surface — flex-grow, generous type, focus feedback ── */
+.journal-entry{
+  flex:1 1 auto;
+  display:flex;flex-direction:column;
+  min-height:0;
+  margin-bottom:10px;
+  position:relative;
+}
+.journal-entry textarea{
+  flex:1;width:100%;height:100%;
+  border:none;outline:none;resize:none;
+  background:transparent;
+  font-family:'Fraunces',serif;font-style:italic;font-weight:300;
+  font-size:17px;line-height:1.8;
+  color:rgba(245,237,224,0.92);
+  letter-spacing:-0.003em;
+  padding:0;
+  min-height:140px;
+  overflow-y:auto;
+  scrollbar-width:thin;
+  scrollbar-color:rgba(201,148,58,0.2) transparent;
+}
+.journal-entry textarea::-webkit-scrollbar{width:4px}
+.journal-entry textarea::-webkit-scrollbar-thumb{background:rgba(201,148,58,0.18);border-radius:2px}
+.journal-entry textarea::placeholder{color:rgba(245,237,224,0.28)}
+/* soft bottom fade hinting scrollable content */
+.journal-entry::after{
+  content:'';position:absolute;left:0;right:0;bottom:0;
+  height:28px;pointer-events:none;
+  background:linear-gradient(0deg, var(--bg) 0%, transparent 100%);
+  opacity:0.6;
+}
 /* journal attachments */
-.journal-attachments{display:flex;flex-direction:column;gap:10px;margin-bottom:16px}
-.attach-buttons{display:flex;gap:12px}
-.attach-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;background:var(--glass);border:1px solid var(--glass-border);border-radius:20px;color:var(--gold);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.04em;cursor:pointer;transition:all 200ms var(--ease)}
-.attach-btn:active{transform:scale(.95)}
-.attach-btn svg{color:var(--gold)}
-.attach-btn.recording{border-color:rgba(220,80,80,.5);background:rgba(220,80,80,.08);color:#dc5050}
+.journal-attachments{
+  display:flex;flex-direction:column;gap:10px;
+  margin-bottom:4px;flex-shrink:0;
+}
+/* attachment preview row — tiny thumbnails above the input bar when present */
+.attach-preview:empty{display:none}
+
+/* attach buttons now live INSIDE .journal-footer as compact icon-pills */
+.attach-buttons{display:flex;gap:8px;align-items:center}
+.attach-btn{
+  display:flex;align-items:center;justify-content:center;gap:0;
+  width:36px;height:36px;padding:0;
+  background:rgba(255,255,255,0.025);
+  border:1px solid rgba(245,237,224,0.08);
+  border-radius:50%;
+  color:rgba(201,148,58,0.7);
+  cursor:pointer;flex-shrink:0;
+  transition:all 200ms var(--ease);
+}
+.attach-btn:hover{border-color:rgba(201,148,58,0.35);color:var(--gold);background:rgba(201,148,58,0.06)}
+.attach-btn:active{transform:scale(.92)}
+.attach-btn svg{width:16px;height:16px;color:inherit}
+.attach-btn span{display:none} /* hide text label, icon only */
+.attach-btn.recording{
+  border-color:rgba(220,80,80,0.55);
+  background:rgba(220,80,80,0.08);
+  color:#dc5050;
+}
 .attach-btn.recording svg{color:#dc5050}
-.attach-btn.recording .rec-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:#dc5050;animation:recPulse 1s ease-in-out infinite}
+.attach-btn.recording .rec-dot{
+  display:inline-block;position:absolute;
+  width:5px;height:5px;border-radius:50%;background:#dc5050;
+  animation:recPulse 1s ease-in-out infinite;
+  transform:translate(10px,-10px);
+}
+.attach-btn.recording span.rec-timer{
+  display:inline-block;position:absolute;bottom:-16px;left:50%;
+  transform:translateX(-50%);
+  font-family:'DM Mono',monospace;font-size:8px;
+  color:#dc5050;white-space:nowrap;letter-spacing:0.04em;
+}
 .attach-btn .rec-dot{display:none}
 .rec-timer{font-family:'DM Mono',monospace;font-size:10px}
 @keyframes recPulse{0%,100%{opacity:1}50%{opacity:.3}}
@@ -478,11 +584,60 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .attach-preview .attach-thumb .remove-attach{position:absolute;top:2px;right:2px;width:18px;height:18px;background:rgba(0,0,0,.6);border:none;border-radius:50%;color:#fff;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center}
 .attach-preview .voice-chip{display:flex;align-items:center;gap:6px;padding:6px 12px;background:var(--glass);border:1px solid var(--glass-border);border-radius:16px;font-family:'DM Mono',monospace;font-size:9px;color:var(--gold)}
 .attach-preview .voice-chip .remove-attach{background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px}
-.journal-footer{display:flex;align-items:center;justify-content:space-between;position:sticky;bottom:0;background:var(--bg);padding:12px 0 max(16px,env(safe-area-inset-bottom));flex-shrink:0}
-.journal-submit{}
-.journal-submit:active{transform:scale(.92);filter:drop-shadow(0 0 18px rgba(230,182,88,0.5))}
-.journal-count{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);opacity:0;transition:opacity 300ms var(--ease)}
-.journal-count.vis{opacity:1}
+/* ── Bottom bar — single clean row: attachments · counter · submit ── */
+.journal-footer{
+  display:flex;align-items:center;gap:12px;
+  position:sticky;bottom:0;
+  background:linear-gradient(180deg, transparent 0%, var(--bg) 24%);
+  padding:14px 0 max(20px, env(safe-area-inset-bottom));
+  flex-shrink:0;
+  border-top:1px solid rgba(245,237,224,0.04);
+  margin-top:8px;
+}
+.journal-count{
+  font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.06em;
+  color:rgba(245,237,224,0.35);
+  opacity:1;transition:opacity 300ms var(--ease), color 300ms var(--ease);
+  flex:1;text-align:center;
+  min-width:0;
+}
+.journal-count.vis{color:rgba(201,148,58,0.55)}
+.journal-count.near-limit{color:rgba(201,148,58,0.85)}
+.journal-count.at-limit{color:#dc5050}
+
+/* submit as a compact inline pill — knot icon + label, warm amber gradient */
+.journal-submit{
+  display:inline-flex !important;
+  flex-direction:row !important;
+  align-items:center;justify-content:center;
+  gap:8px;flex-shrink:0;
+  padding:9px 18px !important;
+  background:rgba(201,148,58,0.10);
+  border:1px solid rgba(201,148,58,0.55) !important;
+  border-radius:999px;
+  font-family:'Fraunces',serif;font-style:italic;font-weight:300;
+  font-size:13px;color:var(--gold) !important;
+  letter-spacing:-0.002em;
+  cursor:pointer;
+  transition:all 220ms var(--ease);
+  filter:none !important;
+}
+.journal-submit:hover{
+  background:rgba(201,148,58,0.18);
+  border-color:var(--gold) !important;
+}
+.journal-submit:active{
+  transform:scale(.96);
+  filter:drop-shadow(0 0 18px rgba(230,182,88,0.4)) !important;
+}
+.journal-submit .knot-icon{
+  width:18px !important;height:18px !important;
+  background-size:contain !important;
+  flex-shrink:0;
+  display:block !important;
+}
+.journal-submit:disabled{opacity:0.35;cursor:not-allowed}
+.journal-submit:disabled:hover{background:rgba(201,148,58,0.10);border-color:rgba(201,148,58,0.55) !important}
 
 /* ═══ SCREEN 5 — POST-SUBMIT: BURST → INSIGHT → SLITHER → REST ══ */
 /* ═══ POST-JOURNAL INSIGHTS SCREEN ═════════════════ */

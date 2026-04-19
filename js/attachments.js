@@ -209,6 +209,26 @@ $('postInsightBtn').addEventListener('click',function(){
   populateMemories();
   populateHeld();
   populatePortrait();
+
+  // ── Best-effort Cosmos write (fire-and-forget) ──
+  // Local save above is source of truth; this mirrors the entry to the backend
+  // so the memory agent, AI Search index, and cross-device sync can use it.
+  // Silent on failure — offline or backend-down never blocks the UI.
+  (function(){
+    try{
+      var userId = localStorage.getItem('gc_user_id') || 'demo-user';
+      fetch(API_BASE + '/submit-entry', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          user_id: userId,
+          content: entry,
+          mood: pendingEmo,
+          intention: pendingIntent || ''
+        })
+      }).catch(function(){ /* offline / backend down — ignore */ });
+    }catch(e){ /* no-op */ }
+  })();
   // clear pending flags
   window._pendingEmo = null;
   window._pendingIntent = null;

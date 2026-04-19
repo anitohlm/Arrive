@@ -632,9 +632,11 @@ function setupJournal(){
 }
 $('journalArea').addEventListener('input',()=>{
   var len=$('journalArea').value.length;
-  $('journalCount').textContent = `${len} / 500`;
-  if(len>0) $('journalCount').classList.add('vis');
-  else $('journalCount').classList.remove('vis');
+  var el = $('journalCount');
+  el.textContent = `${len} / 500`;
+  el.classList.toggle('vis', len > 0);
+  el.classList.toggle('near-limit', len >= 400 && len < 500);
+  el.classList.toggle('at-limit', len >= 500);
 });
 $('journalBack').addEventListener('click',()=>{
   const text = $('journalArea').value.trim();
