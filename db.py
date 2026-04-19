@@ -44,34 +44,35 @@ def save_entry(entry: dict):
     entries_container.upsert_item(entry)
 
 def get_recent_entries(user_id: str, limit: int = 10) -> list:
-    query = f"""
-        SELECT * FROM c
-        WHERE c.userId = '{user_id}'
-        ORDER BY c.dayNumber DESC
-        OFFSET 0 LIMIT {limit}
-    """
     return list(entries_container.query_items(
-        query=query,
-        enable_cross_partition_query=True
+        query="SELECT * FROM c WHERE c.userId = @uid ORDER BY c.dayNumber DESC OFFSET 0 LIMIT @n",
+        parameters=[
+            {"name": "@uid", "value": user_id},
+            {"name": "@n", "value": int(limit)},
+        ],
+        partition_key=user_id,
     ))
 
 def get_entries_by_month(user_id: str, year: int, month: int) -> list:
     """Get all entries for a specific month (for Gratitude Portrait)."""
+    year, month = int(year), int(month)
     start = f"{year}-{str(month).zfill(2)}-01"
     if month == 12:
         end = f"{year+1}-01-01"
     else:
         end = f"{year}-{str(month+1).zfill(2)}-01"
-    query = f"""
-        SELECT * FROM c
-        WHERE c.userId = '{user_id}'
-        AND c.timestamp >= '{start}'
-        AND c.timestamp < '{end}'
-        ORDER BY c.dayNumber ASC
-    """
     return list(entries_container.query_items(
-        query=query,
-        enable_cross_partition_query=True
+        query=(
+            "SELECT * FROM c WHERE c.userId = @uid "
+            "AND c.timestamp >= @start AND c.timestamp < @end "
+            "ORDER BY c.dayNumber ASC"
+        ),
+        parameters=[
+            {"name": "@uid", "value": user_id},
+            {"name": "@start", "value": start},
+            {"name": "@end", "value": end},
+        ],
+        partition_key=user_id,
     ))
 
 def get_logged_dates(user_id: str) -> list:

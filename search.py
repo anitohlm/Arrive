@@ -54,9 +54,11 @@ def index_entry(entry: dict):
 def search_memories(user_id: str, mood: str, top: int = 3) -> list:
     client = get_search_client()
 
+    # Escape single quotes per OData 4.0 string literal rules to prevent filter injection.
+    safe_uid = user_id.replace("'", "''")
     results = client.search(
         search_text=f"grateful thankful {mood}",
-        filter=f"userId eq '{user_id}'",
+        filter=f"userId eq '{safe_uid}'",
         top=top,
         order_by=["dayNumber desc"]
     )
