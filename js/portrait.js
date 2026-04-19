@@ -870,6 +870,44 @@ function showMonthEndCeremony(){
     'opacity:0','transition:opacity 800ms ease'
   ].join(';');
 
+  // ── Live AI monthly reflection — quietly upgrades the hardcoded line ──
+  (function(){
+    var _topEmos = Object.keys(emoCounts)
+      .sort(function(a,b){ return emoCounts[b]-emoCounts[a]; })
+      .slice(0,4);
+    var _monthName = now.toLocaleDateString('en-US',{month:'long'}).toLowerCase();
+    fetch(API_BASE + '/monthly-reflection', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        month_name: _monthName,
+        mornings: monthEntries.length,
+        dominant: dominant,
+        month_word: monthWord,
+        top_emotions: _topEmos
+      })
+    }).then(function(r){ return r.json(); })
+      .then(function(data){
+        if(!data || !data.success || !data.reflection) return;
+        // crossfade only if the element is still on screen
+        if(!msgEl.parentNode) return;
+        var wasVisible = getComputedStyle(msgEl).opacity !== '0';
+        if(wasVisible){
+          msgEl.style.transition = 'opacity 500ms ease';
+          msgEl.style.opacity = '0';
+          setTimeout(function(){
+            if(!msgEl.parentNode) return;
+            msgEl.textContent = data.reflection;
+            msgEl.style.opacity = '1';
+          }, 520);
+        } else {
+          // not yet faded in — just replace, the scheduled fade will carry the new text
+          msgEl.textContent = data.reflection;
+        }
+      })
+      .catch(function(){ /* hardcoded floor stays */ });
+  })();
+
   knotWrap.appendChild(knotCanvas);
   knotWrap.appendChild(wordEl);
   knotWrap.appendChild(rule);
@@ -2241,7 +2279,7 @@ function showYearClosingCeremony(){
       return longest;
     })()
   };
-  fetch('/yearly-insights', {
+  fetch(API_BASE + '/yearly-insights', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body: JSON.stringify(_yearPayload)

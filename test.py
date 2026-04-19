@@ -10,6 +10,8 @@ from search import create_index_if_not_exists, index_entry, search_memories
 from agents.memory_agent import resurface_memories
 from agents.mindfulness_agent import get_exercise
 from agents.insights_agent import generate_portrait
+from agents.grace_agent import generate_grace_message
+from agents.insight_agent import generate_post_insight
 from orchestrator import handle_open_app, handle_submit_entry, handle_monthly_insights
 
 
@@ -139,6 +141,62 @@ def test_orchestrator():
     print(f"📊 Portrait:\n{result['portrait']}")
 
     print("\n✅ Orchestrator working!")
+
+def test_post_insight():
+    print("Testing Post-Insight Agent...")
+
+    # Test with a calm entry
+    result = generate_post_insight(
+        content="The coffee was warm and I just sat with it. I didn't check my phone. That was enough.",
+        mood="calm",
+        day_number=8
+    )
+    print(f"📝 Calm insight:\n{result}\n")
+
+    # Test with a hard entry
+    result = generate_post_insight(
+        content="Everything felt heavy today but I noticed the light through the window.",
+        mood="hard",
+        day_number=15
+    )
+    print(f"📝 Hard insight:\n{result}\n")
+
+    print("✅ Post-Insight Agent working!\n")
+
+def test_grace_agent():
+    print("Testing Grace Agent...")
+
+    # Test 1 — missed 1 day, light emotion
+    print("Test 1 — Missed 1 day (was grateful):")
+    result = generate_grace_message(
+        days_missed=1,
+        streak_before=7,
+        last_emotion="grateful",
+        days_away=1
+    )
+    print(f"💌 {result}\n")
+
+    # Test 2 — missed 3 days, heavy emotion
+    print("Test 2 — Missed 3 days (was exhausted):")
+    result = generate_grace_message(
+        days_missed=3,
+        streak_before=30,
+        last_emotion="exhausted",
+        days_away=3
+    )
+    print(f"💌 {result}\n")
+
+    # Test 3 — missed 10 days, long absence
+    print("Test 3 — Missed 10 days (was sad):")
+    result = generate_grace_message(
+        days_missed=10,
+        streak_before=45,
+        last_emotion="sad",
+        days_away=10
+    )
+    print(f"💌 {result}\n")
+
+    print("✅ Grace Agent working!\n")
 
 if __name__ == "__main__":
     test_orchestrator()

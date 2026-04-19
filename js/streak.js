@@ -126,14 +126,21 @@ function showGracePrompt(missedDay){
   var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
   if(entries.length>0) lastEmo = entries[entries.length-1].emo||'';
   var daysAway = getDayNumber(todayISO()) - missedDay;
-  fetch('/grace-message',{
+  fetch(API_BASE + '/grace-message',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({days_missed:1, streak_before:missedDay-1, last_emotion:lastEmo, days_away:daysAway})
   }).then(function(r){return r.json()}).then(function(data){
     if(data.success && data.message){
       var el = document.getElementById('graceMsg');
-      if(el) el.textContent = data.message;
+      if(!el) return;
+      el.style.transition = 'opacity 400ms ease';
+      el.style.opacity = '0';
+      setTimeout(function(){
+        if(!el.parentNode) return; // overlay already dismissed
+        el.textContent = data.message;
+        el.style.opacity = '1';
+      }, 420);
     }
   }).catch(function(){ _showOfflineBanner(); });
 

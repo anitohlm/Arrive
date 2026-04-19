@@ -181,7 +181,7 @@ $('arriveBtn').addEventListener('click',()=>{
     _openAppFetch = null;
     if(BREATHING_EMOTIONS.has(emo)){
       var userId = localStorage.getItem('gc_user_id') || 'demo-user';
-      _openAppFetch = fetch('/open-app', {
+      _openAppFetch = fetch(API_BASE + '/open-app', {
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify({user_id:userId, mood:emo, intention:intent||'', hours_absent:0})
@@ -489,7 +489,7 @@ function runInsightSequence(){
   const e = EMO[emo];
   // set emotion visuals
   $('insightEmoji').className = 'insight-emoji emo-' + emo;
-  $('insightEmoji').innerHTML = '<img src="assets/' + emo + '-icon.svg" alt="' + emo + '" style="width:84px;height:84px;object-fit:contain;filter:drop-shadow(0 4px 14px rgba(201,148,58,0.35))">';
+  $('insightEmoji').innerHTML = '<img src="' + emoIconPath(emo) + '" alt="' + emo + '" style="width:84px;height:84px;object-fit:contain;filter:drop-shadow(0 4px 14px rgba(201,148,58,0.35))">';
   $('insightEmoji').style.setProperty('--emo-shadow', e.shadow);
   $('insightWord').textContent = emo;
   var bgBase=getComputedStyle(document.body).getPropertyValue('--bg').trim()||'#f5ede0';
@@ -510,11 +510,46 @@ function runInsightSequence(){
   $('birthdayLine').style.opacity='0';
   $('birthdayLine').textContent='';
 
+  // ── live reflection fetch ── fires immediately, cache on window
+  // so a late response can swap in without disrupting the staggered UI.
+  var _reflectionReqId = (window._reflectionReqId||0) + 1;
+  window._reflectionReqId = _reflectionReqId;
+  window._reflectionResult = null;
+  (function(){
+    var _userName = '';
+    try{ _userName = (JSON.parse(localStorage.getItem('gc_user')||'{}').name)||''; }catch(e){}
+    fetch(API_BASE + '/reflection', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({mood: emo, intention: intent||'', name: _userName})
+    }).then(function(r){ return r.json(); })
+      .then(function(data){
+        // only apply if this response is for the current sequence
+        if(_reflectionReqId !== window._reflectionReqId) return;
+        if(!data || !data.success || !data.insight) return;
+        window._reflectionResult = data.insight;
+        // if the insight paragraph is already on screen, crossfade the text
+        var txtEl = $('insightText');
+        if(txtEl && txtEl.classList.contains('vis') && txtEl.textContent){
+          txtEl.style.transition = 'opacity 400ms ease';
+          txtEl.style.opacity = '0';
+          setTimeout(function(){
+            if(_reflectionReqId !== window._reflectionReqId) return;
+            txtEl.textContent = data.insight;
+            txtEl.style.opacity = '1';
+          }, 420);
+        }
+      })
+      .catch(function(){ /* fail quietly — hardcoded fallback stays */ });
+  })();
+
   // timed sequence
   setTimeout(()=>$('insightRule1').classList.add('vis'), 400);
   setTimeout(()=>$('loadingDots').classList.add('hide'), 1200);
   setTimeout(()=>{
-    $('insightText').textContent = INSIGHTS[emo];
+    // prefer live AI if it beat the 1400ms beat; otherwise show hardcoded now
+    // and the fetch resolver above will crossfade it in when ready.
+    $('insightText').textContent = window._reflectionResult || INSIGHTS[emo];
     $('insightText').classList.add('vis');
   }, 1400);
   setTimeout(()=>showInsightMemory(emo), 2200);
@@ -546,7 +581,6 @@ $('beginBtn').addEventListener('click',()=>{
 // ═══ SCREEN 4: JOURNAL ═════════════════════════════
 function setupJournal(){
   const e = EMO[emo];
-  $('journalLabel').textContent = `shaped for your ${emo} today`;
   $('promptCard').style.background = e.bg;
   $('promptText').textContent = PROMPTS[emo];
   $('journalArea').placeholder = PLACEHOLDERS[emo];
@@ -554,6 +588,47 @@ function setupJournal(){
   $('journalCount').textContent = '0 / 500';
   $('s-journal').style.background = `var(--bg)`;
   setTimeout(()=>$('journalArea').focus(), 600);
+
+  // ── Live AI prompt ──
+  // Use cached /open-app response if arrival already fetched it; otherwise fire a fresh one.
+  // Hardcoded PROMPTS[emo] already on screen; swap in AI with a gentle crossfade.
+  var _promptReqId = (window._promptReqId||0) + 1;
+  window._promptReqId = _promptReqId;
+
+  function _swapPrompt(newText){
+    if(_promptReqId !== window._promptReqId) return;
+    if(!newText) return;
+    var el = $('promptText');
+    // don't swap if user has already started typing
+    if($('journalArea').value.trim().length > 0) return;
+    el.style.transition = 'opacity 500ms ease';
+    el.style.opacity = '0';
+    setTimeout(function(){
+      if(_promptReqId !== window._promptReqId) return;
+      el.textContent = newText;
+      el.style.opacity = '1';
+    }, 520);
+  }
+
+  if(_openAppCache && _openAppCache.prompt){
+    _swapPrompt(_openAppCache.prompt);
+  } else if(_openAppFetch){
+    _openAppFetch.then(function(){
+      if(_openAppCache && _openAppCache.prompt) _swapPrompt(_openAppCache.prompt);
+    });
+  } else {
+    var userId = localStorage.getItem('gc_user_id') || 'demo-user';
+    fetch(API_BASE + '/open-app', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({user_id:userId, mood:emo, intention:intent||'', hours_absent:0})
+    }).then(function(r){ return r.json(); })
+      .then(function(data){
+        _openAppCache = data;
+        if(data && data.prompt) _swapPrompt(data.prompt);
+      })
+      .catch(function(){ /* fail quietly */ });
+  }
 }
 $('journalArea').addEventListener('input',()=>{
   var len=$('journalArea').value.length;

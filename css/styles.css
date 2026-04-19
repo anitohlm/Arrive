@@ -75,6 +75,138 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .signin-input::placeholder{color:var(--muted)}
 .signin-label{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);letter-spacing:.08em;margin-top:4px}
 .signin-hint{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:11px;line-height:1.55;color:rgba(245,237,224,0.45);margin:-8px 4px 4px;padding:0;text-align:left}
+
+/* ═══ Custom date picker — brand-matching, dark/gold aesthetic ═══ */
+.gc-datefield{position:relative;width:100%}
+.gc-datefield-display{
+  width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding:14px 16px;background:rgba(255,255,255,0.02);
+  border:1px solid var(--glass-border);border-radius:14px;
+  font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:15px;
+  color:var(--text);cursor:pointer;text-align:left;
+  transition:border-color 200ms var(--ease), background 200ms var(--ease);
+}
+.gc-datefield-display:hover{border-color:rgba(201,148,58,0.28)}
+.gc-datefield-display.open{border-color:rgba(201,148,58,0.55);background:rgba(201,148,58,0.04)}
+.gc-datefield-text{flex:1;min-width:0}
+.gc-datefield-text.placeholder{color:rgba(245,237,224,0.32)}
+.gc-datefield-icon{width:16px;height:16px;color:rgba(201,148,58,0.55);flex-shrink:0;transition:color 200ms var(--ease)}
+.gc-datefield-display.open .gc-datefield-icon{color:var(--gold)}
+
+.gc-cal{
+  position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:120;
+  padding:16px 14px 12px;
+  background:linear-gradient(180deg, #1a140e 0%, #120e09 100%);
+  border:1px solid rgba(201,148,58,0.22);
+  border-radius:18px;
+  box-shadow:0 16px 48px rgba(0,0,0,0.55);
+  opacity:0;transform:translateY(-4px);pointer-events:none;
+  transition:opacity 220ms var(--ease), transform 220ms var(--ease);
+}
+.gc-cal:not([hidden]){opacity:1;transform:translateY(0);pointer-events:auto}
+.gc-cal[hidden]{display:none}
+
+.gc-cal-header{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  margin:0 2px 10px;
+}
+.gc-cal-nav{
+  width:28px;height:28px;padding:0;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  background:transparent;border:1px solid rgba(201,148,58,0.14);border-radius:999px;
+  color:rgba(201,148,58,0.6);cursor:pointer;
+  transition:all 180ms var(--ease);
+}
+.gc-cal-nav:hover{background:rgba(201,148,58,0.08);border-color:rgba(201,148,58,0.4);color:var(--gold)}
+.gc-cal-nav:active{transform:scale(.92)}
+.gc-cal-nav svg{width:13px;height:13px}
+
+.gc-cal-title{
+  flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;cursor:pointer;
+  padding:4px 8px;border-radius:10px;
+  transition:background 180ms var(--ease);
+}
+.gc-cal-title:hover{background:rgba(201,148,58,0.05)}
+.gc-cal-month{
+  font-family:'Fraunces',serif;font-style:italic;font-weight:300;
+  font-size:17px;color:rgba(245,237,224,0.9);letter-spacing:-0.005em;line-height:1;
+}
+.gc-cal-year{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.22em;
+  color:rgba(201,148,58,0.5);text-transform:uppercase;
+}
+
+.gc-cal-dow{
+  display:grid;grid-template-columns:repeat(7, 1fr);
+  margin:0 2px 6px;padding:0 2px;
+}
+.gc-cal-dow span{
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;
+  color:rgba(201,148,58,0.38);text-transform:uppercase;text-align:center;
+  padding:4px 0;
+}
+
+.gc-cal-grid{
+  display:grid;grid-template-columns:repeat(7, 1fr);
+  gap:2px;padding:2px;
+}
+.gc-cal-day{
+  aspect-ratio:1/1;
+  display:flex;align-items:center;justify-content:center;
+  background:transparent;border:1px solid transparent;border-radius:10px;
+  font-family:'Fraunces',serif;font-style:italic;font-weight:300;
+  font-size:13px;color:rgba(245,237,224,0.72);
+  cursor:pointer;padding:0;
+  transition:all 160ms var(--ease);
+}
+.gc-cal-day:hover{
+  background:rgba(201,148,58,0.08);
+  border-color:rgba(201,148,58,0.22);
+  color:var(--text);
+}
+.gc-cal-day.other-month{color:rgba(245,237,224,0.18);pointer-events:none}
+.gc-cal-day.today{
+  color:var(--gold);
+  border-color:rgba(201,148,58,0.28);
+}
+.gc-cal-day.selected{
+  background:rgba(201,148,58,0.18);
+  border-color:var(--gold);
+  color:var(--gold);
+  font-weight:400;
+}
+.gc-cal-day.selected:hover{background:rgba(201,148,58,0.26)}
+.gc-cal-day.future{color:rgba(245,237,224,0.22)}
+
+.gc-cal-footer{
+  display:flex;justify-content:center;align-items:center;
+  margin-top:8px;padding-top:10px;
+  border-top:1px solid rgba(245,237,224,0.04);
+}
+.gc-cal-footer-btn{
+  background:transparent;border:none;padding:6px 12px;
+  font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.16em;
+  color:rgba(201,148,58,0.45);text-transform:uppercase;cursor:pointer;
+  transition:color 180ms var(--ease);
+}
+.gc-cal-footer-btn:hover{color:var(--gold)}
+
+/* Year grid (appears when you tap the title or "jump to year") */
+.gc-cal-year-grid{
+  display:grid;grid-template-columns:repeat(4, 1fr);gap:4px;
+  padding:4px;max-height:252px;overflow-y:auto;
+  scrollbar-width:thin;scrollbar-color:rgba(201,148,58,0.3) transparent;
+}
+.gc-cal-year-grid::-webkit-scrollbar{width:4px}
+.gc-cal-year-grid::-webkit-scrollbar-thumb{background:rgba(201,148,58,0.25);border-radius:2px}
+.gc-cal-year-btn{
+  padding:10px 6px;background:transparent;border:1px solid transparent;border-radius:10px;
+  font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:13px;
+  color:rgba(245,237,224,0.72);cursor:pointer;
+  transition:all 160ms var(--ease);
+}
+.gc-cal-year-btn:hover{background:rgba(201,148,58,0.08);border-color:rgba(201,148,58,0.22);color:var(--text)}
+.gc-cal-year-btn.selected{background:rgba(201,148,58,0.18);border-color:var(--gold);color:var(--gold)}
 .signin-submit{width:100%;padding:14px;background:transparent;border:1px solid var(--gold);border-radius:14px;color:var(--gold);font-family:'Fraunces',serif;font-style:italic;font-size:14px;cursor:pointer;transition:all 200ms var(--ease);opacity:.4}
 .signin-submit.ready{opacity:1;background:rgba(201,148,58,.08)}
 .signin-submit:active{transform:scale(.97)}
@@ -240,7 +372,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .agent-hint::before{content:'';display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--gold);vertical-align:middle;margin-right:8px;opacity:.6}
 .arrive-footer{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:0;right:0;width:100%;max-width:520px;margin:0 auto;padding:8px 24px;z-index:55;background:transparent;text-align:center}
 .knot-btn{display:inline-flex;flex-direction:column;align-items:center;width:auto;height:auto;background:none;border:none;color:var(--gold);font-family:'Fraunces',serif;font-style:italic;font-size:11px;cursor:pointer;filter:drop-shadow(0 0 12px rgba(201,148,58,0.3));transition:opacity 300ms,transform 200ms,filter 200ms;padding:0;gap:8px}
-.knot-btn .knot-icon{display:block;width:60px;height:60px;background:url('assets/logogchain.svg') center/contain no-repeat}
+.knot-btn .knot-icon{display:block;width:60px;height:60px;background:url('../assets/logogchain.svg') center/contain no-repeat}
 .arrive-btn{flex-direction:row;gap:10px;padding:10px 22px;border:1px solid rgba(201,148,58,0.35);border-radius:999px;background:rgba(201,148,58,0.06);font-size:14px}
 .arrive-btn .knot-icon{width:22px;height:22px}
 .knot-btn:active{transform:scale(.92);filter:drop-shadow(0 0 18px rgba(230,182,88,0.5))}

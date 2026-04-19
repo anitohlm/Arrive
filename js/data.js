@@ -1,4 +1,12 @@
 // ═══ DATA ═══════════════════════════════════════════
+
+// Emotion icon filename resolver — all 39 emotion icons live as
+// `assets/<emo>-icon.svg`. One flat rule; fallback to the Sacred Knot
+// if called with an unknown emotion.
+function emoIconPath(emo){
+  return emo ? 'assets/' + emo + '-icon.svg' : 'assets/logogchain.svg';
+}
+
 const EMO = {
   // light
   grateful:    {color:'#c9943a',shadow:'rgba(201,148,58,.3)',bg:'rgba(201,148,58,.07)'},
@@ -25,6 +33,27 @@ const EMO = {
   disappointed:{color:'#8c7864',shadow:'rgba(140,120,100,.3)',bg:'rgba(140,120,100,.07)'},
   exhausted:   {color:'#786e82',shadow:'rgba(120,110,130,.3)',bg:'rgba(120,110,130,.07)'},
   moved:       {color:'#b46482',shadow:'rgba(180,100,130,.3)',bg:'rgba(180,100,130,.07)'},
+  // light (added)
+  passionate:  {color:'#d94a4a',shadow:'rgba(217,74,74,.35)',bg:'rgba(217,74,74,.08)'},
+  content:     {color:'#a0b888',shadow:'rgba(160,184,136,.3)',bg:'rgba(160,184,136,.07)'},
+  relaxed:     {color:'#9ec8a0',shadow:'rgba(158,200,160,.3)',bg:'rgba(158,200,160,.07)'},
+  focused:     {color:'#5880a0',shadow:'rgba(88,128,160,.3)',bg:'rgba(88,128,160,.07)'},
+  inspired:    {color:'#e09848',shadow:'rgba(224,152,72,.35)',bg:'rgba(224,152,72,.08)'},
+  certain:     {color:'#a08860',shadow:'rgba(160,136,96,.3)',bg:'rgba(160,136,96,.07)'},
+  // in between (added)
+  nervous:     {color:'#b89a5a',shadow:'rgba(184,154,90,.3)',bg:'rgba(184,154,90,.07)'},
+  lost:        {color:'#7a7e88',shadow:'rgba(122,126,136,.25)',bg:'rgba(122,126,136,.06)'},
+  yearning:    {color:'#987ba6',shadow:'rgba(152,123,166,.3)',bg:'rgba(152,123,166,.07)'},
+  bored:       {color:'#8e8878',shadow:'rgba(142,136,120,.25)',bg:'rgba(142,136,120,.06)'},
+  // carrying weight (added)
+  livid:       {color:'#a83832',shadow:'rgba(168,56,50,.4)',bg:'rgba(168,56,50,.09)'},
+  lonely:      {color:'#5a6888',shadow:'rgba(90,104,136,.3)',bg:'rgba(90,104,136,.07)'},
+  upset:       {color:'#b07040',shadow:'rgba(176,112,64,.3)',bg:'rgba(176,112,64,.07)'},
+  insecure:    {color:'#a08a90',shadow:'rgba(160,138,144,.3)',bg:'rgba(160,138,144,.07)'},
+  // hard to name (added)
+  ashamed:     {color:'#7a4a5a',shadow:'rgba(122,74,90,.3)',bg:'rgba(122,74,90,.07)'},
+  vulnerable:  {color:'#dba4b2',shadow:'rgba(219,164,178,.3)',bg:'rgba(219,164,178,.07)'},
+  betrayed:    {color:'#8a3840',shadow:'rgba(138,56,64,.35)',bg:'rgba(138,56,64,.08)'},
 };
 const BREATHING_EMOTIONS = new Set([
   'anxious','overwhelmed','heavy','frustrated',

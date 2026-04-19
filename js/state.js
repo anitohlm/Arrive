@@ -2,6 +2,24 @@
 let emo = null, intent = null;
 const $ = id => document.getElementById(id);
 
+// Backend API base.
+// Priority:
+//   1. localStorage.gc_api_base (override — e.g. 'http://localhost:8766')
+//   2. localhost dev detection → http://localhost:8000
+//   3. '' (same-origin, used in production)
+// To change port at runtime without editing source:
+//   localStorage.setItem('gc_api_base', 'http://localhost:8766')
+const API_BASE = (function(){
+  try{
+    var override = localStorage.getItem('gc_api_base');
+    if(override) return override;
+    if(location.hostname === 'localhost' || location.hostname === '127.0.0.1'){
+      if(location.port && location.port !== '8000') return 'http://localhost:8000';
+    }
+  }catch(e){}
+  return '';
+})();
+
 // First-boot identity. Every browser gets its own random ID so backend state
 // (memories, streaks, Cosmos entries) cannot commingle across installs.
 (function(){

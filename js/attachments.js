@@ -104,8 +104,10 @@ $('attachVoiceBtn').addEventListener('click', function(){
 $('journalSubmit').addEventListener('click',()=>{
   const entry = $('journalArea').value.trim();
   if(!entry || !emo) return; // guard: need both text and an emotion
+  // reset AI cache for this submission
+  window._pendingAi = null;
   // populate (but don't save yet — save happens on "carry it forward")
-  $('postInsightIcon').src = 'assets/' + emo + '-icon.svg';
+  $('postInsightIcon').src = emoIconPath(emo);
   $('postInsightEmo').textContent = emo;
   var displayEntry = entry.length > 150 ? entry.slice(0,147) + '\u2026' : entry;
   $('postInsightEntry').textContent = '\u201C' + displayEntry + '\u201D';
@@ -124,7 +126,8 @@ $('journalSubmit').addEventListener('click',()=>{
     $('aiLoadingDot').classList.remove('vis');
   }, 5000);
   // call AI insight API (non-blocking — updates text when ready)
-  fetch('/post-insight', {
+  // Hardcoded POST_AI already shown on screen above; when AI lands, crossfade in.
+  fetch(API_BASE + '/post-insight', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({content:entry, mood:emo, day_number:dayNum-1})
@@ -132,7 +135,15 @@ $('journalSubmit').addEventListener('click',()=>{
     clearTimeout(aiTimeout);
     $('aiLoadingDot').classList.remove('vis');
     if(data.success && data.insight){
-      $('postInsightAi').textContent = data.insight;
+      var el = $('postInsightAi');
+      el.style.transition = 'opacity 400ms ease';
+      el.style.opacity = '0';
+      setTimeout(function(){
+        el.textContent = data.insight;
+        el.style.opacity = '1';
+        // remember the AI version so the saved entry stores it, not the fallback
+        window._pendingAi = data.insight;
+      }, 420);
     }
   }).catch(function(){
     clearTimeout(aiTimeout);
@@ -190,7 +201,7 @@ $('postInsightBtn').addEventListener('click',function(){
     text: entry,
     date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
     dateISO: todayISO(), // reliable month-key for portrait filtering
-    ai: POST_AI[pendingEmo] || '',
+    ai: window._pendingAi || POST_AI[pendingEmo] || '',
     hasPhotos: window._pendingPhotos || false,
     hasVoice: window._pendingVoice || false
   });
