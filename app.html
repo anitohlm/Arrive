@@ -664,6 +664,58 @@ body.theme-morning .nav-tab.active span.icon img{opacity:1;filter:sepia(1) satur
 .ph-stat-num{font-size:28px;font-weight:500;color:var(--ink)}
 .ph-stat-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted)}
 .ph-mem-card{padding:18px;background:var(--card-bg);border-radius:14px;border:1px solid var(--card-border);width:100%}
+
+/* ═══ MEMORIES — search + chips + on-this-day ═══ */
+.mem-search{width:100%;margin:6px 0 12px}
+.mem-search-collapsed{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--glass);border:1px solid var(--glass-border);border-radius:14px;font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px;color:rgba(245,237,224,0.45);cursor:pointer;transition:all 200ms var(--ease)}
+.mem-search-collapsed:hover{border-color:rgba(201,148,58,0.25);color:rgba(245,237,224,0.6)}
+.mem-search-expanded{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--glass);border:1px solid var(--gold);border-radius:14px}
+.mem-search-expanded[hidden]{display:none}
+.mem-search-expanded input{flex:1;min-width:0;border:none;outline:none;background:transparent;font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px;color:var(--text);line-height:1.3}
+.mem-search-expanded input::placeholder{color:rgba(245,237,224,0.35)}
+.mem-search-clear{background:none;border:none;font-size:14px;color:rgba(245,237,224,0.55);cursor:pointer;padding:4px 8px;line-height:1}
+.mem-search-clear:hover{color:var(--gold)}
+
+.mem-chips{display:flex;gap:8px;width:100%;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.mem-chips::-webkit-scrollbar{display:none}
+.mem-chip{flex-shrink:0;padding:7px 14px;background:rgba(255,255,255,0.02);border:1px solid var(--glass-border);border-radius:999px;font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:12px;color:rgba(245,237,224,0.55);cursor:pointer;transition:all 180ms var(--ease);white-space:nowrap}
+.mem-chip:hover{color:var(--text);border-color:rgba(201,148,58,0.25)}
+.mem-chip.active{background:rgba(201,148,58,0.12);border-color:var(--gold);color:var(--gold)}
+
+.mem-active-filters{display:flex;flex-wrap:wrap;gap:6px;width:100%;margin:0 0 12px}
+.mem-active-filters[hidden]{display:none}
+.mem-active-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 12px;background:rgba(201,148,58,0.08);border:1px solid rgba(201,148,58,0.35);border-radius:999px;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.04em;color:var(--gold);text-transform:lowercase}
+.mem-active-pill button{background:none;border:none;color:inherit;opacity:.6;font-size:12px;cursor:pointer;padding:0 2px;line-height:1}
+.mem-active-pill button:hover{opacity:1}
+
+.mem-on-this-day{width:100%;margin:6px 0 18px}
+.mem-on-this-day[hidden]{display:none}
+.mem-section-label{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px;color:rgba(230,182,88,0.75);margin:0 0 10px;letter-spacing:-0.005em}
+.mem-otd-row{display:flex;gap:10px;overflow-x:auto;padding:2px 0 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.mem-otd-row::-webkit-scrollbar{display:none}
+.mem-otd-card{flex-shrink:0;width:200px;padding:14px 16px;background:rgba(201,148,58,0.04);border:1px solid rgba(201,148,58,0.18);border-radius:14px;cursor:pointer;transition:all 200ms var(--ease);display:flex;flex-direction:column;gap:8px}
+.mem-otd-card:hover{background:rgba(201,148,58,0.08);border-color:rgba(201,148,58,0.35)}
+.mem-otd-badge{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.12em;color:var(--gold);opacity:.7;text-transform:uppercase}
+.mem-otd-head{display:flex;align-items:center;gap:8px}
+.mem-otd-emo{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:13px;color:rgba(245,237,224,0.8)}
+.mem-otd-text{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:12px;line-height:1.6;color:rgba(245,237,224,0.6);margin:0}
+
+.mem-results-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.16em;color:rgba(201,148,58,0.45);text-transform:uppercase;margin:4px 0 10px}
+.mem-results-label[hidden]{display:none}
+.mem-results{display:flex;flex-direction:column;gap:10px;width:100%}
+
+.mem-picker-sheet{position:fixed;inset:0;z-index:150;background:rgba(7,5,3,0.7);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity 280ms var(--ease)}
+.mem-picker-sheet.open{opacity:1;pointer-events:auto}
+.mem-picker-sheet[hidden]{display:none}
+.mem-picker-card{width:100%;max-width:460px;background:var(--bg);border-top:1px solid rgba(201,148,58,0.2);border-radius:22px 22px 0 0;padding:24px 24px calc(32px + env(safe-area-inset-bottom));transform:translateY(100%);transition:transform 320ms cubic-bezier(.22,.61,.36,1)}
+.mem-picker-sheet.open .mem-picker-card{transform:translateY(0)}
+.mem-picker-title{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:17px;color:var(--text);text-align:center;margin:0 0 16px}
+.mem-picker-list{display:flex;flex-direction:column;gap:4px;max-height:48vh;overflow-y:auto;margin-bottom:14px}
+.mem-picker-item{padding:12px 16px;background:transparent;border:1px solid transparent;border-radius:12px;font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px;color:var(--text);text-align:left;cursor:pointer;transition:all 180ms var(--ease);display:flex;justify-content:space-between;align-items:center}
+.mem-picker-item:hover{background:rgba(255,255,255,0.03);border-color:rgba(201,148,58,0.15)}
+.mem-picker-item-count{font-family:'DM Mono',monospace;font-size:10px;color:rgba(201,148,58,0.5);letter-spacing:0.04em}
+.mem-picker-close{width:100%;padding:12px;background:transparent;border:1px solid var(--glass-border);border-radius:12px;font-family:'Fraunces',serif;font-style:italic;font-size:13px;color:rgba(245,237,224,0.65);cursor:pointer;transition:all 180ms var(--ease)}
+.mem-picker-close:hover{color:var(--text);border-color:rgba(201,148,58,0.3)}
 .ph-mem-date{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:8px}
 .ph-mem-text{font-style:italic;font-weight:300;font-size:14px;color:var(--ink);line-height:1.7}
 .ph-theme-row{display:flex;align-items:center;gap:10px;padding:10px 14px;background:rgba(201,148,58,.04);border-radius:10px}
@@ -1320,9 +1372,52 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
 <div class="screen placeholder-screen" id="s-memories" style="justify-content:flex-start;padding-top:max(56px,env(safe-area-inset-top))">
   <div class="ph-wrap">
     <h2 class="ph-title" style="text-align:center">memories</h2>
-    <p class="ph-sub" style="margin-bottom:8px">your recent entries</p>
+
+    <!-- SEARCH BAR — tap to expand -->
+    <div class="mem-search" id="memSearch">
+      <div class="mem-search-collapsed" id="memSearchCollapsed">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.6"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <span>search your chain…</span>
+      </div>
+      <div class="mem-search-expanded" id="memSearchExpanded" hidden>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="opacity:.5;flex-shrink:0"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+        <input type="text" id="memSearchInput" placeholder="search your chain…" autocomplete="off">
+        <button class="mem-search-clear" id="memSearchClear" aria-label="close">✕</button>
+      </div>
+    </div>
+
+    <!-- FILTER CHIPS — horizontal scroll -->
+    <div class="mem-chips" id="memChips">
+      <button class="mem-chip active" data-filter="all">all</button>
+      <button class="mem-chip" data-filter="mood">by mood</button>
+      <button class="mem-chip" data-filter="person">by person</button>
+      <button class="mem-chip" data-filter="month">by month</button>
+      <button class="mem-chip" data-filter="photos">with photos</button>
+    </div>
+
+    <!-- ACTIVE FILTER PILLS — only shown when a filter is set -->
+    <div class="mem-active-filters" id="memActiveFilters" hidden></div>
+
+    <!-- ON THIS DAY — only shown if there are date-matches -->
+    <div class="mem-on-this-day" id="memOnThisDay" hidden>
+      <p class="mem-section-label">on this day</p>
+      <div class="mem-otd-row" id="memOtdRow"></div>
+    </div>
+
+    <div class="mem-results-label" id="memResultsLabel" hidden>your recent entries</div>
+    <div class="mem-results" id="memResults"></div>
+
     <div class="memories-empty" id="memoriesEmpty" style="text-align:center;padding:40px 20px">
       <p style="font-style:italic;font-weight:300;font-size:14px;color:var(--text-muted);line-height:1.7">your entries will live here —<br>start your first one today.</p>
+    </div>
+
+    <!-- FILTER PICKER SHEET (mood / person / month) -->
+    <div class="mem-picker-sheet" id="memPickerSheet" hidden>
+      <div class="mem-picker-card">
+        <p class="mem-picker-title" id="memPickerTitle">pick a mood</p>
+        <div class="mem-picker-list" id="memPickerList"></div>
+        <button class="mem-picker-close" id="memPickerClose">cancel</button>
+      </div>
     </div>
   </div>
 </div>
@@ -2081,28 +2176,292 @@ const $ = id => document.getElementById(id);
 })();
 
 // ═══ ENTRY HISTORY ══════════════════════════════════
+// ═══ MEMORIES — search, filter, on-this-day ═════════════════════
+var memState = { query: '', filter: null }; // filter: {type, value, label} | null
+var _memWiredUp = false;
+
+function _extractPeople(entries){
+  // Heuristic person tags: capitalized words (length ≥3) appearing in entry text.
+  // Skips common English words to reduce noise.
+  var stop = new Set(['The','And','But','Not','For','With','Was','Were','Has','Have','Had','This','That','These','Those','When','Where','What','Why','How','Who','Our','His','Her','Him','She','They','Them','Their','Its','Our','One','Two','Some','Any','All','Did','Does','Doing','Just','Only','Also','Even','Than','Then','Still','From','Into','Over','Under','Back','Like','Made','Make','Said','Say','Told','New','Old','Good','Bad','More','Less','Very','Much','Most','Here','There','Today','Tomorrow','Yesterday','Morning','Night','Day','April','May','June','July','August','September','October','November','December','January','February','March','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','It','Is','As','In','On','Of','Or','If','Be','By','We','Am','Do']);
+  var counts = {};
+  entries.forEach(function(e){
+    if(!e.text) return;
+    var m = e.text.match(/\b[A-Z][a-z]{2,}\b/g) || [];
+    m.forEach(function(w){
+      if(stop.has(w)) return;
+      counts[w] = (counts[w]||0) + 1;
+    });
+  });
+  // return array of {name, count} sorted by count desc
+  return Object.keys(counts).map(function(n){ return {name:n, count:counts[n]}; })
+    .sort(function(a,b){ return b.count - a.count; });
+}
+
+function _extractMoods(entries){
+  var counts = {};
+  entries.forEach(function(e){ if(e.emo) counts[e.emo] = (counts[e.emo]||0)+1; });
+  return Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; })
+    .map(function(m){ return {name:m, count:counts[m]}; });
+}
+
+function _extractMonths(entries){
+  var counts = {};
+  entries.forEach(function(e){
+    var iso = e.dateISO || '';
+    var ym = iso.slice(0,7);
+    if(ym) counts[ym] = (counts[ym]||0)+1;
+  });
+  return Object.keys(counts).sort().reverse()
+    .map(function(ym){
+      var parts = ym.split('-');
+      var months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+      var label = months[parseInt(parts[1],10)-1] + ' ' + parts[0];
+      return {value:ym, label:label, count:counts[ym]};
+    });
+}
+
+function _matchesQuery(e, q){
+  if(!q) return true;
+  q = q.toLowerCase();
+  var hay = [(e.text||''), (e.emo||''), (e.date||''), (e.intent||''), (e.ai||'')].join(' ').toLowerCase();
+  return hay.indexOf(q) >= 0;
+}
+function _matchesFilter(e, f){
+  if(!f) return true;
+  if(f.type==='mood')  return (e.emo||'').toLowerCase() === f.value.toLowerCase();
+  if(f.type==='person')return (e.text||'').indexOf(f.value) >= 0;
+  if(f.type==='month') return (e.dateISO||'').slice(0,7) === f.value;
+  if(f.type==='photos')return !!e.hasPhotos;
+  return true;
+}
+
+function _renderOnThisDay(entries){
+  var host = $('memOnThisDay'); var row = $('memOtdRow');
+  if(!host || !row) return;
+  row.innerHTML = '';
+  // Don't show OTD while user is searching/filtering — it'd compete for attention.
+  if(memState.query || memState.filter){ host.hidden = true; return; }
+  var today = new Date();
+  var todayMD = String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
+  var matches = [];
+  entries.forEach(function(e){
+    var iso = e.dateISO || '';
+    if(!iso) return;
+    var md = iso.slice(5);
+    if(md !== todayMD) return;
+    var entryDate = new Date(iso+'T12:00:00');
+    var diffDays = Math.round((today - entryDate)/86400000);
+    if(diffDays < 25) return; // only past — not today itself
+    var years = Math.floor(diffDays/365);
+    var months = Math.floor(diffDays/30);
+    var badge;
+    if(years >= 1)       badge = years + (years===1?' year ago':' years ago');
+    else if(months >=11) badge = '1 year ago';
+    else if(months >= 6) badge = months + ' months ago';
+    else if(months >= 1) badge = months + (months===1?' month ago':' months ago');
+    else                 badge = diffDays + ' days ago';
+    matches.push({entry:e, badge:badge, diffDays:diffDays});
+  });
+  if(matches.length === 0){ host.hidden = true; return; }
+  // sort oldest-first (so "1 year ago" appears first, then "6 months ago")
+  matches.sort(function(a,b){ return b.diffDays - a.diffDays; });
+  matches.slice(0,3).forEach(function(m){
+    var card = document.createElement('div');
+    card.className = 'mem-otd-card';
+    var preview = (m.entry.text||'').split(/\s+/).slice(0,18).join(' ');
+    if((m.entry.text||'').split(/\s+/).length > 18) preview += '…';
+    card.innerHTML = '<span class="mem-otd-badge">'+m.badge+'</span>'
+      + '<span class="mem-otd-emo">'+(m.entry.emo||'')+'</span>'
+      + '<p class="mem-otd-text">\u201C'+preview+'\u201D</p>';
+    card.addEventListener('click', function(){ openEntryDetail(m.entry); });
+    row.appendChild(card);
+  });
+  host.hidden = false;
+}
+
+function _renderActiveFilter(){
+  var host = $('memActiveFilters');
+  if(!host) return;
+  host.innerHTML = '';
+  if(!memState.filter){ host.hidden = true; return; }
+  var pill = document.createElement('span');
+  pill.className = 'mem-active-pill';
+  pill.innerHTML = '<span>'+memState.filter.label+'</span>'
+    + '<button aria-label="remove">\u2715</button>';
+  pill.querySelector('button').addEventListener('click', function(){
+    memState.filter = null;
+    document.querySelectorAll('#memChips .mem-chip').forEach(function(c){
+      c.classList.toggle('active', c.dataset.filter==='all');
+    });
+    populateMemories();
+  });
+  host.appendChild(pill);
+  host.hidden = false;
+}
+
 function populateMemories(){
-  const entries = JSON.parse(localStorage.getItem('gc_entries') || '[]');
-  const container = $('s-memories').querySelector('.ph-wrap');
+  var entries = JSON.parse(localStorage.getItem('gc_entries') || '[]');
+  var container = $('memResults');
+  var emptyEl   = $('memoriesEmpty');
+  var label     = $('memResultsLabel');
   if(!container) return;
-  // keep the title and subtitle, remove old cards
-  const cards = container.querySelectorAll('[data-entry]');
-  cards.forEach(c => c.remove());
-  // show last 7 entries, newest first
-  const recent = entries.slice(-7).reverse();
-  var emptyEl = $('memoriesEmpty');
-  if(recent.length === 0){ if(emptyEl) emptyEl.style.display=''; return; }
+
+  _renderOnThisDay(entries);
+  _renderActiveFilter();
+
+  // apply query + filter
+  var filtered = entries.filter(function(e){
+    return _matchesQuery(e, memState.query) && _matchesFilter(e, memState.filter);
+  });
+
+  container.innerHTML = '';
+  if(entries.length === 0){
+    if(emptyEl) emptyEl.style.display='';
+    if(label) label.hidden = true;
+    return;
+  }
   if(emptyEl) emptyEl.style.display='none';
-  recent.forEach(e => {
-    const card = document.createElement('div');
-    card.setAttribute('data-entry','true');
-    card.className='ph-mem-card';
-    card.style.cursor='pointer';
-    card.innerHTML = `<p style="font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);margin-bottom:8px">DAY ${String(e.day).padStart(3,'0')} \u00B7 ${e.date.toUpperCase()} \u00B7 ${(e.emo||'').toUpperCase()}</p><p style="font-style:italic;font-weight:300;font-size:14px;color:var(--text);line-height:1.7">\u201C${e.text.length>140?e.text.slice(0,137)+'\u2026':e.text}\u201D</p>`;
+
+  // label
+  if(label){
+    label.hidden = false;
+    if(memState.query || memState.filter){
+      label.textContent = filtered.length + ' ' + (filtered.length===1?'match':'matches');
+    } else {
+      label.textContent = 'your recent entries';
+    }
+  }
+
+  if(filtered.length === 0){
+    var none = document.createElement('p');
+    none.style.cssText = 'font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:13px;color:rgba(245,237,224,0.45);text-align:center;padding:24px 10px;margin:0';
+    none.textContent = 'nothing matches here yet.';
+    container.appendChild(none);
+    return;
+  }
+
+  // newest first, cap at 50 on unfiltered view to keep things quick
+  var list = filtered.slice().reverse();
+  if(!memState.query && !memState.filter) list = list.slice(0, 50);
+
+  list.forEach(function(e){
+    var card = document.createElement('div');
+    card.className = 'ph-mem-card';
+    card.style.cursor = 'pointer';
+    card.innerHTML = '<p style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--muted);margin-bottom:8px">DAY '
+      + String(e.day||'').padStart(3,'0') + ' \u00B7 '
+      + (e.date||'').toUpperCase() + ' \u00B7 '
+      + (e.emo||'').toUpperCase() + (e.hasPhotos ? ' \u00B7 \u25A1' : '') + '</p>'
+      + '<p style="font-style:italic;font-weight:300;font-size:14px;color:var(--text);line-height:1.7">\u201C'
+      + ((e.text||'').length>140 ? (e.text||'').slice(0,137)+'\u2026' : (e.text||''))
+      + '\u201D</p>';
     card.addEventListener('click', function(){ openEntryDetail(e); });
     container.appendChild(card);
   });
 }
+
+function _openMemPicker(type){
+  var sheet = $('memPickerSheet');
+  var title = $('memPickerTitle');
+  var list  = $('memPickerList');
+  var entries = JSON.parse(localStorage.getItem('gc_entries') || '[]');
+  list.innerHTML = '';
+  var items = [];
+  if(type==='mood'){
+    title.textContent = 'filter by mood';
+    items = _extractMoods(entries).map(function(m){ return {value:m.name, label:m.name, count:m.count}; });
+  } else if(type==='person'){
+    title.textContent = 'filter by person';
+    items = _extractPeople(entries).map(function(p){ return {value:p.name, label:p.name, count:p.count}; });
+  } else if(type==='month'){
+    title.textContent = 'filter by month';
+    items = _extractMonths(entries).map(function(m){ return {value:m.value, label:m.label, count:m.count}; });
+  }
+  if(items.length === 0){
+    var none = document.createElement('p');
+    none.style.cssText = 'text-align:center;font-family:Fraunces,serif;font-style:italic;font-size:13px;color:rgba(245,237,224,0.5);padding:16px 8px;margin:0';
+    none.textContent = type==='person' ? 'no names picked up from your entries yet.' : 'nothing to filter by yet.';
+    list.appendChild(none);
+  } else {
+    items.forEach(function(it){
+      var btn = document.createElement('button');
+      btn.className = 'mem-picker-item';
+      btn.innerHTML = '<span>'+it.label+'</span><span class="mem-picker-item-count">'+it.count+'</span>';
+      btn.addEventListener('click', function(){
+        memState.filter = {type:type, value:it.value, label: (type==='month'?it.label : type+': '+it.label)};
+        _closeMemPicker();
+        // mark the matching chip active
+        document.querySelectorAll('#memChips .mem-chip').forEach(function(c){
+          c.classList.toggle('active', c.dataset.filter===type);
+        });
+        populateMemories();
+      });
+      list.appendChild(btn);
+    });
+  }
+  sheet.hidden = false;
+  requestAnimationFrame(function(){ sheet.classList.add('open'); });
+}
+function _closeMemPicker(){
+  var sheet = $('memPickerSheet');
+  sheet.classList.remove('open');
+  setTimeout(function(){ sheet.hidden = true; }, 320);
+}
+
+function _wireMemories(){
+  if(_memWiredUp) return;
+  _memWiredUp = true;
+  // search expand/collapse
+  $('memSearchCollapsed').addEventListener('click', function(){
+    $('memSearchCollapsed').hidden = true;
+    $('memSearchExpanded').hidden = false;
+    setTimeout(function(){ $('memSearchInput').focus(); }, 60);
+  });
+  $('memSearchClear').addEventListener('click', function(){
+    $('memSearchInput').value = '';
+    memState.query = '';
+    $('memSearchExpanded').hidden = true;
+    $('memSearchCollapsed').hidden = false;
+    populateMemories();
+  });
+  var _searchDebounce;
+  $('memSearchInput').addEventListener('input', function(){
+    var v = this.value;
+    clearTimeout(_searchDebounce);
+    _searchDebounce = setTimeout(function(){
+      memState.query = v.trim();
+      populateMemories();
+    }, 120);
+  });
+
+  // filter chips
+  document.querySelectorAll('#memChips .mem-chip').forEach(function(chip){
+    chip.addEventListener('click', function(){
+      var t = this.dataset.filter;
+      if(t === 'all'){
+        memState.filter = null;
+        document.querySelectorAll('#memChips .mem-chip').forEach(function(c){
+          c.classList.toggle('active', c.dataset.filter==='all');
+        });
+        populateMemories();
+      } else if(t === 'photos'){
+        memState.filter = {type:'photos', value:true, label:'with photos'};
+        document.querySelectorAll('#memChips .mem-chip').forEach(function(c){
+          c.classList.toggle('active', c.dataset.filter==='photos');
+        });
+        populateMemories();
+      } else {
+        _openMemPicker(t);
+      }
+    });
+  });
+  $('memPickerClose').addEventListener('click', _closeMemPicker);
+  $('memPickerSheet').addEventListener('click', function(e){
+    if(e.target === this) _closeMemPicker();
+  });
+}
+_wireMemories();
 // populate on load if entries exist
 populateMemories();
 
