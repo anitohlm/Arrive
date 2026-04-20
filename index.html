@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=14">
+<link rel="stylesheet" href="css/styles.css?v=23">
 </head>
 <body>
 
@@ -372,52 +372,40 @@
 
 <!-- ═══ SCREEN 7: MEMORIES ═══════════════════════════ -->
 <div class="screen placeholder-screen" id="s-memories" style="justify-content:flex-start;padding-top:max(56px,env(safe-area-inset-top))">
-  <div class="ph-wrap">
+  <div class="mem-wrap">
     <h2 class="ph-title" style="text-align:center">memories</h2>
 
-    <!-- SEARCH BAR -->
-    <label class="mem-search" id="memSearch">
-      <svg class="mem-search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input type="text" id="memSearchInput" placeholder="search your chain…" autocomplete="off">
-      <button class="mem-search-clear" id="memSearchClear" aria-label="clear" hidden>
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 6l12 12M18 6 6 18"/></svg>
-      </button>
-    </label>
-
-    <!-- FILTER CHIPS — horizontal scroll -->
-    <div class="mem-chips" id="memChips">
-      <button class="mem-chip active" data-filter="all">all</button>
-      <button class="mem-chip" data-filter="mood">by mood</button>
-      <button class="mem-chip" data-filter="person">by person</button>
-      <button class="mem-chip" data-filter="month">by month</button>
-      <button class="mem-chip" data-filter="photos">with photos</button>
+    <!-- DAY 1 EMPTY STATE — only shown when gc_entries is empty -->
+    <div class="mem-empty" id="memEmpty" hidden>
+      <p class="mem-empty-primary">nothing here yet.</p>
+      <p class="mem-empty-secondary">come back after your first morning.</p>
     </div>
 
-    <!-- ACTIVE FILTER PILLS — only shown when a filter is set -->
-    <div class="mem-active-filters" id="memActiveFilters" hidden></div>
+    <!-- HEATMAP — full year from start, colored by emotion per day -->
+    <section class="mem-heatmap-section" id="memHeatmapSection" hidden>
+      <p class="mem-section-label">your constellation</p>
 
-    <!-- ON THIS DAY — only shown if there are date-matches -->
-    <div class="mem-on-this-day" id="memOnThisDay" hidden>
-      <p class="mem-section-label">on this day</p>
-      <div class="mem-otd-row" id="memOtdRow"></div>
-    </div>
-
-    <div class="mem-results-label" id="memResultsLabel" hidden>your recent entries</div>
-    <div class="mem-results" id="memResults"></div>
-
-    <div class="memories-empty" id="memoriesEmpty" style="text-align:center;padding:40px 20px">
-      <p style="font-style:italic;font-weight:300;font-size:14px;color:var(--text-muted);line-height:1.7">your entries will live here —<br>start your first one today.</p>
-    </div>
-
-    <!-- FILTER PICKER SHEET (mood / person / month) -->
-    <div class="mem-picker-sheet" id="memPickerSheet" hidden>
-      <div class="mem-picker-card">
-        <p class="mem-picker-sub" id="memPickerSub">filter</p>
-        <p class="mem-picker-title" id="memPickerTitle">by mood</p>
-        <div class="mem-picker-list" id="memPickerList"></div>
-        <button class="mem-picker-close" id="memPickerClose">close</button>
+      <!-- intro hint — sits between the header and the grid -->
+      <div class="mem-first-hint" id="memFirstHint" hidden>
+        <p class="mem-first-hint-primary">the constellation will grow as you return.</p>
+        <p class="mem-first-hint-secondary">past entries will surface here once the chain has something to remember.</p>
       </div>
-    </div>
+
+      <div class="mem-heatmap" id="memHeatmap"></div>
+      <div class="mem-heatmap-legend">
+        <span><i class="mem-legend-dot mem-legend-dot--filled"></i>logged</span>
+        <span><i class="mem-legend-dot mem-legend-dot--empty"></i>missed</span>
+        <span><i class="mem-legend-dot mem-legend-dot--future"></i>not yet</span>
+      </div>
+    </section>
+
+    <!-- MEMORY AGENT CARD — one surfaced past entry -->
+    <section class="mem-agent-card" id="memAgentCard" hidden>
+      <p class="mem-agent-label">the chain remembers</p>
+      <p class="mem-agent-meta" id="memAgentMeta">DAY 001 — calm</p>
+      <p class="mem-agent-text" id="memAgentText"></p>
+      <p class="mem-agent-date" id="memAgentDate"></p>
+    </section>
   </div>
 </div>
 
@@ -765,18 +753,18 @@
 
 
 <!-- ═══ SCRIPTS (loaded in dependency order) ═══════════ -->
-<script src="js/data.js?v=14"></script>
-<script src="js/state.js?v=14"></script>
-<script src="js/onboarding.js?v=14"></script>
-<script src="js/memories.js?v=14"></script>
-<script src="js/streak.js?v=14"></script>
-<script src="js/held.js?v=14"></script>
-<script src="js/portrait.js?v=14"></script>
-<script src="js/navigation.js?v=14"></script>
-<script src="js/screens.js?v=14"></script>
-<script src="js/attachments.js?v=14"></script>
-<script src="js/ceremonies.js?v=14"></script>
-<script src="js/entry-detail.js?v=14"></script>
-<script src="js/capsule.js?v=14"></script>
+<script src="js/data.js?v=23"></script>
+<script src="js/state.js?v=23"></script>
+<script src="js/onboarding.js?v=23"></script>
+<script src="js/memories.js?v=23"></script>
+<script src="js/streak.js?v=23"></script>
+<script src="js/held.js?v=23"></script>
+<script src="js/portrait.js?v=23"></script>
+<script src="js/navigation.js?v=23"></script>
+<script src="js/screens.js?v=23"></script>
+<script src="js/attachments.js?v=23"></script>
+<script src="js/ceremonies.js?v=23"></script>
+<script src="js/entry-detail.js?v=23"></script>
+<script src="js/capsule.js?v=23"></script>
 </body>
 </html>

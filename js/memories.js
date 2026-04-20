@@ -1,292 +1,274 @@
-// ═══ ENTRY HISTORY ══════════════════════════════════
-// ═══ MEMORIES — search, filter, on-this-day ═════════════════════
-var memState = { query: '', filter: null }; // filter: {type, value, label} | null
-var _memWiredUp = false;
+// ═══ MEMORIES — heatmap + memory-agent recall ═══════════════════
+// The screen is deliberately sparse. Two sections:
+//   1. Heatmap constellation — one dot per day since gc_start_date,
+//      colored by that day's emotion (pulled from KNOT_PARAMS).
+//   2. Memory agent card     — one surfaced entry from the past,
+//      chosen by matching today's emotion (exact → family → recent).
+// Day-1 users (zero entries) see only a quiet empty state.
 
-function _extractPeople(entries){
-  // Heuristic person tags: capitalized words (length ≥3) appearing in entry text.
-  // Skips common English words to reduce noise.
-  var stop = new Set(['The','And','But','Not','For','With','Was','Were','Has','Have','Had','This','That','These','Those','When','Where','What','Why','How','Who','Our','His','Her','Him','She','They','Them','Their','Its','Our','One','Two','Some','Any','All','Did','Does','Doing','Just','Only','Also','Even','Than','Then','Still','From','Into','Over','Under','Back','Like','Made','Make','Said','Say','Told','New','Old','Good','Bad','More','Less','Very','Much','Most','Here','There','Today','Tomorrow','Yesterday','Morning','Night','Day','April','May','June','July','August','September','October','November','December','January','February','March','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday','It','Is','As','In','On','Of','Or','If','Be','By','We','Am','Do']);
-  var counts = {};
-  entries.forEach(function(e){
-    if(!e.text) return;
-    var m = e.text.match(/\b[A-Z][a-z]{2,}\b/g) || [];
-    m.forEach(function(w){
-      if(stop.has(w)) return;
-      counts[w] = (counts[w]||0) + 1;
-    });
-  });
-  // return array of {name, count} sorted by count desc
-  return Object.keys(counts).map(function(n){ return {name:n, count:counts[n]}; })
-    .sort(function(a,b){ return b.count - a.count; });
+// ── Emotion family groups — used to broaden "similar emotion" matches ──
+var MEM_EMO_FAMILIES = {
+  light:  ['grateful','alive','tender','calm','hopeful','light','passionate','content','relaxed','focused','inspired','certain'],
+  between:['numb','quiet','foggy','restless','searching','nervous','lost','yearning','bored'],
+  weight: ['hard','heavy','overwhelmed','sad','frustrated','anxious','livid','lonely','upset','insecure'],
+  hard:   ['heartbroken','disappointed','exhausted','moved','ashamed','vulnerable','betrayed']
+};
+function _memFamilyOf(emo){
+  for(var k in MEM_EMO_FAMILIES){
+    if(MEM_EMO_FAMILIES[k].indexOf(emo) >= 0) return k;
+  }
+  return null;
 }
 
-function _extractMoods(entries){
-  var counts = {};
-  entries.forEach(function(e){ if(e.emo) counts[e.emo] = (counts[e.emo]||0)+1; });
-  return Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; })
-    .map(function(m){ return {name:m, count:counts[m]}; });
+// ── Helpers ──────────────────────────────────────────────
+function _memPad(n){ return String(n).padStart(2,'0'); }
+function _memISO(d){ return d.getFullYear()+'-'+_memPad(d.getMonth()+1)+'-'+_memPad(d.getDate()); }
+function _memMonthLabel(d){
+  var mons = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+  return mons[d.getMonth()] + ' ' + d.getFullYear();
+}
+function _memColorFor(emo){
+  try{
+    if(typeof KNOT_PARAMS !== 'undefined' && KNOT_PARAMS[emo] && KNOT_PARAMS[emo].color){
+      return KNOT_PARAMS[emo].color;
+    }
+    if(typeof EMO !== 'undefined' && EMO[emo] && EMO[emo].color){
+      return EMO[emo].color;
+    }
+  }catch(e){}
+  return '#c9943a';
 }
 
-function _extractMonths(entries){
-  var counts = {};
-  entries.forEach(function(e){
-    var iso = e.dateISO || '';
-    var ym = iso.slice(0,7);
-    if(ym) counts[ym] = (counts[ym]||0)+1;
-  });
-  return Object.keys(counts).sort().reverse()
-    .map(function(ym){
-      var parts = ym.split('-');
-      var months = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
-      var label = months[parseInt(parts[1],10)-1] + ' ' + parts[0];
-      return {value:ym, label:label, count:counts[ym]};
-    });
-}
-
-function _matchesQuery(e, q){
-  if(!q) return true;
-  q = q.toLowerCase();
-  var hay = [(e.text||''), (e.emo||''), (e.date||''), (e.intent||''), (e.ai||'')].join(' ').toLowerCase();
-  return hay.indexOf(q) >= 0;
-}
-function _matchesFilter(e, f){
-  if(!f) return true;
-  if(f.type==='mood')  return (e.emo||'').toLowerCase() === f.value.toLowerCase();
-  if(f.type==='person')return (e.text||'').indexOf(f.value) >= 0;
-  if(f.type==='month') return (e.dateISO||'').slice(0,7) === f.value;
-  if(f.type==='photos')return !!e.hasPhotos;
-  return true;
-}
-
-function _renderOnThisDay(entries){
-  var host = $('memOnThisDay'); var row = $('memOtdRow');
-  if(!host || !row) return;
-  row.innerHTML = '';
-  // Don't show OTD while user is searching/filtering — it'd compete for attention.
-  if(memState.query || memState.filter){ host.hidden = true; return; }
-  var today = new Date();
-  var todayMD = String(today.getMonth()+1).padStart(2,'0') + '-' + String(today.getDate()).padStart(2,'0');
-  var matches = [];
-  entries.forEach(function(e){
-    var iso = e.dateISO || '';
-    if(!iso) return;
-    var md = iso.slice(5);
-    if(md !== todayMD) return;
-    var entryDate = new Date(iso+'T12:00:00');
-    var diffDays = Math.round((today - entryDate)/86400000);
-    if(diffDays < 25) return; // only past — not today itself
-    var years = Math.floor(diffDays/365);
-    var months = Math.floor(diffDays/30);
-    var badge;
-    if(years >= 1)       badge = years + (years===1?' year ago':' years ago');
-    else if(months >=11) badge = '1 year ago';
-    else if(months >= 6) badge = months + ' months ago';
-    else if(months >= 1) badge = months + (months===1?' month ago':' months ago');
-    else                 badge = diffDays + ' days ago';
-    matches.push({entry:e, badge:badge, diffDays:diffDays});
-  });
-  if(matches.length === 0){ host.hidden = true; return; }
-  // sort oldest-first (so "1 year ago" appears first, then "6 months ago")
-  matches.sort(function(a,b){ return b.diffDays - a.diffDays; });
-  matches.slice(0,3).forEach(function(m){
-    var card = document.createElement('div');
-    card.className = 'mem-otd-card';
-    var preview = (m.entry.text||'').split(/\s+/).slice(0,18).join(' ');
-    if((m.entry.text||'').split(/\s+/).length > 18) preview += '…';
-    card.innerHTML = '<span class="mem-otd-badge">'+m.badge+'</span>'
-      + '<span class="mem-otd-emo">'+(m.entry.emo||'')+'</span>'
-      + '<p class="mem-otd-text">\u201C'+preview+'\u201D</p>';
-    card.addEventListener('click', function(){ openEntryDetail(m.entry); });
-    row.appendChild(card);
-  });
-  host.hidden = false;
-}
-
-function _renderActiveFilter(){
-  var host = $('memActiveFilters');
+// ── Render the heatmap ───────────────────────────────────
+function _renderMemHeatmap(entries){
+  var host = document.getElementById('memHeatmap');
   if(!host) return;
   host.innerHTML = '';
-  if(!memState.filter){ host.hidden = true; return; }
-  var pill = document.createElement('span');
-  pill.className = 'mem-active-pill';
-  pill.innerHTML = '<span>'+memState.filter.label+'</span>'
-    + '<button aria-label="remove">\u2715</button>';
-  pill.querySelector('button').addEventListener('click', function(){
-    memState.filter = null;
-    document.querySelectorAll('#memChips .mem-chip').forEach(function(c){
-      c.classList.toggle('active', c.dataset.filter==='all');
-    });
-    populateMemories();
+
+  var startISO = localStorage.getItem('gc_start_date');
+  if(!startISO) return;
+
+  var start = new Date(startISO + 'T12:00:00');
+  var today = new Date();
+  today.setHours(12,0,0,0);
+  if(isNaN(start.getTime())) return;
+
+  // ISO → entry lookup
+  var byISO = {};
+  entries.forEach(function(e){
+    var iso = e.dateISO || e.date;
+    if(iso) byISO[iso] = e;
   });
-  host.appendChild(pill);
-  host.hidden = false;
+
+  // Walk every day of the year-long chain — start → start + 364 days — so future
+  // days render as "not yet" placeholders instead of disappearing. Groups by calendar month.
+  var end = new Date(start);
+  end.setDate(start.getDate() + 364);
+  // leap-aware: if the span crosses a Feb 29, still just 365 days — that's fine,
+  // the chain is defined as 365 mornings regardless of calendar leap logic.
+
+  var groups = [];
+  var currentGroup = null;
+  var cursor = new Date(start);
+  var safety = 0;
+  while(cursor <= end && safety < 500){
+    safety++;
+    var monthKey = cursor.getFullYear()+'-'+_memPad(cursor.getMonth()+1);
+    if(!currentGroup || currentGroup.monthKey !== monthKey){
+      currentGroup = {
+        monthKey: monthKey,
+        monthLabel: _memMonthLabel(cursor),
+        firstDayOfWeek: null,
+        days: []
+      };
+      groups.push(currentGroup);
+    }
+    var iso = _memISO(cursor);
+    var entry = byISO[iso] || null;
+    var isFuture = cursor > today;
+    var isToday  = cursor.getTime() === today.getTime();
+    var day = {
+      iso: iso,
+      dow: cursor.getDay(),
+      logged: !!entry,
+      future: isFuture,
+      today: isToday && !entry,
+      emo: entry ? entry.emo : null,
+      entry: entry
+    };
+    if(currentGroup.firstDayOfWeek === null) currentGroup.firstDayOfWeek = day.dow;
+    currentGroup.days.push(day);
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  // dow: 0=Sun, 1=Mon…6=Sat. Grid is Mon→Sun → shift.
+  function dowToIdx(dow){ return (dow + 6) % 7; }
+
+  groups.forEach(function(g){
+    var groupEl = document.createElement('div');
+    groupEl.className = 'mem-month-group';
+
+    var label = document.createElement('p');
+    label.className = 'mem-month-label';
+    label.textContent = g.monthLabel;
+    groupEl.appendChild(label);
+
+    var grid = document.createElement('div');
+    grid.className = 'mem-dot-grid';
+
+    // leading pads so first dot aligns with its weekday column
+    var startOffset = dowToIdx(g.firstDayOfWeek);
+    for(var i = 0; i < startOffset; i++){
+      var pad = document.createElement('i');
+      pad.className = 'mem-dot mem-dot--pad';
+      grid.appendChild(pad);
+    }
+
+    g.days.forEach(function(d){
+      var dot = document.createElement('button');
+      dot.type = 'button';
+      var cls = 'mem-dot ';
+      if(d.logged) cls += 'mem-dot--filled';
+      else if(d.today) cls += 'mem-dot--today';
+      else if(d.future) cls += 'mem-dot--future';
+      else cls += 'mem-dot--empty';
+      dot.className = cls;
+      if(d.logged){
+        var c = _memColorFor(d.emo);
+        dot.style.background = c;
+        dot.style.boxShadow = '0 0 6px ' + c + '66';
+        dot.setAttribute('aria-label', d.iso + ' · ' + (d.emo || 'logged'));
+        dot.title = d.iso + ' · ' + (d.emo || '');
+        (function(entry){
+          dot.addEventListener('click', function(){
+            if(typeof openEntryDetail === 'function' && entry) openEntryDetail(entry);
+          });
+        })(d.entry);
+      } else if(d.today){
+        dot.title = d.iso + ' · today, waiting';
+        dot.disabled = true;
+      } else if(d.future){
+        dot.title = d.iso + ' · not yet';
+        dot.disabled = true;
+      } else {
+        dot.title = d.iso + ' · not written';
+        dot.disabled = true;
+      }
+      grid.appendChild(dot);
+    });
+
+    groupEl.appendChild(grid);
+    host.appendChild(groupEl);
+  });
 }
 
-function populateMemories(){
-  var entries = JSON.parse(localStorage.getItem('gc_entries') || '[]');
-  var container = $('memResults');
-  var emptyEl   = $('memoriesEmpty');
-  var label     = $('memResultsLabel');
-  if(!container) return;
+// ── Pick a past entry to surface ─────────────────────────
+// Returns null if there's nothing truly from the past to draw from.
+// "the chain remembers" is only honest if there's a past to remember.
+function _pickMemoryEntry(entries){
+  if(!entries || entries.length < 2) return null; // need at least one PAST entry
 
-  _renderOnThisDay(entries);
-  _renderActiveFilter();
+  // today's emotion — prefer pending draft, else most-recent entry
+  var todayEmo = null;
+  try{ todayEmo = window._pendingEmo || null; }catch(e){}
+  if(!todayEmo && entries.length > 0) todayEmo = entries[entries.length - 1].emo || null;
 
-  // apply query + filter
-  var filtered = entries.filter(function(e){
-    return _matchesQuery(e, memState.query) && _matchesFilter(e, memState.filter);
-  });
+  // Candidate pool excludes the very latest entry so we never surface today's own writing.
+  var pool = entries.slice(0, -1);
 
-  container.innerHTML = '';
-  if(entries.length === 0){
-    if(emptyEl) emptyEl.style.display='';
-    if(label) label.hidden = true;
-    return;
+  function longestBy(filterFn){
+    var hits = pool.filter(filterFn);
+    if(hits.length === 0) return null;
+    return hits.reduce(function(best, e){
+      var len = (e.text || '').length;
+      var bestLen = best ? (best.text || '').length : -1;
+      return len > bestLen ? e : best;
+    }, null);
   }
-  if(emptyEl) emptyEl.style.display='none';
 
-  // label
-  if(label){
-    label.hidden = false;
-    if(memState.query || memState.filter){
-      label.textContent = filtered.length + ' ' + (filtered.length===1?'match':'matches');
-    } else {
-      label.textContent = 'your recent entries';
+  // 1) exact emotion match, longest
+  var match = todayEmo ? longestBy(function(e){ return e.emo === todayEmo; }) : null;
+
+  // 2) same family, longest
+  if(!match && todayEmo){
+    var fam = _memFamilyOf(todayEmo);
+    if(fam){
+      var famSet = {};
+      MEM_EMO_FAMILIES[fam].forEach(function(x){ famSet[x] = true; });
+      match = longestBy(function(e){ return !!famSet[e.emo]; });
     }
   }
 
-  if(filtered.length === 0){
-    var none = document.createElement('p');
-    none.style.cssText = 'font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:13px;color:rgba(245,237,224,0.45);text-align:center;padding:24px 10px;margin:0';
-    none.textContent = 'nothing matches here yet.';
-    container.appendChild(none);
+  // 3) fallback — most recent past entry
+  if(!match) match = pool[pool.length - 1] || null;
+
+  return match;
+}
+
+// ── Render the memory agent card ─────────────────────────
+function _renderMemAgentCard(entries){
+  var card = document.getElementById('memAgentCard');
+  if(!card) return;
+  var picked = _pickMemoryEntry(entries);
+  if(!picked || !picked.text){
+    card.hidden = true;
+    return;
+  }
+  var metaEl = document.getElementById('memAgentMeta');
+  var textEl = document.getElementById('memAgentText');
+  var dateEl = document.getElementById('memAgentDate');
+  if(metaEl) metaEl.textContent = 'DAY ' + String(picked.day || '').padStart(3,'0') + ' — ' + (picked.emo || '');
+  if(textEl) textEl.textContent = '\u201C' + picked.text + '\u201D';
+  if(dateEl){
+    var dateTxt = '';
+    try{
+      var iso = picked.dateISO || '';
+      if(/^\d{4}-\d{2}-\d{2}/.test(iso)){
+        var d = new Date(iso+'T12:00:00');
+        var mons = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
+        dateTxt = mons[d.getMonth()] + ' ' + d.getDate() + ', ' + d.getFullYear();
+      } else if(picked.date){
+        dateTxt = String(picked.date).toLowerCase();
+      }
+    }catch(e){}
+    dateEl.textContent = dateTxt;
+  }
+  card.hidden = false;
+}
+
+// ── Orchestrator ─────────────────────────────────────────
+function populateMemories(){
+  var entries = [];
+  try{ entries = JSON.parse(localStorage.getItem('gc_entries') || '[]'); }catch(e){}
+
+  var emptyEl   = document.getElementById('memEmpty');
+  var heatmapEl = document.getElementById('memHeatmapSection');
+  var hintEl    = document.getElementById('memFirstHint');
+  var cardEl    = document.getElementById('memAgentCard');
+
+  // Day 0 — no entries at all
+  if(entries.length === 0){
+    if(emptyEl)   emptyEl.hidden = false;
+    if(heatmapEl) heatmapEl.hidden = true;
+    if(hintEl)    hintEl.hidden = true;
+    if(cardEl)    cardEl.hidden = true;
     return;
   }
 
-  // newest first, cap at 50 on unfiltered view to keep things quick
-  var list = filtered.slice().reverse();
-  if(!memState.query && !memState.filter) list = list.slice(0, 50);
+  if(emptyEl)   emptyEl.hidden = true;
+  if(heatmapEl) heatmapEl.hidden = false;
+  _renderMemHeatmap(entries);
 
-  list.forEach(function(e){
-    var card = document.createElement('div');
-    card.className = 'ph-mem-card';
-    card.style.cursor = 'pointer';
-    card.innerHTML = '<p style="font-family:\'DM Mono\',monospace;font-size:9px;color:var(--muted);margin-bottom:8px">DAY '
-      + String(e.day||'').padStart(3,'0') + ' \u00B7 '
-      + (e.date||'').toUpperCase() + ' \u00B7 '
-      + (e.emo||'').toUpperCase() + (e.hasPhotos ? ' \u00B7 \u25A1' : '') + '</p>'
-      + '<p style="font-style:italic;font-weight:300;font-size:14px;color:var(--text);line-height:1.7">\u201C'
-      + ((e.text||'').length>140 ? (e.text||'').slice(0,137)+'\u2026' : (e.text||''))
-      + '\u201D</p>';
-    card.addEventListener('click', function(){ openEntryDetail(e); });
-    container.appendChild(card);
-  });
-}
-
-function _openMemPicker(type){
-  var sheet = $('memPickerSheet');
-  var title = $('memPickerTitle');
-  var sub   = $('memPickerSub');
-  var list  = $('memPickerList');
-  var entries = JSON.parse(localStorage.getItem('gc_entries') || '[]');
-  list.innerHTML = '';
-  var items = [];
-  sub.textContent = 'filter';
-  if(type==='mood'){
-    title.textContent = 'by mood';
-    items = _extractMoods(entries).map(function(m){ return {value:m.name, label:m.name, count:m.count}; });
-  } else if(type==='person'){
-    title.textContent = 'by person';
-    items = _extractPeople(entries).map(function(p){ return {value:p.name, label:p.name, count:p.count}; });
-  } else if(type==='month'){
-    title.textContent = 'by month';
-    items = _extractMonths(entries).map(function(m){ return {value:m.value, label:m.label, count:m.count}; });
-  }
-  if(items.length === 0){
-    var none = document.createElement('p');
-    none.style.cssText = 'text-align:center;font-family:Fraunces,serif;font-style:italic;font-size:13px;color:rgba(245,237,224,0.5);padding:16px 8px;margin:0';
-    none.textContent = type==='person' ? 'no names picked up from your entries yet.' : 'nothing to filter by yet.';
-    list.appendChild(none);
+  // 1 entry → hint ("constellation will grow"), no memory card
+  // 2+ entries → memory card, no hint
+  if(entries.length < 2){
+    if(hintEl) hintEl.hidden = false;
+    if(cardEl) cardEl.hidden = true;
   } else {
-    items.forEach(function(it){
-      var btn = document.createElement('button');
-      btn.className = 'mem-picker-item';
-      btn.innerHTML = '<span>'+it.label+'</span><span class="mem-picker-item-count">'+it.count+'</span>';
-      btn.addEventListener('click', function(){
-        memState.filter = {type:type, value:it.value, label: (type==='month'?it.label : type+': '+it.label)};
-        _closeMemPicker();
-        // mark the matching chip active
-        document.querySelectorAll('#memChips .mem-chip').forEach(function(c){
-          c.classList.toggle('active', c.dataset.filter===type);
-        });
-        populateMemories();
-      });
-      list.appendChild(btn);
-    });
+    if(hintEl) hintEl.hidden = true;
+    _renderMemAgentCard(entries); // sets cardEl hidden if pick returns null
   }
-  sheet.hidden = false;
-  requestAnimationFrame(function(){ sheet.classList.add('open'); });
-}
-function _closeMemPicker(){
-  var sheet = $('memPickerSheet');
-  sheet.classList.remove('open');
-  setTimeout(function(){ sheet.hidden = true; }, 320);
 }
 
-function _wireMemories(){
-  if(_memWiredUp) return;
-  _memWiredUp = true;
-  // search — always visible; clear button fades in when there's text
-  var _searchDebounce;
-  var _searchInput = $('memSearchInput');
-  var _searchClear = $('memSearchClear');
-  _searchInput.addEventListener('input', function(){
-    var v = this.value;
-    _searchClear.hidden = v.length === 0;
-    clearTimeout(_searchDebounce);
-    _searchDebounce = setTimeout(function(){
-      memState.query = v.trim();
-      populateMemories();
-    }, 120);
-  });
-  _searchClear.addEventListener('click', function(){
-    _searchInput.value = '';
-    _searchClear.hidden = true;
-    memState.query = '';
-    populateMemories();
-    _searchInput.focus();
-  });
-
-  // filter chips
-  document.querySelectorAll('#memChips .mem-chip').forEach(function(chip){
-    chip.addEventListener('click', function(){
-      var t = this.dataset.filter;
-      if(t === 'all'){
-        memState.filter = null;
-        document.querySelectorAll('#memChips .mem-chip').forEach(function(c){
-          c.classList.toggle('active', c.dataset.filter==='all');
-        });
-        populateMemories();
-      } else if(t === 'photos'){
-        memState.filter = {type:'photos', value:true, label:'with photos'};
-        document.querySelectorAll('#memChips .mem-chip').forEach(function(c){
-          c.classList.toggle('active', c.dataset.filter==='photos');
-        });
-        populateMemories();
-      } else {
-        _openMemPicker(t);
-      }
-    });
-  });
-  $('memPickerClose').addEventListener('click', _closeMemPicker);
-  $('memPickerSheet').addEventListener('click', function(e){
-    if(e.target === this) _closeMemPicker();
-  });
-}
-_wireMemories();
-// populate on load if entries exist
+// populate on load
 populateMemories();
-
-// Held + Portrait population deferred — see after hasLogged declaration
-

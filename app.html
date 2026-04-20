@@ -250,7 +250,7 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .agent-hint::before{content:'';display:inline-block;width:4px;height:4px;border-radius:50%;background:var(--gold);vertical-align:middle;margin-right:8px;opacity:.6}
 .arrive-footer{position:fixed;bottom:calc(80px + env(safe-area-inset-bottom));left:0;right:0;width:100%;max-width:520px;margin:0 auto;padding:8px 24px;z-index:55;background:transparent;text-align:center}
 .knot-btn{display:inline-flex;flex-direction:column;align-items:center;width:auto;height:auto;background:none;border:none;color:var(--gold);font-family:'Fraunces',serif;font-style:italic;font-size:11px;cursor:pointer;filter:drop-shadow(0 0 12px rgba(201,148,58,0.3));transition:opacity 300ms,transform 200ms,filter 200ms;padding:0;gap:8px}
-.knot-btn .knot-icon{display:block;width:60px;height:60px;background:url('logogchain.svg') center/contain no-repeat}
+.knot-btn .knot-icon{display:block;width:60px;height:60px;background:url('assets/logogchain.svg') center/contain no-repeat}
 .arrive-btn{flex-direction:row;gap:10px;padding:10px 22px;border:1px solid rgba(201,148,58,0.35);border-radius:999px;background:rgba(201,148,58,0.06);font-size:14px}
 .arrive-btn .knot-icon{width:22px;height:22px}
 .knot-btn:active{transform:scale(.92);filter:drop-shadow(0 0 18px rgba(230,182,88,0.5))}
@@ -1580,7 +1580,7 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
 <!-- ═══ ONBOARDING (Day 1 only) ═══════════════════════ -->
 <!-- ═══ SCREEN 0A: SIGN IN (OAuth) ═══════════════════ -->
 <div id="s-signin" style="display:none">
-  <img src="logogchain.svg" alt="" class="signin-logo">
+  <img src="assets/logogchain.svg" alt="" class="signin-logo">
   <h1 class="signin-title">GratitudeChain</h1>
   <p class="signin-sub">your daily gratitude journey</p>
   <div class="signin-buttons">
@@ -1597,7 +1597,7 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
 
 <!-- ═══ SCREEN 0B: PROFILE SETUP (name + birthday) ══ -->
 <div id="s-profile" style="display:none">
-  <img src="logogchain.svg" alt="" class="signin-logo">
+  <img src="assets/logogchain.svg" alt="" class="signin-logo">
   <h1 class="signin-title">welcome</h1>
   <p class="signin-sub">tell us a little about you</p>
   <div class="signin-form" id="profileForm">
@@ -1613,7 +1613,7 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
   <p class="onboard-line" id="ob1">one moment per day.</p>
   <p class="onboard-line" id="ob2">a chain that grows with you.</p>
   <p class="onboard-line" id="ob3">the knot is today.</p>
-  <img class="onboard-line" id="ob4" src="logogchain.svg" alt="" style="width:64px;height:64px;object-fit:contain;margin-top:12px;filter:drop-shadow(0 0 16px rgba(201,148,58,0.4))">
+  <img class="onboard-line" id="ob4" src="assets/logogchain.svg" alt="" style="width:64px;height:64px;object-fit:contain;margin-top:12px;filter:drop-shadow(0 0 16px rgba(201,148,58,0.4))">
 </div>
 
 <!-- ═══ SCREEN 1: SPLASH ═════════════════════════════ -->
@@ -1641,22 +1641,22 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
       <!-- STEP 1 — 4 category cards in a 2×2 grid. One gentle ask at a time. -->
       <div class="arrival-cats" id="arrivalCats">
         <button class="arrival-cat" data-group="light">
-          <img class="arrival-cat-icon" src="arriving-light-card.svg" alt="">
+          <img class="arrival-cat-icon" src="assets/arrivinglight.svg" alt="">
           <span class="arrival-cat-name">arriving light</span>
           <span class="arrival-cat-hint">grateful&nbsp;· tender&nbsp;· hopeful&nbsp;· calm&nbsp;· alive&nbsp;· light&nbsp;· passionate&nbsp;· content&nbsp;· relaxed&nbsp;· focused&nbsp;· inspired&nbsp;· certain</span>
         </button>
         <button class="arrival-cat" data-group="between">
-          <img class="arrival-cat-icon" src="in-between-card.svg" alt="">
+          <img class="arrival-cat-icon" src="assets/inbetween.svg" alt="">
           <span class="arrival-cat-name">in between</span>
           <span class="arrival-cat-hint">quiet&nbsp;· numb&nbsp;· foggy&nbsp;· nervous&nbsp;· restless&nbsp;· searching&nbsp;· lost&nbsp;· yearning&nbsp;· bored</span>
         </button>
         <button class="arrival-cat" data-group="weight">
-          <img class="arrival-cat-icon" src="carrying-weight-card.svg" alt="">
+          <img class="arrival-cat-icon" src="assets/carryingweight.svg" alt="">
           <span class="arrival-cat-name">carrying weight</span>
           <span class="arrival-cat-hint">hard&nbsp;· heavy&nbsp;· overwhelmed&nbsp;· livid&nbsp;· sad&nbsp;· frustrated&nbsp;· anxious&nbsp;· lonely&nbsp;· upset&nbsp;· insecure</span>
         </button>
         <button class="arrival-cat" data-group="hard">
-          <img class="arrival-cat-icon" src="hard-to-name-card.svg" alt="">
+          <img class="arrival-cat-icon" src="assets/hardtoname.svg" alt="">
           <span class="arrival-cat-name">hard to name</span>
           <span class="arrival-cat-hint">heartbroken&nbsp;· disappointed&nbsp;· exhausted&nbsp;· moved&nbsp;· ashamed&nbsp;· vulnerable&nbsp;· betrayed</span>
         </button>
@@ -1668,59 +1668,59 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
       <div class="emo-group" data-group="light" hidden>
         <p class="emo-group-label">— arriving light —</p>
         <div class="emo-grid">
-          <button class="chip" data-c="grateful"><img src="grateful-icon.svg" alt=""> grateful</button>
-          <button class="chip" data-c="alive"><img src="alive-icon.svg" alt=""> alive</button>
-          <button class="chip" data-c="tender"><img src="tender-icon.svg" alt=""> tender</button>
-          <button class="chip" data-c="calm"><img src="calm-icon.svg" alt=""> calm</button>
-          <button class="chip" data-c="hopeful"><img src="hopeful-icon.svg" alt=""> hopeful</button>
-          <button class="chip" data-c="light"><img src="light-icon.svg" alt=""> light</button>
-          <button class="chip" data-c="passionate"><img src="passionate-icon.svg" alt=""> passionate</button>
-          <button class="chip" data-c="content"><img src="content-icon.svg" alt=""> content</button>
-          <button class="chip" data-c="relaxed"><img src="relaxed-icon.svg" alt=""> relaxed</button>
-          <button class="chip" data-c="focused"><img src="focused-icon.svg" alt=""> focused</button>
-          <button class="chip" data-c="inspired"><img src="inspired-icon.svg" alt=""> inspired</button>
-          <button class="chip" data-c="certain"><img src="certain-icon.svg" alt=""> certain</button>
+          <button class="chip" data-c="grateful"><img src="assets/grateful-icon.svg" alt=""> grateful</button>
+          <button class="chip" data-c="alive"><img src="assets/alive-icon.svg" alt=""> alive</button>
+          <button class="chip" data-c="tender"><img src="assets/tender-icon.svg" alt=""> tender</button>
+          <button class="chip" data-c="calm"><img src="assets/calm-icon.svg" alt=""> calm</button>
+          <button class="chip" data-c="hopeful"><img src="assets/hopeful-icon.svg" alt=""> hopeful</button>
+          <button class="chip" data-c="light"><img src="assets/light-icon.svg" alt=""> light</button>
+          <button class="chip" data-c="passionate"><img src="assets/passionate.svg" alt=""> passionate</button>
+          <button class="chip" data-c="content"><img src="assets/content.svg" alt=""> content</button>
+          <button class="chip" data-c="relaxed"><img src="assets/relaxed.svg" alt=""> relaxed</button>
+          <button class="chip" data-c="focused"><img src="assets/focused.svg" alt=""> focused</button>
+          <button class="chip" data-c="inspired"><img src="assets/inspired.svg" alt=""> inspired</button>
+          <button class="chip" data-c="certain"><img src="assets/certain.svg" alt=""> certain</button>
         </div>
       </div>
       <div class="emo-group" data-group="between" hidden>
         <p class="emo-group-label">— in between —</p>
         <div class="emo-grid">
-          <button class="chip" data-c="numb"><img src="numb-icon.svg" alt=""> numb</button>
-          <button class="chip" data-c="quiet"><img src="quiet-icon.svg" alt=""> quiet</button>
-          <button class="chip" data-c="foggy"><img src="foggy-icon.svg" alt=""> foggy</button>
-          <button class="chip" data-c="restless"><img src="restless-icon.svg" alt=""> restless</button>
-          <button class="chip" data-c="searching"><img src="searching-icon.svg" alt=""> searching</button>
-          <button class="chip" data-c="nervous"><img src="nervous-icon.svg" alt=""> nervous</button>
-          <button class="chip" data-c="lost"><img src="lost-icon.svg" alt=""> lost</button>
-          <button class="chip" data-c="yearning"><img src="yearning-icon.svg" alt=""> yearning</button>
-          <button class="chip" data-c="bored"><img src="bored-icon.svg" alt=""> bored</button>
+          <button class="chip" data-c="numb"><img src="assets/numb-icon.svg" alt=""> numb</button>
+          <button class="chip" data-c="quiet"><img src="assets/quiet-icon.svg" alt=""> quiet</button>
+          <button class="chip" data-c="foggy"><img src="assets/foggy-icon.svg" alt=""> foggy</button>
+          <button class="chip" data-c="restless"><img src="assets/restless-icon.svg" alt=""> restless</button>
+          <button class="chip" data-c="searching"><img src="assets/searching-icon.svg" alt=""> searching</button>
+          <button class="chip" data-c="nervous"><img src="assets/nervous.svg" alt=""> nervous</button>
+          <button class="chip" data-c="lost"><img src="assets/lost.svg" alt=""> lost</button>
+          <button class="chip" data-c="yearning"><img src="assets/yearning.svg" alt=""> yearning</button>
+          <button class="chip" data-c="bored"><img src="assets/bored.svg" alt=""> bored</button>
         </div>
       </div>
       <div class="emo-group" data-group="weight" hidden>
         <p class="emo-group-label">— carrying weight —</p>
         <div class="emo-grid">
-          <button class="chip" data-c="hard"><img src="hard-icon.svg" alt=""> hard</button>
-          <button class="chip" data-c="heavy"><img src="heavy-icon.svg" alt=""> heavy</button>
-          <button class="chip" data-c="overwhelmed"><img src="overwhelmed-icon.svg" alt=""> overwhelmed</button>
-          <button class="chip" data-c="sad"><img src="sad-icon.svg" alt=""> sad</button>
-          <button class="chip" data-c="frustrated"><img src="frustrated-icon.svg" alt=""> frustrated</button>
-          <button class="chip" data-c="anxious"><img src="anxious-icon.svg" alt=""> anxious</button>
-          <button class="chip" data-c="livid"><img src="livid-icon.svg" alt=""> livid</button>
-          <button class="chip" data-c="lonely"><img src="lonely-icon.svg" alt=""> lonely</button>
-          <button class="chip" data-c="upset"><img src="upset-icon.svg" alt=""> upset</button>
-          <button class="chip" data-c="insecure"><img src="insecure-icon.svg" alt=""> insecure</button>
+          <button class="chip" data-c="hard"><img src="assets/hard-icon.svg" alt=""> hard</button>
+          <button class="chip" data-c="heavy"><img src="assets/heavy-icon.svg" alt=""> heavy</button>
+          <button class="chip" data-c="overwhelmed"><img src="assets/overwhelmed-icon.svg" alt=""> overwhelmed</button>
+          <button class="chip" data-c="sad"><img src="assets/sad-icon.svg" alt=""> sad</button>
+          <button class="chip" data-c="frustrated"><img src="assets/frustrated-icon.svg" alt=""> frustrated</button>
+          <button class="chip" data-c="anxious"><img src="assets/anxious-icon.svg" alt=""> anxious</button>
+          <button class="chip" data-c="livid"><img src="assets/livid.svg" alt=""> livid</button>
+          <button class="chip" data-c="lonely"><img src="assets/lonely.svg" alt=""> lonely</button>
+          <button class="chip" data-c="upset"><img src="assets/upset.svg" alt=""> upset</button>
+          <button class="chip" data-c="insecure"><img src="assets/insecure.svg" alt=""> insecure</button>
         </div>
       </div>
       <div class="emo-group" data-group="hard" hidden>
         <p class="emo-group-label">— hard to name —</p>
         <div class="emo-grid">
-          <button class="chip" data-c="heartbroken"><img src="heartbroken-icon.svg" alt=""> heartbroken</button>
-          <button class="chip" data-c="disappointed"><img src="disappointed-icon.svg" alt=""> disappointed</button>
-          <button class="chip" data-c="exhausted"><img src="exhausted-icon.svg" alt=""> exhausted</button>
-          <button class="chip" data-c="moved"><img src="moved-icon.svg" alt=""> moved</button>
-          <button class="chip" data-c="ashamed"><img src="ashamed-icon.svg" alt=""> ashamed</button>
-          <button class="chip" data-c="vulnerable"><img src="vulnerable-icon.svg" alt=""> vulnerable</button>
-          <button class="chip" data-c="betrayed"><img src="betrayed-icon.svg" alt=""> betrayed</button>
+          <button class="chip" data-c="heartbroken"><img src="assets/heartbroken-icon.svg" alt=""> heartbroken</button>
+          <button class="chip" data-c="disappointed"><img src="assets/disappointed-icon.svg" alt=""> disappointed</button>
+          <button class="chip" data-c="exhausted"><img src="assets/exhausted-icon.svg" alt=""> exhausted</button>
+          <button class="chip" data-c="moved"><img src="assets/moved-icon.svg" alt=""> moved</button>
+          <button class="chip" data-c="ashamed"><img src="assets/ashamed.svg" alt=""> ashamed</button>
+          <button class="chip" data-c="vulnerable"><img src="assets/vulnerable.svg" alt=""> vulnerable</button>
+          <button class="chip" data-c="betrayed"><img src="assets/betrayed.svg" alt=""> betrayed</button>
         </div>
       </div>
     </div>
@@ -2141,16 +2141,16 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
 <!-- ═══ BOTTOM NAV ═══════════════════════════════════ -->
 <nav class="bottom-nav dark" id="bottomNav">
   <button class="nav-tab" data-screen="s-unfold">
-    <span class="icon"><img src="unfold-icon.svg" alt="" style="width:20px;height:20px;object-fit:contain"></span><span class="label">unfold</span>
+    <span class="icon"><img src="assets/unfold-icon.svg" alt="" style="width:20px;height:20px;object-fit:contain"></span><span class="label">unfold</span>
   </button>
   <button class="nav-tab" data-screen="s-held">
-    <span class="icon"><img src="held.svg" alt="" style="width:20px;height:20px;object-fit:contain"></span><span class="label">held</span>
+    <span class="icon"><img src="assets/held.svg" alt="" style="width:20px;height:20px;object-fit:contain"></span><span class="label">held</span>
   </button>
   <button class="nav-tab active" data-screen="s-splash">
-    <span class="icon"><img src="logogchain.svg" alt="" style="width:20px;height:20px;object-fit:contain"></span><span class="label">chain</span>
+    <span class="icon"><img src="assets/logogchain.svg" alt="" style="width:20px;height:20px;object-fit:contain"></span><span class="label">chain</span>
   </button>
   <button class="nav-tab" data-screen="s-memories">
-    <span class="icon"><img src="memories.svg" alt="" style="width:20px;height:20px;object-fit:contain"></span><span class="label">memories</span>
+    <span class="icon"><img src="assets/memories.svg" alt="" style="width:20px;height:20px;object-fit:contain"></span><span class="label">memories</span>
   </button>
   <button class="nav-tab" data-screen="s-portrait">
     <span class="icon">◎</span><span class="label">weave</span>
@@ -2170,7 +2170,7 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
 
 <!-- ═══ SETTINGS BUTTON (fixed, top-right of every screen) ═══ -->
 <button class="settings-btn" id="settingsBtn" aria-label="settings">
-  <img src="settings.svg" alt="">
+  <img src="assets/settings.svg" alt="">
 </button>
 
 <!-- ═══ SETTINGS SCREEN (slide-in from right) ═══ -->
@@ -9167,7 +9167,7 @@ function runInsightSequence(){
   const e = EMO[emo];
   // set emotion visuals
   $('insightEmoji').className = 'insight-emoji emo-' + emo;
-  $('insightEmoji').innerHTML = '<img src="' + emo + '-icon.svg" alt="' + emo + '" style="width:84px;height:84px;object-fit:contain;filter:drop-shadow(0 4px 14px rgba(201,148,58,0.35))">';
+  $('insightEmoji').innerHTML = '<img src="assets/' + emo + '-icon.svg" alt="' + emo + '" style="width:84px;height:84px;object-fit:contain;filter:drop-shadow(0 4px 14px rgba(201,148,58,0.35))">';
   $('insightEmoji').style.setProperty('--emo-shadow', e.shadow);
   $('insightWord').textContent = emo;
   var bgBase=getComputedStyle(document.body).getPropertyValue('--bg').trim()||'#f5ede0';
@@ -9661,7 +9661,7 @@ $('journalSubmit').addEventListener('click',()=>{
   const entry = $('journalArea').value.trim();
   if(!entry || !emo) return; // guard: need both text and an emotion
   // populate (but don't save yet — save happens on "carry it forward")
-  $('postInsightIcon').src = emo + '-icon.svg';
+  $('postInsightIcon').src = 'assets/' + emo + '-icon.svg';
   $('postInsightEmo').textContent = emo;
   var displayEntry = entry.length > 150 ? entry.slice(0,147) + '\u2026' : entry;
   $('postInsightEntry').textContent = '\u201C' + displayEntry + '\u201D';
@@ -9821,7 +9821,7 @@ function flyKnotToChain(entry, startBtn){
   var knot=document.createElement('div');
   knot.style.cssText='position:fixed;z-index:200;pointer-events:none;'+
     'width:80px;height:80px;'+
-    'background:url(logogchain.svg) center/contain no-repeat;'+
+    'background:url(assets/logogchain.svg) center/contain no-repeat;'+
     'filter:drop-shadow(0 0 20px rgba(230,182,88,0.6));'+
     'transition:all 1.4s cubic-bezier(0.25,0.1,0.25,1);'+
     'left:'+(startBtn.left+startBtn.width/2-40)+'px;'+
@@ -10460,7 +10460,7 @@ function runBirthdayCeremony(onDone){
     html += '<button class="ed-close" onclick="closeEntryDetail()">← back</button>';
     // header: emotion icon + name
     html += '<div class="ed-header">';
-    if(entry.emo) html += '<img class="ed-emo-icon" src="logogchain.svg" alt="'+entry.emo+'">';
+    if(entry.emo) html += '<img class="ed-emo-icon" src="assets/logogchain.svg" alt="'+entry.emo+'">';
     html += '<div><div class="ed-emo-name">'+(entry.emo||'')+'</div>';
     html += '<div class="ed-day">DAY '+String(entry.day).padStart(3,'0')+' \u00B7 '+(entry.date||'').toUpperCase()+'</div>';
     html += '</div></div>';
@@ -10510,7 +10510,7 @@ try{ void function(){
 
   // ── KNOT SVG IMAGE ──
   var KNOT_IMG=new Image();
-  KNOT_IMG.src='logogchain.svg';
+  KNOT_IMG.src='assets/logogchain.svg';
 
   // ── NECKLACE GEOMETRY (circle, not serpentine) ──
   var NECKLACE_R, NECKLACE_CX, NECKLACE_CY;
@@ -12317,6 +12317,109 @@ if (typeof window !== 'undefined') {
     localStorage.removeItem('gc_annual_pending');
 
     // summary: confirm every month has a distinct dominant
+    var summary = [];
+    for (var mi = 0; mi < 12; mi++){
+      var ct = {};
+      entries.filter(function(e){ return e.date.slice(5,7) === pad(mi+1); })
+             .forEach(function(e){ ct[e.emo] = (ct[e.emo]||0)+1; });
+      var top = Object.keys(ct).sort(function(a,b){ return ct[b]-ct[a]; })[0] || '—';
+      summary.push(pad(mi+1)+': '+top);
+    }
+    return { entries: entries.length, startDate: iso(start), monthDominants: summary };
+  };
+
+  // ── Third demo set — wave-based month shape ──
+  // Each month has an early / mid / late emotional phase. The mid week
+  // carries the month's dominant heaviest; the edges add arc and variance.
+  // 12 new distinct dominants — none shared with demoAnnual or demoAnnualAlt:
+  //   Jan ashamed · Feb lonely · Mar anxious · Apr inspired · May focused ·
+  //   Jun certain · Jul relaxed · Aug light · Sep sad · Oct overwhelmed ·
+  //   Nov vulnerable · Dec bored
+  window._DEV.demoAnnualWaves = function(year){
+    year = year || new Date().getFullYear();
+    var pad = function(n){ return String(n).padStart(2,'0'); };
+    var iso = function(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+
+    // [earlyPool, midDominant+supports, latePool] — the mid anchor is pool[0]
+    var phases = [
+      // Jan — new-year weight; ashamed middle, dims toward hopeful
+      [['heavy','quiet','tender'],   ['ashamed','disappointed','insecure','exhausted'], ['hopeful','calm','grateful']],
+      // Feb — winter isolation; lonely middle, ends tender
+      [['quiet','numb','foggy'],     ['lonely','sad','yearning','heartbroken'],         ['tender','moved','grateful']],
+      // Mar — season shift; anxious middle
+      [['restless','foggy','numb'],  ['anxious','nervous','overwhelmed','frustrated'],  ['hopeful','alive','moved']],
+      // Apr — bloom; inspired middle
+      [['hopeful','calm','tender'],  ['inspired','alive','passionate','grateful'],      ['focused','light','content']],
+      // May — clarity; focused middle
+      [['calm','content','relaxed'], ['focused','certain','inspired','alive'],          ['passionate','grateful','moved']],
+      // Jun — summer fullness; certain middle
+      [['relaxed','content','calm'], ['certain','focused','grateful','alive'],          ['passionate','light','moved']],
+      // Jul — midsummer ease; relaxed middle
+      [['alive','light','content'],  ['relaxed','calm','grateful','tender'],            ['moved','hopeful','passionate']],
+      // Aug — late-summer warmth; light middle
+      [['tender','grateful','calm'], ['light','alive','moved','passionate'],            ['yearning','searching','nervous']],
+      // Sep — autumn grief / return; sad middle
+      [['quiet','tender','moved'],   ['sad','yearning','lonely','heartbroken'],         ['searching','restless','foggy']],
+      // Oct — year pressure; overwhelmed middle
+      [['foggy','restless','numb'],  ['overwhelmed','anxious','frustrated','heavy'],    ['hard','livid','upset']],
+      // Nov — tenderness / thanksgiving; vulnerable middle
+      [['grateful','moved','tender'],['vulnerable','tender','ashamed','yearning'],      ['hopeful','quiet','calm']],
+      // Dec — winter quiet; bored middle
+      [['quiet','calm','foggy'],     ['bored','numb','restless','lost'],                ['hopeful','tender','content']]
+    ];
+
+    var today = new Date();
+    var start = new Date(year, 0, 1);
+    var daysInYear = ((year % 4 === 0 && year % 100 !== 0) || year % 400 === 0) ? 366 : 365;
+
+    var logged = [], entries = [];
+    for (var i = 0; i < daysInYear; i++) {
+      var d = new Date(start); d.setDate(start.getDate() + i);
+      var date = iso(d);
+      logged.push(date);
+
+      var mIdx = d.getMonth();
+      var dayOfMonth = d.getDate();
+      var daysInMonth = new Date(d.getFullYear(), mIdx+1, 0).getDate();
+      var phase = phases[mIdx];
+
+      // phase weighting by position in month (early third / mid third / late third)
+      // mid third leans hardest on pool[0] (the month's dominant)
+      var third = dayOfMonth / daysInMonth;
+      var pool, weights;
+      if (third < 0.20) {
+        pool = phase[0]; // early (days 1-6 of 30)
+        weights = [0,0,1,1,2,2];
+      } else if (third > 0.80) {
+        pool = phase[2]; // late (days 25-30)
+        weights = [0,0,1,1,2,2];
+      } else {
+        pool = phase[1]; // mid (days 7-24) — wider window, stronger dominant
+        // pool[0] ≈ 70%, pool[1] ≈ 20%, pool[2] ≈ 6%, pool[3] ≈ 4%
+        weights = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,2,2,3];
+      }
+      // deterministic LCG pick keyed on day+month+year
+      var lseed = (((d.getDate() * 2654435761) ^ (mIdx * 40503) ^ (year * 374761393)) + 2166136261) >>> 0;
+      var r = ((lseed >> 11) ^ (lseed >> 5)) % weights.length;
+      var emo = pool[weights[r]] || pool[0];
+      entries.push({day: i+1, date: date, emo: emo, intent:'carry-forward', text: 'day '+(i+1)+' — '+emo+'.', ts: d.getTime()});
+    }
+
+    localStorage.setItem('gc_user', JSON.stringify({name:'Dev', birthday:'04-25', email:'d@test'}));
+    localStorage.setItem('gc_onboard_seen', '1');
+    localStorage.setItem('gc_start_date', iso(start));
+    localStorage.setItem('gc_logged_dates', JSON.stringify(logged));
+    localStorage.setItem('gc_logged_today', today.toDateString());
+    localStorage.setItem('gc_day', String(logged.length));
+    localStorage.setItem('gc_entries', JSON.stringify(entries));
+    localStorage.setItem('gc_birthday_knots', '[]');
+    for (var m = 0; m < 12; m++) {
+      localStorage.removeItem('gc_ceremony_seen_'+year+'-'+pad(m+1));
+      localStorage.removeItem('gc_portrait_seen_'+year+'-'+pad(m+1));
+    }
+    localStorage.removeItem('gc_year_complete_'+year);
+    localStorage.removeItem('gc_annual_pending');
+
     var summary = [];
     for (var mi = 0; mi < 12; mi++){
       var ct = {};

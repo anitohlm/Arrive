@@ -580,13 +580,17 @@ function _shareCapsule(cap){
   var _selectedDateChip = null;
   var _selectedMood = null;
 
-  var MOODS = [
-    'calm','tender','grateful','alive','hopeful','light','passionate','content','relaxed',
-    'focused','inspired','certain','numb','quiet','foggy','restless','searching','nervous',
-    'lost','yearning','bored','hard','heavy','overwhelmed','sad','frustrated','anxious',
-    'livid','lonely','upset','insecure','heartbroken','disappointed','exhausted','moved',
-    'ashamed','vulnerable','betrayed'
+  var MOOD_FAMILIES = [
+    { label:'arriving light',
+      moods:['grateful','tender','hopeful','calm','alive','light','passionate','content','relaxed','focused','inspired','certain'] },
+    { label:'in between',
+      moods:['quiet','numb','foggy','nervous','restless','searching','lost','yearning','bored'] },
+    { label:'carrying weight',
+      moods:['hard','heavy','overwhelmed','livid','sad','frustrated','anxious','lonely','upset','insecure'] },
+    { label:'hard to name',
+      moods:['heartbroken','disappointed','exhausted','moved','ashamed','vulnerable','betrayed'] }
   ];
+  var MOODS = MOOD_FAMILIES.reduce(function(all, f){ return all.concat(f.moods); }, []);
 
   // ── open/close ──────────────────────────────────────
   function openComposer(){
@@ -686,26 +690,59 @@ function _shareCapsule(cap){
 
   $('capsuleNext2').addEventListener('click', function(){
     if(!_capsuleData.unlock_date) return;
-    // populate mood chips
     var wrap = $('capsuleMoodChips');
     wrap.innerHTML = '';
-    MOODS.forEach(function(m){
-      var btn = document.createElement('button');
-      btn.className = 'capsule-mood-chip';
-      btn.dataset.mood = m;
-      btn.textContent = m;
-      btn.addEventListener('click', function(){
-        var isDeselecting = (_selectedMood === m);
-        document.querySelectorAll('.capsule-mood-chip').forEach(function(c){ c.classList.remove('sel'); });
-        if(isDeselecting){
-          _selectedMood = null;
-        } else {
-          btn.classList.add('sel');
-          _selectedMood = m;
-        }
-      });
-      wrap.appendChild(btn);
+
+    // "any feeling" default — clears any specific mood. Selected unless user picks one.
+    var anyBtn = document.createElement('button');
+    anyBtn.type = 'button';
+    anyBtn.className = 'capsule-any-pill sel';
+    anyBtn.textContent = 'any feeling';
+    anyBtn.addEventListener('click', function(){
+      document.querySelectorAll('.capsule-mood-word.sel').forEach(function(c){ c.classList.remove('sel'); });
+      anyBtn.classList.add('sel');
+      _selectedMood = null;
     });
+    wrap.appendChild(anyBtn);
+
+    function selectWord(btn, mood){
+      var isDeselect = (_selectedMood === mood);
+      document.querySelectorAll('.capsule-mood-word.sel').forEach(function(c){ c.classList.remove('sel'); });
+      anyBtn.classList.remove('sel');
+      if(isDeselect){
+        _selectedMood = null;
+        anyBtn.classList.add('sel');
+      } else {
+        btn.classList.add('sel');
+        _selectedMood = mood;
+      }
+    }
+
+    MOOD_FAMILIES.forEach(function(family){
+      var group = document.createElement('div');
+      group.className = 'capsule-mood-group';
+      var label = document.createElement('p');
+      label.className = 'capsule-mood-group-label';
+      label.textContent = family.label;
+      group.appendChild(label);
+
+      var words = document.createElement('div');
+      words.className = 'capsule-mood-words';
+      family.moods.forEach(function(m){
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'capsule-mood-word';
+        btn.dataset.mood = m;
+        btn.textContent = m;
+        btn.addEventListener('click', function(){ selectWord(btn, m); });
+        words.appendChild(btn);
+      });
+      group.appendChild(words);
+      wrap.appendChild(group);
+    });
+
+    // reset selection state when the picker opens
+    _selectedMood = null;
     _showStep(3);
   });
 
