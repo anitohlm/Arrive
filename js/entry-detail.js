@@ -10,6 +10,9 @@
   overlay.addEventListener('click', function(e){
     if(e.target === overlay) closeEntryDetail();
   });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape' && overlay.classList.contains('open')) closeEntryDetail();
+  });
 
   // User-authored fields (entry.text, entry.ai, entry.emo, entry.intent) are rendered
   // via innerHTML, so every interpolation MUST pass through _escHtml (capsule.js:312)
@@ -29,12 +32,27 @@
     var ai = _escHtml(entry.ai || '');
     var html = '';
     html += '<button class="ed-close" onclick="closeEntryDetail()">← back</button>';
-    // header: emotion icon + name
+    // centered stack: big icon → title → day · date
     html += '<div class="ed-header">';
-    if(emo) html += '<img class="ed-emo-icon" src="assets/logogchain.svg" alt="'+emo+'">';
-    html += '<div><div class="ed-emo-name">'+emo+'</div>';
+    if(emo){
+      var iconSrc = (typeof emoIconPath === 'function') ? emoIconPath(entry.emo || '') : 'assets/logogchain.svg';
+      // Derive a per-emotion glow from EMO[emo].color (#rrggbb → rgba). Falls
+      // back to a warm gold glow if the emotion isn't in the palette.
+      var _glowCss = '';
+      try{
+        var _ep = (typeof EMO !== 'undefined') ? EMO[entry.emo] : null;
+        var _hex = (_ep && _ep.color) ? _ep.color.replace('#','') : 'c9943a';
+        var _r = parseInt(_hex.slice(0,2),16);
+        var _g = parseInt(_hex.slice(2,4),16);
+        var _b = parseInt(_hex.slice(4,6),16);
+        _glowCss = '--emo-glow:rgba('+_r+','+_g+','+_b+',0.55);'
+                 + '--emo-glow-soft:rgba('+_r+','+_g+','+_b+',0.28);';
+      }catch(e){}
+      html += '<img class="ed-emo-icon" style="'+_glowCss+'" src="' + _escHtml(iconSrc) + '" alt="'+emo+'">';
+    }
+    html += '<div class="ed-emo-name">'+emo+'</div>';
     html += '<div class="ed-day">DAY '+dayLabel+' \u00B7 '+date+'</div>';
-    html += '</div></div>';
+    html += '</div>';
     html += '<div class="ed-rule"></div>';
     // full entry text
     html += '<div class="ed-entry">\u201C'+text+'\u201D</div>';
@@ -66,12 +84,6 @@
     } else if(entry.hasVoice){
       html += '<div class="ed-voice"><div class="ed-badge">voice memo attached</div></div>';
     }
-    // badges
-    html += '<div class="ed-badges">';
-    if(emo) html += '<span class="ed-badge">'+emo+'</span>';
-    if(intent) html += '<span class="ed-badge">'+intent+'</span>';
-    html += '<span class="ed-badge">day '+dayNum+'</span>';
-    html += '</div>';
     inner.innerHTML = html;
     overlay.classList.add('open');
   };
