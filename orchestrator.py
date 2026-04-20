@@ -33,10 +33,18 @@ def handle_open_app(user_id: str, mood: str, intention: str, hours_absent: float
     return result
 
 
-def handle_submit_entry(user_id: str, content: str, mood: str, intention: str) -> dict:
+def handle_submit_entry(
+    user_id: str,
+    content: str,
+    mood: str,
+    intention: str,
+    photos: list = None,
+    voice: dict = None,
+) -> dict:
     """
     Called when user submits their daily gratitude entry.
-    Returns: streak info + milestone if any
+    Persists text + attachments (base64 data URLs) to Cosmos + AI Search.
+    Returns: streak info + milestone if any.
     """
     # Process streak
     streak_result = process_streak(user_id)
@@ -44,10 +52,12 @@ def handle_submit_entry(user_id: str, content: str, mood: str, intention: str) -
     if streak_result.get("already_logged"):
         return {
             "success": False,
-            "message": "Already logged today! Come back tomorrow. 🌙"
+            "message": "Already logged today! Come back tomorrow. \U0001F319"
         }
 
-    # Save entry to Cosmos DB
+    # Save entry to Cosmos DB — include attachments so memories survive reloads
+    # and cross-device sync. Cosmos SQL doc limit is 2MB; frontend compresses
+    # photos (~150KB each) and voice is ~100KB per 30s so we stay well under.
     entry = {
         "id": str(uuid.uuid4()),
         "userId": user_id,
@@ -55,12 +65,22 @@ def handle_submit_entry(user_id: str, content: str, mood: str, intention: str) -
         "mood": mood,
         "intention": intention,
         "dayNumber": streak_result["streak"],
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": datetime.utcnow().isoformat(),
+        "photos": photos or [],
+        "voice": voice or None,
+        "hasPhotos": bool(photos),
+        "hasVoice":  bool(voice),
     }
     save_entry(entry)
 
-    # Index entry in AI Search for memory resurface
-    index_entry(entry)
+    # Index entry in AI Search for memory resurface.
+    # We build a text-only projection so the large base64 payloads never
+    # hit the search index — memory recall works on content/mood alone.
+    search_doc = {k: entry[k] for k in ("id","userId","content","mood","intention","dayNumber","timestamp")}
+    try:
+        index_entry(search_doc)
+    except Exception:
+        pass  # Search is best-effort; Cosmos write above is source of truth
 
     return {
         "success": True,

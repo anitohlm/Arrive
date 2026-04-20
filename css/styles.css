@@ -692,6 +692,23 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .entry-detail .ed-ai{font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px;color:var(--gold);line-height:1.7;opacity:.8}
 .entry-detail .ed-photos{display:flex;gap:8px;flex-wrap:wrap}
 .entry-detail .ed-photos img{width:100%;max-width:180px;border-radius:12px;border:1px solid var(--glass-border)}
+.entry-detail .ed-photos-grid{
+  display:grid;grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+  gap:10px;margin:12px 0 4px;
+}
+.entry-detail .ed-photo{
+  width:100%;aspect-ratio:1/1;object-fit:cover;
+  border-radius:12px;
+  border:1px solid rgba(201,148,58,0.18);
+  background:rgba(255,255,255,0.02);
+}
+.entry-detail .ed-voice-player{
+  display:flex;justify-content:center;margin:12px 0 0;
+}
+.entry-detail .ed-voice-player audio{
+  width:100%;max-width:320px;height:38px;
+  filter:sepia(0.3) hue-rotate(-15deg) saturate(0.8);
+}
 .entry-detail .ed-voice{display:flex;align-items:center;gap:8px}
 .entry-detail .ed-voice audio{width:100%;max-width:280px;height:36px}
 .entry-detail .ed-badges{display:flex;gap:8px;flex-wrap:wrap}

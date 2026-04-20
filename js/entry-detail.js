@@ -29,13 +29,25 @@
       html += '<div class="ed-rule"></div>';
       html += '<div class="ed-ai">'+entry.ai+'</div>';
     }
-    // photos
-    if(entry.hasPhotos){
+    // photos — render actual thumbnails if data present, else legacy badge
+    var photos = Array.isArray(entry.photos) ? entry.photos : [];
+    if(photos.length > 0){
+      html += '<div class="ed-rule"></div>';
+      html += '<div class="ed-photos-grid">';
+      photos.forEach(function(p){
+        if(p && p.dataUrl){
+          html += '<img class="ed-photo" src="'+p.dataUrl+'" alt="">';
+        }
+      });
+      html += '</div>';
+    } else if(entry.hasPhotos){
       html += '<div class="ed-rule"></div>';
       html += '<div class="ed-photos"><div class="ed-badge">photos attached</div></div>';
     }
-    // voice
-    if(entry.hasVoice){
+    // voice — inline audio player if data present, else legacy badge
+    if(entry.voice && entry.voice.dataUrl){
+      html += '<div class="ed-voice-player"><audio controls src="'+entry.voice.dataUrl+'"></audio></div>';
+    } else if(entry.hasVoice){
       html += '<div class="ed-voice"><div class="ed-badge">voice memo attached</div></div>';
     }
     // badges

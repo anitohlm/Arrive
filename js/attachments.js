@@ -1,30 +1,81 @@
 // ═══ JOURNAL ATTACHMENTS (photo + voice) ═══════════
+// Photos and voice memos are stored as base64 data URLs so they persist
+// across sessions and can be shipped to Cosmos via /submit-entry.
+// Photos are compressed to ~1000px max and JPEG 0.75 before encoding so
+// the entry stays well under Cosmos's 2MB-per-document limit.
 var journalAttachments = { photos: [], voice: null };
+
+// ── Image compression helper ──
+// Returns a Promise<{dataUrl, width, height, size}> for a resized JPEG.
+function _compressImage(file, maxDim, quality){
+  maxDim = maxDim || 1000;
+  quality = typeof quality === 'number' ? quality : 0.75;
+  return new Promise(function(resolve, reject){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var img = new Image();
+      img.onload = function(){
+        var w = img.width, h = img.height;
+        if(w > maxDim || h > maxDim){
+          var ratio = Math.min(maxDim / w, maxDim / h);
+          w = Math.round(w * ratio);
+          h = Math.round(h * ratio);
+        }
+        var canvas = document.createElement('canvas');
+        canvas.width = w; canvas.height = h;
+        var ctx = canvas.getContext('2d');
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, w, h);
+        var dataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve({ dataUrl: dataUrl, width: w, height: h, size: dataUrl.length });
+      };
+      img.onerror = reject;
+      img.src = e.target.result;
+    };
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+// ── Generic blob → data URL ──
+function _blobToDataURL(blob){
+  return new Promise(function(resolve, reject){
+    var reader = new FileReader();
+    reader.onload = function(e){ resolve(e.target.result); };
+    reader.onerror = reject;
+    reader.readAsDataURL(blob);
+  });
+}
 
 // photo upload
 $('attachPhotoBtn').addEventListener('click', function(){
   $('photoInput').click();
 });
 $('photoInput').addEventListener('change', function(e){
-  var files = e.target.files;
-  for(var i=0;i<files.length;i++){
-    if(journalAttachments.photos.length >= 3) break; // max 3 photos
-    var file = files[i];
-    var url = URL.createObjectURL(file);
-    journalAttachments.photos.push({ file: file, url: url });
-    // add thumbnail
-    var thumb = document.createElement('div');
-    thumb.className = 'attach-thumb';
-    thumb.innerHTML = '<img src="'+url+'"><button class="remove-attach">&times;</button>';
-    var idx = journalAttachments.photos.length - 1;
-    thumb.querySelector('.remove-attach').addEventListener('click', (function(i,el){
-      return function(){
-        journalAttachments.photos.splice(i,1);
-        el.remove();
-      };
-    })(idx, thumb));
-    $('attachPreview').appendChild(thumb);
-  }
+  var files = Array.from(e.target.files || []);
+  files.forEach(function(file){
+    if(journalAttachments.photos.length >= 3) return; // max 3 photos
+    _compressImage(file, 1000, 0.75).then(function(result){
+      if(journalAttachments.photos.length >= 3) return;
+      var entry = { dataUrl: result.dataUrl, width: result.width, height: result.height };
+      journalAttachments.photos.push(entry);
+      var idx = journalAttachments.photos.length - 1;
+      var thumb = document.createElement('div');
+      thumb.className = 'attach-thumb';
+      thumb.innerHTML = '<img src="'+result.dataUrl+'"><button class="remove-attach">&times;</button>';
+      thumb.querySelector('.remove-attach').addEventListener('click', (function(el){
+        return function(){
+          var i = journalAttachments.photos.indexOf(entry);
+          if(i >= 0) journalAttachments.photos.splice(i,1);
+          el.remove();
+        };
+      })(thumb));
+      $('attachPreview').appendChild(thumb);
+    }).catch(function(err){
+      console.warn('photo compression failed', err);
+    });
+  });
   e.target.value = '';
 });
 
@@ -60,20 +111,23 @@ $('attachVoiceBtn').addEventListener('click', function(){
     mediaRecorder.ondataavailable = function(e){ audioChunks.push(e.data); };
     mediaRecorder.onstop = function(){
       var blob = new Blob(audioChunks, {type:'audio/webm'});
-      var url = URL.createObjectURL(blob);
-      journalAttachments.voice = { blob: blob, url: url };
+      var mime = blob.type || 'audio/webm';
       stream.getTracks().forEach(function(t){t.stop()});
-      // show voice chip
-      var existing = $('attachPreview').querySelector('.voice-chip');
-      if(existing) existing.remove();
-      var chip = document.createElement('div');
-      chip.className = 'voice-chip';
-      chip.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/></svg>voice memo<button class="remove-attach">&times;</button>';
-      chip.querySelector('.remove-attach').addEventListener('click', function(){
-        journalAttachments.voice = null;
-        chip.remove();
+      _blobToDataURL(blob).then(function(dataUrl){
+        journalAttachments.voice = { dataUrl: dataUrl, mime: mime, size: dataUrl.length };
+        var existing = $('attachPreview').querySelector('.voice-chip');
+        if(existing) existing.remove();
+        var chip = document.createElement('div');
+        chip.className = 'voice-chip';
+        chip.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/></svg>voice memo<button class="remove-attach">&times;</button>';
+        chip.querySelector('.remove-attach').addEventListener('click', function(){
+          journalAttachments.voice = null;
+          chip.remove();
+        });
+        $('attachPreview').appendChild(chip);
+      }).catch(function(err){
+        console.warn('voice encode failed', err);
       });
-      $('attachPreview').appendChild(chip);
     };
     mediaRecorder.start();
     $('attachVoiceBtn').classList.add('recording');
@@ -118,8 +172,14 @@ $('journalSubmit').addEventListener('click',()=>{
   window._pendingEntry = entry;
   window._pendingEmo = emo;
   window._pendingIntent = intent;
-  window._pendingPhotos = journalAttachments.photos.length>0;
-  window._pendingVoice = !!journalAttachments.voice;
+  // Snapshot the actual attachment data so it persists into the saved entry.
+  // Photos: [{dataUrl,width,height}]. Voice: {dataUrl,mime,size} | null.
+  window._pendingPhotos = journalAttachments.photos.map(function(p){
+    return { dataUrl: p.dataUrl, width: p.width, height: p.height };
+  });
+  window._pendingVoice = journalAttachments.voice
+    ? { dataUrl: journalAttachments.voice.dataUrl, mime: journalAttachments.voice.mime }
+    : null;
   go('s-journal','s-post-insight');
   // safety timeout — hide the dot even if fetch hangs
   var aiTimeout = setTimeout(function(){
@@ -192,7 +252,11 @@ $('postInsightBtn').addEventListener('click',function(){
   localStorage.setItem('gc_logged_today', new Date().toDateString());
   hasLogged = true;
   showNav();
-  // save entry to localStorage history
+  // Resolve attachment snapshots (array of photos + optional voice).
+  var pendingPhotos = Array.isArray(window._pendingPhotos) ? window._pendingPhotos : [];
+  var pendingVoice  = window._pendingVoice && window._pendingVoice.dataUrl ? window._pendingVoice : null;
+
+  // save entry to localStorage history (attachments included so memories work across reloads)
   var entries = JSON.parse(localStorage.getItem('gc_entries') || '[]');
   entries.push({
     day: dayNum - 1, // save display day, not post-increment internal
@@ -202,18 +266,30 @@ $('postInsightBtn').addEventListener('click',function(){
     date: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
     dateISO: todayISO(), // reliable month-key for portrait filtering
     ai: window._pendingAi || POST_AI[pendingEmo] || '',
-    hasPhotos: window._pendingPhotos || false,
-    hasVoice: window._pendingVoice || false
+    photos: pendingPhotos,       // [{dataUrl,width,height}]
+    voice:  pendingVoice,        // {dataUrl,mime} | null
+    hasPhotos: pendingPhotos.length > 0,
+    hasVoice:  !!pendingVoice
   });
-  localStorage.setItem('gc_entries', JSON.stringify(entries));
+  try{
+    localStorage.setItem('gc_entries', JSON.stringify(entries));
+  }catch(e){
+    // localStorage quota exceeded — drop attachments and retry text-only to
+    // protect the chain. User's text is never lost; only the media falls off.
+    console.warn('localStorage full; stripping attachments from saved entry', e);
+    entries[entries.length-1].photos = [];
+    entries[entries.length-1].voice = null;
+    entries[entries.length-1].hasPhotos = false;
+    entries[entries.length-1].hasVoice = false;
+    try{ localStorage.setItem('gc_entries', JSON.stringify(entries)); }catch(_){}
+  }
   populateMemories();
   populateHeld();
   populatePortrait();
 
   // ── Best-effort Cosmos write (fire-and-forget) ──
-  // Local save above is source of truth; this mirrors the entry to the backend
-  // so the memory agent, AI Search index, and cross-device sync can use it.
-  // Silent on failure — offline or backend-down never blocks the UI.
+  // Ships the entry (with attachments, if any) to the backend so the memory
+  // agent, AI Search index, and cross-device sync can use it. Silent on failure.
   (function(){
     try{
       var userId = localStorage.getItem('gc_user_id') || 'demo-user';
@@ -224,7 +300,9 @@ $('postInsightBtn').addEventListener('click',function(){
           user_id: userId,
           content: entry,
           mood: pendingEmo,
-          intention: pendingIntent || ''
+          intention: pendingIntent || '',
+          photos: pendingPhotos, // [{dataUrl,width,height}]
+          voice:  pendingVoice   // {dataUrl,mime} | null
         })
       }).catch(function(){ /* offline / backend down — ignore */ });
     }catch(e){ /* no-op */ }
@@ -232,8 +310,8 @@ $('postInsightBtn').addEventListener('click',function(){
   // clear pending flags
   window._pendingEmo = null;
   window._pendingIntent = null;
-  window._pendingPhotos = false;
-  window._pendingVoice = false;
+  window._pendingPhotos = null;
+  window._pendingVoice = null;
   flyKnotToChain(entry, _btnRect);
   // invalidate the pendant-entries cache — new entry might be in the chosen month
   if(typeof window._invalidatePendantCache === 'function') window._invalidatePendantCache();

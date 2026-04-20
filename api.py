@@ -37,11 +37,22 @@ class OpenAppRequest(BaseModel):
     intention: str
     hours_absent: float = 0.0
 
+class PhotoAttachment(BaseModel):
+    dataUrl: str
+    width: Optional[int] = None
+    height: Optional[int] = None
+
+class VoiceAttachment(BaseModel):
+    dataUrl: str
+    mime: Optional[str] = "audio/webm"
+
 class SubmitEntryRequest(BaseModel):
     user_id: str
     content: str
     mood: str
     intention: str
+    photos: Optional[List[PhotoAttachment]] = None
+    voice: Optional[VoiceAttachment] = None
 
 class PostInsightRequest(BaseModel):
     content: str
@@ -94,11 +105,15 @@ def open_app(request: OpenAppRequest):
 
 @app.post("/submit-entry")
 def submit_entry(request: SubmitEntryRequest):
+    photos_payload = [p.dict() for p in (request.photos or [])]
+    voice_payload  = request.voice.dict() if request.voice else None
     result = handle_submit_entry(
         user_id=request.user_id,
         content=request.content,
         mood=request.mood,
-        intention=request.intention
+        intention=request.intention,
+        photos=photos_payload,
+        voice=voice_payload,
     )
     return result
 
