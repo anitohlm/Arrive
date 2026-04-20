@@ -280,6 +280,7 @@ function drawKnotOnCanvas(canvas, entries, monthIndex){
 // preserves rotation state on canvas._lastRotation so pause/resume is seamless
 function startKnotRotation(canvas, entries, monthIndex){
   if(canvas._rotationRunning) return;
+  canvas._sparkleRunning = false; // rose rotation and sparkle-forming are mutually exclusive
   canvas._rotationRunning = true;
 
   var ctx = canvas.getContext('2d');
@@ -2948,6 +2949,155 @@ function drawCurrentMonthForming(ctx, cx, cy, R, rotation, stats, emo){
   ctx.restore();
 }
 
+// ── Animated "forming" sparkle — two trail-leaving dots orbit the center
+// on a lissajous path, with a fading tail + ambient twinkle specks. Replaces
+// the static ◎ ring in the big portrait canvas so the in-progress month feels
+// alive. Still stops cleanly: owns `canvas._sparkleRunning` like the rotation
+// loop owns `canvas._rotationRunning`.
+//   - respects prefers-reduced-motion (falls back to drawCurrentMonthForming)
+//   - tinted by the dominant emotion's palette (p.color / p.glow)
+//   - self-terminates when the canvas detaches, state leaves "forming",
+//     document.hidden, or a caller flips canvas._sparkleRunning = false
+function startSparkleForming(canvas, stats, emo, opts){
+  if(!canvas || canvas._sparkleRunning) return;
+  opts = opts || {};
+  var sizePx = opts.size || 260;        // logical CSS px square
+  var rRatio = opts.rRatio || (80/260); // orbit radius relative to size
+
+  // reduced motion → skip the loop, paint the calm ring once
+  if(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches){
+    var dprR = Math.min(window.devicePixelRatio||1, 2);
+    canvas.width = sizePx * dprR; canvas.height = sizePx * dprR;
+    canvas.style.width = sizePx + 'px'; canvas.style.height = sizePx + 'px';
+    var ctxR = canvas.getContext('2d');
+    ctxR.setTransform(dprR,0,0,dprR,0,0);
+    drawCurrentMonthForming(ctxR, sizePx/2, sizePx/2, sizePx*rRatio, 0, stats, emo);
+    return;
+  }
+
+  canvas._sparkleRunning = true;
+  canvas._rotationRunning = false; // mutually exclusive with the rose rotation loop
+
+  var W = sizePx, H = sizePx, cx = W/2, cy = H/2, R = sizePx * rRatio;
+  var dpr = Math.min(window.devicePixelRatio||1, 2);
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // emotion tint
+  var p = (typeof KNOT_PARAMS !== 'undefined' && KNOT_PARAMS[emo]) ? KNOT_PARAMS[emo] : (typeof KNOT_FALLBACK !== 'undefined' ? KNOT_FALLBACK : {color:'#c9943a', glow:'rgba(201,148,58,0.6)'});
+  var m = (p.glow || '').match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  var tintR = m ? +m[1] : 201, tintG = m ? +m[2] : 148, tintB = m ? +m[3] : 58;
+  var tint = function(a){ return 'rgba('+tintR+','+tintG+','+tintB+','+a+')'; };
+
+  // scale dot/trail sizes proportionally so the sparkle reads on any canvas size
+  var scale = sizePx / 260;
+
+  // two heads — offset phases trace a figure-8 / lissajous inside the ring
+  var TRAIL_LEN = 34;
+  var trails = [ [], [] ];
+
+  // ambient twinkle specks — slow life-cycle, random positions inside R*1.15
+  var SPECK_COUNT = 14;
+  var specks = [];
+  for(var s = 0; s < SPECK_COUNT; s++){
+    specks.push({
+      a: Math.random() * Math.PI * 2,
+      r: (0.25 + Math.random()*0.95) * R,
+      life: Math.random(),
+      speed: 0.0015 + Math.random()*0.0025,
+      size: (0.5 + Math.random()*1.3) * scale
+    });
+  }
+
+  // faint ghost ring behind everything — keeps a whisper of the ◎ marker
+  function drawGhostRing(){
+    ctx.save();
+    ctx.globalAlpha = 0.10;
+    ctx.strokeStyle = tint(1);
+    ctx.lineWidth = 0.9;
+    ctx.setLineDash([2,5]);
+    ctx.beginPath(); ctx.arc(cx, cy, R*1.05, 0, Math.PI*2); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 0.07;
+    ctx.lineWidth = 0.7;
+    ctx.beginPath(); ctx.arc(cx, cy, R*0.55, 0, Math.PI*2); ctx.stroke();
+    ctx.restore();
+  }
+
+  // lissajous path for head i at time t
+  // a=3,b=2 is a 3:2 loop that stays symmetric and doesn't re-cross the middle too often
+  function headPos(i, t){
+    var phase = i === 0 ? 0 : Math.PI; // opposite sides
+    var rx = R * 0.72, ry = R * 0.56;
+    var x = cx + Math.sin(t * 0.9 + phase) * rx;
+    var y = cy + Math.sin(t * 1.35 + phase * 0.5) * ry;
+    return {x:x, y:y};
+  }
+
+  var start = performance.now();
+  function frame(now){
+    if(!canvas.isConnected){ canvas._sparkleRunning = false; return; }
+    if(!canvas._sparkleRunning) return;
+    if(document.hidden){ canvas._sparkleRunning = false; return; }
+
+    var t = (now - start) / 1000; // seconds
+
+    ctx.clearRect(0, 0, W, H);
+    drawGhostRing();
+
+    // ambient specks — additive, composited first so heads read on top
+    ctx.save();
+    ctx.globalCompositeOperation = 'lighter';
+    for(var si = 0; si < specks.length; si++){
+      var sp = specks[si];
+      sp.life += sp.speed;
+      if(sp.life > 1){ sp.life = 0; sp.a = Math.random()*Math.PI*2; sp.r = (0.25 + Math.random()*0.95) * R; }
+      // soft in/out: peak around 0.5
+      var k = Math.sin(sp.life * Math.PI);
+      var sx = cx + Math.cos(sp.a) * sp.r;
+      var sy = cy + Math.sin(sp.a) * sp.r;
+      ctx.fillStyle = tint(0.55 * k);
+      ctx.beginPath(); ctx.arc(sx, sy, sp.size * (0.6 + 0.5*k), 0, Math.PI*2); ctx.fill();
+    }
+    ctx.restore();
+
+    // heads + trails
+    for(var i = 0; i < 2; i++){
+      var pos = headPos(i, t);
+      trails[i].push(pos);
+      if(trails[i].length > TRAIL_LEN) trails[i].shift();
+
+      // draw trail as fading dots (additive blend for glow)
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for(var k2 = 0; k2 < trails[i].length; k2++){
+        var pt = trails[i][k2];
+        var age = k2 / trails[i].length; // 0 oldest → 1 newest
+        var a = Math.pow(age, 1.6) * 0.55;   // fade curve
+        var rad = (0.8 + age * 2.4) * scale;
+        ctx.fillStyle = tint(a);
+        ctx.beginPath(); ctx.arc(pt.x, pt.y, rad, 0, Math.PI*2); ctx.fill();
+      }
+      // bright head — inner core + halo
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.fillStyle = tint(0.35);
+      ctx.beginPath(); ctx.arc(pos.x, pos.y, 7*scale, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = tint(0.9);
+      ctx.beginPath(); ctx.arc(pos.x, pos.y, 3.1*scale, 0, Math.PI*2); ctx.fill();
+      // sharp white-hot center for sparkle
+      ctx.globalCompositeOperation = 'source-over';
+      ctx.fillStyle = 'rgba(255,248,230,0.95)';
+      ctx.beginPath(); ctx.arc(pos.x, pos.y, 1.3*scale, 0, Math.PI*2); ctx.fill();
+      ctx.restore();
+    }
+
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
 // dashed ghost ring for future or empty months
 function drawGhostKnot(ctx, x, y, size){
   ctx.save();
@@ -3051,14 +3201,22 @@ function renderPortraitMonth(){
       currentState === 'forming'   ? (stats.word || '') :
       (stats.word || '');
 
-    $('portraitMessage').textContent =
-      currentState === 'gathering'
-        ? 'the chain is gathering your month.'
-        : currentState === 'forming'
-        ? 'something is taking shape.'
-        : currentState === 'almost'
-        ? 'the knot is almost ready.'
+    // Use the emotion-specific present-tense line once we know the dominant
+    // emotion — same copy that shows in the replay overlay, so the outside
+    // screen carries the same weight. Fall back to the stage-based line for
+    // the gathering stage (no dominant emotion yet) or if the dict is missing.
+    var _formingLine;
+    if(currentState !== 'gathering' && stats.topEmo && typeof PORTRAIT_MESSAGES_PRESENT !== 'undefined'){
+      _formingLine = PORTRAIT_MESSAGES_PRESENT[stats.topEmo];
+    }
+    if(!_formingLine){
+      _formingLine =
+        currentState === 'gathering' ? 'the chain is gathering your month.'
+        : currentState === 'forming'  ? 'something is taking shape.'
+        : currentState === 'almost'   ? 'the knot is almost ready.'
         : 'today the chain closes.';
+    }
+    $('portraitMessage').textContent = _formingLine;
 
     $('portraitStats').textContent =
       stats.count + (stats.count===1?' entry':' entries')
@@ -3078,14 +3236,19 @@ function renderPortraitMonth(){
     ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.clearRect(0,0,260,260);
 
-    // Before month-end: show the weave-icon placeholder (concentric rings)
-    // via drawCurrentMonthForming. The full rose-curve reveal is reserved
-    // for the end-of-month ceremony; up until then this is just a marker
-    // that the month is still forming.
-    drawCurrentMonthForming(ctx, 130, 130, 80,
-      0, {count:stats.count, topEmo:stats.topEmo},
-      stats.topEmo||'calm');
-    canvas.style.filter = 'none';
+    // Before month-end: show a living sparkle — two trail-leaving dots
+    // orbit the center in a lissajous path, tinted by the dominant emotion.
+    // The full rose-curve reveal is still reserved for the end-of-month
+    // ceremony; this just signals "something is taking shape" with motion
+    // instead of a static ring.
+    if(typeof startSparkleForming === 'function'){
+      startSparkleForming(canvas, {count:stats.count, topEmo:stats.topEmo}, stats.topEmo||'calm');
+    } else {
+      drawCurrentMonthForming(ctx, 130, 130, 80, 0, {count:stats.count, topEmo:stats.topEmo}, stats.topEmo||'calm');
+    }
+    // soft tinted glow around the canvas to match the emotion
+    var formingMorning = document.body.classList.contains('theme-morning');
+    canvas.style.filter = knotShadowFilter(stats.topEmo || 'calm', 28, formingMorning ? 0.35 : 0.22);
     return;
   }
 
@@ -3160,10 +3323,14 @@ function renderPortraitMonth(){
   }
 }
 
-// stop the rotation loop and remember where it was; called when we're hiding the knot
+// stop the rotation loop and remember where it was; called when we're hiding the knot.
+// Also stops the sparkle-forming loop so nothing keeps rAF'ing in the background.
 function stopKnotRotation(){
   var canvas = document.getElementById('portraitKnotCanvas');
-  if(canvas) canvas._rotationRunning = false;
+  if(canvas){
+    canvas._rotationRunning = false;
+    canvas._sparkleRunning  = false;
+  }
 }
 
 // resume the rotation loop for the current month's entries; called when showing the knot again
@@ -3185,6 +3352,41 @@ function resumeKnotRotation(){
 }
 
 // ── TAB 2: render full year grid ──
+// Gentle floating toast when the user taps the NOW cell. The replay overlay
+// is reserved for finished months; this toast explains why nothing opened
+// and how many entries the month already holds. Floats near the top so it's
+// visible without scrolling down past the grid. Self-dismisses in ~3.2s.
+function _showFormingHint(entryCount){
+  var count = entryCount || 0;
+  var entriesPhrase = count === 0
+    ? 'no entries yet'
+    : count + (count === 1 ? ' entry so far' : ' entries so far');
+  var msg = 'this month is still forming \u2014 ' + entriesPhrase + '. come back at month\u2019s end.';
+
+  // reuse a single toast node so rapid taps don't stack them
+  var t = document.getElementById('_formingToast');
+  if(!t){
+    t = document.createElement('div');
+    t.id = '_formingToast';
+    t.className = 'forming-toast';
+    t.setAttribute('role', 'status');
+    t.setAttribute('aria-live', 'polite');
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  if(t._timer) clearTimeout(t._timer);
+  // force reflow so the transition runs even when the class is re-added
+  // while the previous toast hasn't finished fading out.
+  t.classList.remove('is-visible');
+  // eslint-disable-next-line no-unused-expressions
+  void t.offsetWidth;
+  t.classList.add('is-visible');
+  t._timer = setTimeout(function(){
+    t.classList.remove('is-visible');
+    t._timer = null;
+  }, 3200);
+}
+
 function renderPortraitYear(){
   var now = new Date();
   var currentMonth = now.getMonth();
@@ -3232,8 +3434,11 @@ function renderPortraitYear(){
     var isFuture = cellDate > nowMonthStart;
     var isCurrent = (m === currentMonth && gridYear === currentYear);
     var isPastComplete = !isFuture && !isCurrent && stats.count > 0;
-    // tappable if there's content worth opening (past completed months, or current month with entries)
-    var tappable = isPastComplete || (isCurrent && stats.count > 0 && currentState !== 'gathering');
+    // tappable ONLY for past completed months — the in-progress month lives
+    // in the hero canvas above (with its sparkle + present-tense copy), so
+    // there's nothing to "open" yet for it. Future months obviously stay
+    // locked. This keeps the replay overlay a past-tense ritual only.
+    var tappable = isPastComplete;
 
     var cell = document.createElement('div');
     cell.className = 'portrait-year-cell'
@@ -3363,6 +3568,12 @@ function renderPortraitYear(){
       (function(captureIdx, captureEntries){
         cell.addEventListener('click', function(){ openMonthDetail(captureIdx, captureEntries); });
       })(m, stats.entries);
+    } else if(isCurrent){
+      // Current month isn't openable yet — the pendant reveals itself at
+      // month's end. Give tactile feedback instead of silence so the tap
+      // doesn't feel broken.
+      cell.addEventListener('click', function(){ _showFormingHint(stats.count); });
+      cell.style.cursor = 'default';
     }
 
     grid.appendChild(cell);
@@ -3441,7 +3652,12 @@ function showMonthReplay(ym, monthIndex, entries){
   var dominant = Object.keys(emoCounts).sort(function(a,b){ return emoCounts[b]-emoCounts[a]; })[0] || 'calm';
   var monthWord = PORTRAIT_WORDS[dominant] || dominant;
   var monthMsg = PORTRAIT_MESSAGES[dominant] || 'you were here. the chain remembers.';
-  var closingLines = {
+  // Voice rule: finished months read in past tense (the month is closed —
+  // the chain "held"). An in-progress month must read in present tense —
+  // nothing is finished yet, and "you burned for something" lands wrong
+  // while the user is still burning for it. We pick which dict to pull
+  // from based on whether this replay is the still-forming current month.
+  var closingLinesPast = {
     calm:'the quiet was real. you were in it.',
     tender:'soft and still here. that matters.',
     grateful:'you noticed. the chain remembers.',
@@ -3481,6 +3697,61 @@ function showMonthReplay(ym, monthIndex, entries){
     insecure:'you doubted and showed up anyway.',
     upset:'upset is honest. you let it be.'
   };
+  var closingLinesPresent = {
+    calm:'the quiet is real. you are in it.',
+    tender:'soft and still here. that matters.',
+    grateful:'you are noticing. the chain is listening.',
+    hard:'hard months count too. this one does.',
+    heavy:'you are carrying what you can. that is enough.',
+    overwhelmed:'small returns through the flood. you keep arriving.',
+    alive:'you are burning. the chain is burning with you.',
+    numb:'even the quiet ones are held.',
+    hopeful:'something is opening. stay close to it.',
+    light:'you are catching the brightness. it stays.',
+    quiet:'a month of hush. you are honoring it.',
+    foggy:'you are walking through. that is how it clears.',
+    restless:'restlessness is pointing you somewhere. you are following.',
+    searching:'searching is a kind of faith. you are holding it.',
+    sad:'sadness has a witness this month. you are giving it one.',
+    frustrated:'you care enough to be frustrated. that is love.',
+    anxious:'small safe things, one at a time. you are doing them.',
+    heartbroken:'the chain is holding what you cannot carry alone.',
+    disappointed:'what disappoints you matters. that means something.',
+    exhausted:'rest is also part of the practice. you are earning it.',
+    moved:'you are letting it move you. that is a kind of courage.',
+    passionate:'you are burning for something. the chain is burning with you.',
+    nervous:'you stay close to the edge and keep arriving.',
+    livid:'anger is honest this month. you are telling the truth.',
+    lonely:'the chain is keeping you company. you are not alone.',
+    ashamed:'you are showing up when you want to hide. that counts.',
+    certain:'you know what you know this month. that is not small.',
+    content:'enough is arriving. you are letting it be enough.',
+    focused:'you are keeping the thread this month. that is a practice.',
+    inspired:'something is sparking. you are tending it. it stays.',
+    lost:'you are walking without a map. arriving still counts.',
+    relaxed:'ease is visiting. you are letting it stay.',
+    vulnerable:'you are soft. the chain is holding that.',
+    yearning:'a month of reaching. the chain is the evidence.',
+    betrayed:'the break is real. you are telling the truth about it.',
+    bored:'flat months count. you are staying.',
+    insecure:'you are doubting and showing up anyway.',
+    upset:'upset is honest. you are letting it be.'
+  };
+  // decide tense up-front (same logic that flips the canvas into sparkle mode)
+  var _nowForTense = new Date();
+  var _isCurrentMonthReplay = (yearOfReplay === _nowForTense.getFullYear() && monthIndex === _nowForTense.getMonth());
+  var _ceremonySeenTense = localStorage.getItem('gc_ceremony_seen_' + ym);
+  var _curStateTense = (typeof computeCurrentMonthState === 'function') ? computeCurrentMonthState() : null;
+  var _isFormingTense = _isCurrentMonthReplay && !_ceremonySeenTense && _curStateTense !== 'complete';
+  // tense-flip the body line on page 2 too — this is the "you burned..." / "you are burning..." copy
+  if(_isFormingTense && typeof PORTRAIT_MESSAGES_PRESENT !== 'undefined'){
+    monthMsg = PORTRAIT_MESSAGES_PRESENT[dominant] || 'you are here. the chain is listening.';
+  }
+  var closingLines = _isFormingTense ? closingLinesPresent : closingLinesPast;
+  var closingLabel = _isFormingTense ? 'the thread is holding' : 'the thread held';
+  var closingFallback = _isFormingTense
+    ? 'you are arriving this month. the chain is listening.'
+    : 'you arrived this month. the chain remembers.';
 
   // ── Build overlay + pages ────────────────────────────────────────
   var overlay = document.createElement('div');
@@ -3583,9 +3854,9 @@ function showMonthReplay(ym, monthIndex, entries){
 
   // PAGE 5 — the thread held
   (function(){
-    var closing = closingLines[dominant] || 'you arrived this month. the chain remembers.';
+    var closing = closingLines[dominant] || closingFallback;
     pages[4].innerHTML = '<div style="padding:calc(80px + env(safe-area-inset-top)) 36px 80px;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:20px;max-width:400px;margin:0 auto;box-sizing:border-box">'
-      + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.4;text-transform:uppercase;letter-spacing:0.18em;margin:0">the thread held</p>'
+      + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.4;text-transform:uppercase;letter-spacing:0.18em;margin:0">'+closingLabel+'</p>'
       + '<div style="width:40px;height:1px;background:linear-gradient(90deg,transparent,#c9943a,transparent);opacity:0.6"></div>'
       + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:18px;color:var(--gold);line-height:1.7;text-align:center;margin:0">'+closing+'</p>'
       + '</div>';
@@ -3624,12 +3895,30 @@ function showMonthReplay(ym, monthIndex, entries){
   overlay.appendChild(dotsWrap);
   document.body.appendChild(overlay);
 
-  // Draw the two knots after attach (so getContext is valid + sized)
+  // Draw the two knots after attach (so getContext is valid + sized).
+  // If this is the current, still-forming month, mirror the outside portrait
+  // screen by showing the ◎ ring placeholder instead of the fully-formed rose
+  // — the pendant reveals itself only at month's end (or after ceremony).
+  var nowDate = new Date();
+  var isCurrentMonthReplay = (yearOfReplay === nowDate.getFullYear() && monthIndex === nowDate.getMonth());
+  var ceremonySeenReplay = localStorage.getItem('gc_ceremony_seen_' + ym);
+  var curStateReplay = (typeof computeCurrentMonthState === 'function') ? computeCurrentMonthState() : null;
+  var replayIsForming = isCurrentMonthReplay && !ceremonySeenReplay && curStateReplay !== 'complete';
+
   requestAnimationFrame(function(){
     var main = document.getElementById('_mrKnotMain');
-    if(main) drawKnotOnCanvas(main, entries, monthIndex);
     var mini = document.getElementById('_mrKnotMini');
-    if(mini) drawKnotOnCanvas(mini, entries, monthIndex);
+    if(replayIsForming){
+      // Animated sparkle — mirrors the outside portrait screen so this
+      // in-progress month feels alive here too. rRatio 0.38 keeps the
+      // orbit inside the same visual footprint the static ring used.
+      var statsForming = { count: entries.length, entries: entries, topEmo: dominant, word: monthWord };
+      if(main) startSparkleForming(main, statsForming, dominant, { size: 220, rRatio: 0.38 });
+      if(mini) startSparkleForming(mini, statsForming, dominant, { size: 120, rRatio: 0.38 });
+    } else {
+      if(main) drawKnotOnCanvas(main, entries, monthIndex);
+      if(mini) drawKnotOnCanvas(mini, entries, monthIndex);
+    }
   });
 
   // Fade in
@@ -3763,6 +4052,11 @@ function openMonthDetail(monthIndex, entries){
 }
 
 // unified populate — called on load and after new entries
+// Tabs were merged: the calendar year IS the portrait now. We still call
+// renderPortraitMonth() so the hidden month canvas + stats stay warm for
+// share-month generation, but its rotation loop never starts (the visibility
+// checks inside renderPortraitMonth gate on #portraitMonthView being .active,
+// which no longer happens).
 function populatePortrait(){
   renderPortraitMonth();
   renderPortraitYear();
@@ -3771,29 +4065,12 @@ populateHeld();
 populatePortrait();
 window.__portraitReady = true;
 
-// tab switching — pause rotation when month tab hides, resume when it shows
-document.querySelectorAll('#portraitTabs .portrait-tab').forEach(function(t){
-  t.addEventListener('click', function(e){
-    e.stopPropagation();
-    var view = this.dataset.view;
-    document.querySelectorAll('#portraitTabs .portrait-tab').forEach(function(b){
-      b.classList.toggle('active', b.dataset.view === view);
-    });
-    $('portraitMonthView').classList.toggle('active', view === 'month');
-    $('portraitYearView').classList.toggle('active', view === 'year');
-    if(view === 'month') resumeKnotRotation();
-    else stopKnotRotation();
-  });
-});
-
-// pause the rotation loop when the browser tab/app is backgrounded, resume on return
+// pause any leftover rotation when the browser tab/app is backgrounded.
+// (No resume branch — the month tab no longer surfaces in the UI.)
 document.addEventListener('visibilitychange', function(){
   if(document.hidden){
     stopKnotRotation();
     if(typeof stopPortraitLoadingAnim === 'function') stopPortraitLoadingAnim();
-  } else if($('s-portrait').classList.contains('active')
-            && $('portraitMonthView').classList.contains('active')){
-    resumeKnotRotation();
   }
 });
 

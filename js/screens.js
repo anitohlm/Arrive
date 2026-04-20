@@ -58,8 +58,52 @@ try {
 } catch(e) {}
 
 // ═══ SCREEN 1 → 2 ══════════════════════════════════
+// Re-verify "logged today" on every splash tap instead of trusting the
+// module-level `hasLogged` computed once at script load. If the user taps
+// through and no real entry for today exists in gc_entries, any "logged"
+// markers are phantom — clear them and let the tap proceed. This is the
+// last line of defense against stale localStorage blocking a new entry.
+// LOCAL-date ISO (not UTC) — users east of UTC would otherwise see today-ISO
+// lag a day during early-morning hours, causing yesterday's entry to match
+// "today" and locking the splash in "logged" state.
+function _localTodayISO(){
+  var d = new Date();
+  var p = function(n){ return String(n).padStart(2,'0'); };
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+}
+function _reallyLoggedToday(){
+  try{
+    var iso = _localTodayISO();
+    var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+    return entries.some(function(e){
+      if(e.dateISO && e.dateISO === iso) return true;
+      if(e.date && String(e.date).slice(0,10) === iso) return true;
+      if(e.timestamp && String(e.timestamp).slice(0,10) === iso) return true;
+      return false;
+    });
+  }catch(err){ return false; }
+}
+function _forceClearTodayMarkers(){
+  try{
+    var iso = _localTodayISO();
+    localStorage.removeItem('gc_logged_today');
+    var arr = JSON.parse(localStorage.getItem('gc_logged_dates')||'[]').filter(function(d){ return d !== iso; });
+    localStorage.setItem('gc_logged_dates', JSON.stringify(arr));
+    $('s-splash').classList.remove('logged');
+  }catch(err){}
+}
+
 $('s-splash').addEventListener('click', (e) => {
-  // if already logged today, show gentle feedback instead of dead silence
+  // don't trigger if tapping nav
+  if(e.target.closest('.bottom-nav')) return;
+
+  // Trust only real entries. If the splash says "logged" but no entry in
+  // gc_entries actually corresponds to today, the markers are stale — clear
+  // them and open arrival like normal.
+  if($('s-splash').classList.contains('logged') && !_reallyLoggedToday()){
+    _forceClearTodayMarkers();
+  }
+
   if($('s-splash').classList.contains('logged')){
     const msg = $('loggedTapMsg');
     msg.classList.add('vis');
@@ -67,14 +111,22 @@ $('s-splash').addEventListener('click', (e) => {
     window._loggedMsgTimer = setTimeout(()=> msg.classList.remove('vis'), 3000);
     return;
   }
-  // don't trigger if tapping nav
-  if(e.target.closest('.bottom-nav')) return;
+
   $('s-splash').classList.add('dimmed');
   // Reset arrival to step 1 (category cards) on fresh entry so each check-in
   // starts with a clean slate. Back-from-insight/breathing keeps their pick.
   if(typeof _arrivalShowStep1 === 'function') _arrivalShowStep1();
   setTimeout(() => go('s-splash','s-arrival'), 400);
 });
+
+// Safety-net heal: re-run at splash mount too, not just at boot. If the user
+// reloads while the tab was backgrounded and heal-at-boot missed an edge, this
+// catches it. Also strips the `.logged` class if it's there without truth.
+(function(){
+  if(!_reallyLoggedToday()){
+    _forceClearTodayMarkers();
+  }
+})();
 
 // dev helpers removed for production
 

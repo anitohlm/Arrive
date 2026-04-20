@@ -41,8 +41,13 @@ const API_BASE = (function(){
     var todayISO = today.getFullYear()+'-'+pad(today.getMonth()+1)+'-'+pad(today.getDate());
 
     var entries = JSON.parse(localStorage.getItem('gc_entries') || '[]');
+    // Match on either `dateISO` (new entries) or `date` (older / seeded entries).
+    // `date` may be a full timestamp or a plain YYYY-MM-DD — slice to 10 chars
+    // to normalize. Anything that resolves to today's ISO counts as "real".
     var hasRealEntryToday = entries.some(function(e){
-      return (e.dateISO && e.dateISO === todayISO);
+      if(e.dateISO && e.dateISO === todayISO) return true;
+      if(e.date && String(e.date).slice(0,10) === todayISO) return true;
+      return false;
     });
     if(hasRealEntryToday) return; // genuinely logged → keep state
 
@@ -59,6 +64,36 @@ const API_BASE = (function(){
       localStorage.setItem('gc_logged_dates', JSON.stringify(loggedDates));
     }
   }catch(e){ /* never block boot on healing logic */ }
+})();
+
+// ── Date-rollover guard ──────────────────────────────────────────────────
+// If the user leaves the app open overnight, the module-level `hasLogged`
+// in streak.js is set once at script load and never re-evaluates. Without
+// this guard, opening the tab on a new day would still show yesterday's
+// "logged" state until a hard refresh. Listen for visibility/focus events
+// and force a reload the first time we notice the ISO date has changed —
+// the boot-time healer then clears any stale flags naturally.
+(function(){
+  // LOCAL date (not UTC) so this triggers at local midnight, not UTC midnight.
+  function _localISO(){
+    var d = new Date(), p = function(n){ return String(n).padStart(2,'0'); };
+    return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate());
+  }
+  var bootISO = _localISO();
+  function maybeReload(){
+    try{
+      var nowISO = _localISO();
+      if(nowISO !== bootISO){
+        // date rolled over while the tab was open → reload so heal + streak
+        // recompute against the new day
+        location.reload();
+      }
+    }catch(e){}
+  }
+  document.addEventListener('visibilitychange', function(){
+    if(!document.hidden) maybeReload();
+  });
+  window.addEventListener('focus', maybeReload);
 })();
 
 

@@ -21,7 +21,10 @@ function deleteCapsule(id){
 }
 
 function _todayISO(){
-  return new Date().toISOString().slice(0,10);
+  // local date, not UTC — see streak.js todayISO() comment
+  var d = new Date();
+  var p = function(n){ return String(n).padStart(2,'0'); };
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
 }
 
 function _todayLoggedEmo(){

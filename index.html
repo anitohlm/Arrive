@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=32">
+<link rel="stylesheet" href="css/styles.css?v=55">
 </head>
 <body>
 
@@ -407,19 +407,13 @@
   </div>
 </div>
 
-<!-- ═══ SCREEN 8: PORTRAIT — two-tab redesign ═══════ -->
+<!-- ═══ SCREEN 8: PORTRAIT — month view (top) + year calendar (below), no tabs ═══════ -->
 <div class="screen placeholder-screen" id="s-portrait">
   <div class="ph-wrap">
-    <!-- pill toggle -->
-    <div class="portrait-tabs" id="portraitTabs">
-      <button class="portrait-tab active" data-view="month">your month</button>
-      <button class="portrait-tab" data-view="year">your year</button>
-    </div>
-
-    <!-- TAB 1: YOUR MONTH -->
+    <!-- MONTH (always visible, was TAB 1) -->
     <div class="portrait-view active" id="portraitMonthView">
-      <canvas id="portraitKnotCanvas" width="520" height="520"></canvas>
       <p class="portrait-month-label" id="portraitMonth">—</p>
+      <canvas id="portraitKnotCanvas" width="520" height="520"></canvas>
       <p class="portrait-word" id="portraitWord"></p>
       <p class="portrait-msg" id="portraitMessage"></p>
       <div class="portrait-divider"></div>
@@ -428,11 +422,11 @@
       <button class="portrait-share-btn" id="shareMonthBtn">share this portrait</button>
     </div>
 
-    <!-- TAB 2: YOUR YEAR -->
-    <div class="portrait-view" id="portraitYearView">
+    <!-- YEAR (below, was TAB 2) -->
+    <div class="portrait-view active" id="portraitYearView">
       <p class="portrait-year-label" id="portraitYearLabel">—</p>
+      <p class="portrait-year-hint portrait-year-hint--top">tap a past month to unravel it</p>
       <div class="portrait-year-grid" id="portraitGrid"></div>
-      <p class="portrait-year-hint">tap a knot to unravel it</p>
       <button class="portrait-share-btn" id="shareYearBtn">share your year</button>
     </div>
   </div>
@@ -751,18 +745,18 @@
 
 
 <!-- ═══ SCRIPTS (loaded in dependency order) ═══════════ -->
-<script src="js/data.js?v=32"></script>
-<script src="js/state.js?v=32"></script>
-<script src="js/onboarding.js?v=32"></script>
-<script src="js/memories.js?v=32"></script>
-<script src="js/streak.js?v=32"></script>
-<script src="js/held.js?v=32"></script>
-<script src="js/portrait.js?v=32"></script>
-<script src="js/navigation.js?v=32"></script>
-<script src="js/screens.js?v=32"></script>
-<script src="js/attachments.js?v=32"></script>
-<script src="js/ceremonies.js?v=32"></script>
-<script src="js/entry-detail.js?v=32"></script>
-<script src="js/capsule.js?v=32"></script>
+<script src="js/data.js?v=55"></script>
+<script src="js/state.js?v=55"></script>
+<script src="js/onboarding.js?v=55"></script>
+<script src="js/memories.js?v=55"></script>
+<script src="js/streak.js?v=55"></script>
+<script src="js/held.js?v=55"></script>
+<script src="js/portrait.js?v=55"></script>
+<script src="js/navigation.js?v=55"></script>
+<script src="js/screens.js?v=55"></script>
+<script src="js/attachments.js?v=55"></script>
+<script src="js/ceremonies.js?v=55"></script>
+<script src="js/entry-detail.js?v=55"></script>
+<script src="js/capsule.js?v=55"></script>
 </body>
 </html>

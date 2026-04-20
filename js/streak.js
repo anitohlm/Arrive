@@ -6,7 +6,15 @@ var gcStartDate = localStorage.getItem('gc_start_date') || '';
 var gcLoggedDates = JSON.parse(localStorage.getItem('gc_logged_dates') || '[]');
 var gcLoggedSet = new Set(gcLoggedDates);
 
-function todayISO(){ return new Date().toISOString().slice(0,10); }
+// Use LOCAL date, not UTC. `.toISOString()` returns UTC, which is a day
+// behind for users east of UTC during the early-morning hours — that caused
+// today's entry to collide with "today ISO" lookups and locked the splash
+// in "logged" state. Build the ISO string from local year/month/day instead.
+function todayISO(){
+  var d = new Date();
+  var p = function(n){ return String(n).padStart(2,'0'); };
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate());
+}
 function daysBetween(a,b){
   // anchor both dates at noon local time to avoid midnight floating-point drift
   var da = new Date(a + 'T12:00:00');

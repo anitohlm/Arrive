@@ -57,6 +57,50 @@ var PORTRAIT_MESSAGES = {
   insecure:'you showed up when you doubted yourself. you came anyway.',
   upset:'upset is real information. the chain received it all.'
 };
+// Present-tense variants for in-progress (still-forming) months. Finished
+// months use PORTRAIT_MESSAGES above ("you burned... the chain remembered").
+// A month that hasn't ended yet must speak in present tense — "you are burning"
+// — because nothing is finished yet, so past tense lands wrong.
+var PORTRAIT_MESSAGES_PRESENT = {
+  calm:'you are finding stillness while the world asks for more.',
+  tender:'you are letting yourself be soft. that is not weakness.',
+  grateful:'you are noticing beauty in the everyday — that is everything.',
+  hard:'you are showing up on days that ask too much. that is courage.',
+  heavy:'you are carrying what you can and still writing it down.',
+  overwhelmed:'one small word at a time, you are keeping going.',
+  alive:'you are burning bright this month, and the chain is here for it.',
+  numb:'even numbness deserves its witness. you are giving it one.',
+  hopeful:'you are leaning toward something. it is leaning back.',
+  light:'you are noticing the lightness. that is the whole practice.',
+  quiet:'a month of hush. you are honoring it fully.',
+  foggy:'you are finding something in the fog. that is no small thing.',
+  restless:'you are giving your restlessness a direction. it is working.',
+  searching:'you are searching. the chain is the lamp.',
+  sad:'sad months count too. yours is being held.',
+  frustrated:'you care enough to be frustrated. that is love.',
+  anxious:'one small safe thing at a time. you are making it through.',
+  heartbroken:'the chain is holding what you cannot carry alone.',
+  disappointed:'not the month you hoped for. still the month you are making.',
+  exhausted:'you are showing up tired. that is the bravest kind of showing up.',
+  moved:'something is moving you this month. the chain feels it too.',
+  passionate:'you are burning for something this month. that is its own kind of love.',
+  nervous:'you are staying close to the edge and still arriving. that is bravery.',
+  livid:'you are angry. it is real. the chain is holding that too.',
+  lonely:'loneliness is honest about what it wants. the chain is keeping you company.',
+  ashamed:'you keep showing up when you want to disappear. that counts.',
+  certain:'you know what you know. that kind of steadiness is rare.',
+  content:'enough is arriving, more than once. you are noticing. that is the whole practice.',
+  focused:'you are keeping your attention where it matters. the chain feels it.',
+  inspired:'something is sparking in you. you are not letting it pass unnoticed.',
+  lost:'you do not know the way and are walking anyway. that is faith.',
+  relaxed:'ease is visiting. you are letting it stay. nothing has to be earned.',
+  vulnerable:'you are letting yourself be soft in a hard world. that takes nerve.',
+  yearning:'you want something. you are not pretending otherwise. that is honest.',
+  betrayed:'something is broken that shouldn\u2019t have been. you are telling the truth about it.',
+  bored:'the flat days count too. you are still here.',
+  insecure:'you are showing up when you doubt yourself. you are coming anyway.',
+  upset:'upset is real information. the chain is receiving all of it.'
+};
 var YEAR_CLOSING_LINES = {
   calm:        'a whole year of quiet. you honored it.',
   tender:      'soft, and still here. a whole year of that.',
