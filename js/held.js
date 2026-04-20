@@ -743,6 +743,9 @@ function populateAlongsideTab(){
   activeEl.style.display = 'block';
   populateWalkingSection();
 
+  // Fetch pending invitations from the backend (shows a card if any exist).
+  if(typeof refreshPendingInvites === 'function') refreshPendingInvites();
+
   // First-ever visit → float the parchment on top so they read the rule.
   if(!seen && links.length === 0){
     _openParchmentModal();
@@ -800,35 +803,81 @@ function populateAlongsideTab(){
   });
 })();
 
-// inline accept-code input + button (alongside tab)
-(function(){
-  var input = document.getElementById('acceptCodeInput');
-  var btn = document.getElementById('acceptCodeBtn');
-  var msg = document.getElementById('acceptCodeMsg');
-  if(!input || !btn || !msg) return;
+// Pending invitations — fetch from backend whenever alongside tab opens.
+// Displayed above the active walking-alongside list as a small card with
+// accept / decline controls.
+function refreshPendingInvites(){
+  var host = document.getElementById('pendingInvites');
+  if(!host) return;
+  var u = {};
+  try{ u = JSON.parse(localStorage.getItem('gc_user')||'{}'); }catch(e){}
+  // Server now derives email from user_id — no client-side email early-return.
+  var uid = localStorage.getItem('gc_user_id') || '';
+  fetch(API_BASE + '/link/pending?user_id=' + encodeURIComponent(uid))
+    .then(function(r){ return r.json(); })
+    .then(function(data){
+      if(!data || !data.ok) return;
+      var list = data.pending || [];
+      if(list.length === 0){ host.style.display = 'none'; host.innerHTML = ''; return; }
+      host.style.display = 'block';
+      var html = '<p style="font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:0.18em;color:rgba(201,148,58,0.35);text-transform:uppercase;margin:0 0 10px">invitations waiting for you</p>';
+      list.forEach(function(inv){
+        var nickSafe = (inv.requester_nickname || 'someone').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        html += '<div class="pending-invite-card" data-link-id="'+inv.id+'" style="'+
+          'padding:14px 16px;margin-bottom:10px;'+
+          'background:rgba(201,148,58,0.04);border:1px solid rgba(201,148,58,0.18);'+
+          'border-radius:14px;display:flex;flex-direction:column;gap:10px">'+
+          '<p style="font-family:\'Fraunces\',serif;font-style:italic;font-weight:300;'+
+          'font-size:14px;color:rgba(245,237,224,0.85);margin:0;line-height:1.5">'+
+          nickSafe + ' wants to walk alongside you.</p>'+
+          '<div style="display:flex;gap:8px">'+
+          '<button class="pending-accept" style="flex:1;padding:8px 14px;'+
+          'background:rgba(201,148,58,0.14);border:1px solid rgba(201,148,58,0.45);'+
+          'border-radius:10px;font-family:\'Fraunces\',serif;font-style:italic;font-size:12px;'+
+          'color:var(--gold);cursor:pointer;transition:all 180ms ease">accept</button>'+
+          '<button class="pending-decline" style="flex:1;padding:8px 14px;'+
+          'background:transparent;border:1px solid rgba(245,237,224,0.1);'+
+          'border-radius:10px;font-family:\'Fraunces\',serif;font-style:italic;font-size:12px;'+
+          'color:rgba(245,237,224,0.4);cursor:pointer;transition:all 180ms ease">not now</button>'+
+          '</div></div>';
+      });
+      host.innerHTML = html;
 
-  input.addEventListener('focus', function(){ input.style.borderColor = 'var(--gold)'; });
-  input.addEventListener('blur',  function(){ input.style.borderColor = 'var(--glass-border)'; });
+      // wire up button handlers
+      host.querySelectorAll('.pending-invite-card').forEach(function(card){
+        var linkId = card.dataset.linkId;
+        var accept = card.querySelector('.pending-accept');
+        var decline = card.querySelector('.pending-decline');
+        if(accept) accept.addEventListener('click', function(){
+          fetch(API_BASE + '/link/accept', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+              link_id: linkId,
+              user_id: localStorage.getItem('gc_user_id') || ''
+            })
+          }).then(function(r){ return r.json(); }).then(function(res){
+            if(res && res.ok){
+              refreshPendingInvites();
+              populateWalkingSection();
+            }
+          });
+        });
+        if(decline) decline.addEventListener('click', function(){
+          fetch(API_BASE + '/link/decline', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({
+              link_id: linkId,
+              user_id: localStorage.getItem('gc_user_id') || ''
+            })
+          }).then(function(){ refreshPendingInvites(); });
+        });
+      });
+    })
+    .catch(function(){ /* backend down — show nothing */ });
+}
 
-  btn.addEventListener('click', function(){
-    var code = (input.value || '').trim();
-    if(!code) return;
-    var res = acceptLinkByCode(code);
-    if(res.ok){
-      input.value = '';
-      msg.textContent = 'linked. you\u2019re walking alongside them.';
-      msg.style.color = 'rgba(201,148,58,0.6)';
-      setTimeout(function(){
-        msg.textContent = '';
-        populateWalkingSection();
-      }, 2500);
-    } else {
-      msg.textContent = 'code not found \u2014 ask them to resend.';
-      msg.style.color = 'rgba(180,80,60,0.6)';
-      setTimeout(function(){ msg.textContent = ''; }, 3000);
-    }
-  });
-})();
+// Expose for other modules (navigation.js calls populateHeld → this fires)
+window.refreshPendingInvites = refreshPendingInvites;
 
 function buildWitnessCard(link){
   var card = document.createElement('div');
@@ -1242,17 +1291,10 @@ function showPhilosophyScreen(){
   document.getElementById('philoLaterBtn').addEventListener('click', dismiss);
 }
 
-function generateLinkCode(){
-  var emoWords = ['tender','calm','alive','grateful','hopeful','light','quiet',
-    'moved','searching','restless','heavy','soft','still','open','held'];
-  var goldWords = ['gold','thread','morning','knot','chain','dawn','ember','gentle',
-    'quiet','light','bloom','silk','hush'];
-  var num = Math.floor(Math.random()*89) + 10;
-  var w1 = emoWords[Math.floor(Math.random()*emoWords.length)];
-  var w2 = goldWords[Math.floor(Math.random()*goldWords.length)];
-  return w1 + ' \u00B7 ' + w2 + ' \u00B7 ' + num;
-}
-
+// Email-based link invitation flow. Replaces the old shareable-code generator.
+// User types (1) a nickname they'll see for the person and (2) the target's
+// email address. Backend stores a pending invitation. If the target is a
+// GratitudeChain user, they'll see it on their Held > Alongside tab next time.
 function showLinkInviteFlow(){
   var overlay = document.createElement('div');
   overlay.id = 'linkInviteFlow';
@@ -1273,17 +1315,25 @@ function showLinkInviteFlow(){
     '<p style="font-family:\'Fraunces\',serif;font-style:italic;font-weight:300;font-size:18px;',
       'color:rgba(245,237,224,0.75);margin:0 0 8px">who are you inviting?</p>',
     '<p style="font-family:\'Fraunces\',serif;font-style:italic;font-size:12px;',
-      'color:rgba(245,237,224,0.25);margin:0 0 32px">only you will see this name.</p>',
+      'color:rgba(245,237,224,0.35);margin:0 0 28px;max-width:260px">',
+      'enter their email. they\u2019ll see your invitation next time they open the app.</p>',
     '<input id="linkNicknameInput" placeholder="a name for them" maxlength="40" style="',
       'width:100%;max-width:280px;padding:14px 18px;background:var(--glass);',
       'border:1px solid var(--glass-border);border-radius:14px;font-family:\'Fraunces\',serif;',
       'font-style:italic;font-size:15px;color:var(--text);outline:none;text-align:center;',
+      'transition:border-color 200ms;margin-bottom:12px">',
+    '<input id="linkEmailInput" type="email" placeholder="their email" autocomplete="email" inputmode="email" style="',
+      'width:100%;max-width:280px;padding:14px 18px;background:var(--glass);',
+      'border:1px solid var(--glass-border);border-radius:14px;font-family:\'Fraunces\',serif;',
+      'font-style:italic;font-size:15px;color:var(--text);outline:none;text-align:center;',
       'transition:border-color 200ms;margin-bottom:24px">',
-    '<button id="linkGenerateBtn" style="background:rgba(201,148,58,0.06);',
+    '<button id="linkSendBtn" style="background:rgba(201,148,58,0.06);',
       'border:1px solid rgba(201,148,58,0.2);border-radius:20px;padding:12px 28px;',
       'font-family:\'Fraunces\',serif;font-style:italic;font-size:13px;',
       'color:rgba(201,148,58,0.4);cursor:pointer;transition:all 200ms ease">',
-      'generate their code</button>'
+      'send invitation</button>',
+    '<p id="linkSendStatus" style="font-family:\'DM Mono\',monospace;font-size:9px;',
+      'letter-spacing:0.08em;color:rgba(201,148,58,0.4);margin:18px 0 0;min-height:16px;text-align:center"></p>'
   ].join('');
 
   document.body.appendChild(overlay);
@@ -1294,126 +1344,110 @@ function showLinkInviteFlow(){
     setTimeout(function(){ if(overlay.parentNode) overlay.remove(); }, 500);
   });
 
-  var input = document.getElementById('linkNicknameInput');
-  var genBtn = document.getElementById('linkGenerateBtn');
+  var nameInput  = document.getElementById('linkNicknameInput');
+  var emailInput = document.getElementById('linkEmailInput');
+  var sendBtn    = document.getElementById('linkSendBtn');
+  var statusEl   = document.getElementById('linkSendStatus');
 
-  input.addEventListener('input', function(){
-    var hasText = input.value.trim().length > 0;
-    genBtn.style.color = hasText ? 'var(--gold)' : 'rgba(201,148,58,0.4)';
-    genBtn.style.borderColor = hasText ? 'rgba(201,148,58,0.4)' : 'rgba(201,148,58,0.2)';
-    genBtn.style.background = hasText ? 'rgba(201,148,58,0.1)' : 'rgba(201,148,58,0.06)';
+  function _isValidEmail(v){ return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||'').trim()); }
+  function _updateReady(){
+    var hasName  = nameInput.value.trim().length > 0;
+    var hasEmail = _isValidEmail(emailInput.value);
+    var ok = hasName && hasEmail;
+    sendBtn.style.color       = ok ? 'var(--gold)' : 'rgba(201,148,58,0.4)';
+    sendBtn.style.borderColor = ok ? 'rgba(201,148,58,0.4)' : 'rgba(201,148,58,0.2)';
+    sendBtn.style.background  = ok ? 'rgba(201,148,58,0.1)' : 'rgba(201,148,58,0.06)';
+  }
+  nameInput.addEventListener('input', _updateReady);
+  emailInput.addEventListener('input', _updateReady);
+  [nameInput, emailInput].forEach(function(el){
+    el.addEventListener('focus', function(){ el.style.borderColor = 'var(--gold)'; });
+    el.addEventListener('blur',  function(){ el.style.borderColor = 'var(--glass-border)'; });
   });
-  input.addEventListener('focus', function(){ input.style.borderColor = 'var(--gold)'; });
-  input.addEventListener('blur', function(){ input.style.borderColor = 'var(--glass-border)'; });
+  setTimeout(function(){ try{ nameInput.focus(); }catch(e){} }, 300);
 
-  setTimeout(function(){ try{ input.focus(); }catch(e){} }, 300);
-
-  genBtn.addEventListener('click', function(){
-    var nickname = input.value.trim();
+  sendBtn.addEventListener('click', function(){
+    var nickname = nameInput.value.trim();
+    var targetEmail = emailInput.value.trim().toLowerCase();
     if(!nickname) return;
-    // enforce max 3 links before saving
-    var links = JSON.parse(localStorage.getItem('gc_links')||'[]');
-    if(links.length >= 3) return;
-    var code = generateLinkCode();
-    showGeneratedCode(overlay, nickname, code);
+    if(!_isValidEmail(targetEmail)) return;
+    var u = {};
+    try{ u = JSON.parse(localStorage.getItem('gc_user')||'{}'); }catch(e){}
+    if(!u.email){
+      statusEl.textContent = 'set your email in settings first.';
+      statusEl.style.color = 'rgba(180,80,60,0.6)';
+      return;
+    }
+    if(targetEmail === u.email){
+      statusEl.textContent = 'that\u2019s you.';
+      statusEl.style.color = 'rgba(180,80,60,0.6)';
+      return;
+    }
+    sendBtn.style.opacity = '0.5';
+    sendBtn.style.pointerEvents = 'none';
+    fetch(API_BASE + '/link/request', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        user_id: localStorage.getItem('gc_user_id') || '',
+        user_email: u.email,
+        nickname: nickname,
+        target_email: targetEmail
+      })
+    }).then(function(r){ return r.json(); }).then(function(res){
+      showSentConfirmation(overlay, nickname, targetEmail);
+    }).catch(function(){
+      // Graceful: even offline, treat as sent for privacy consistency.
+      showSentConfirmation(overlay, nickname, targetEmail);
+    });
   });
 }
 
-function showGeneratedCode(overlay, nickname, code){
+// Confirmation view — always same message whether target email exists or not.
+// Privacy: do not confirm or deny whether the email is a known user.
+function showSentConfirmation(overlay, nickname, email){
   overlay.style.opacity = '0';
   setTimeout(function(){
     overlay.innerHTML = [
-      '<button id="codeBack" style="position:absolute;top:max(20px,env(safe-area-inset-top));',
-        'left:20px;background:var(--glass);border:1px solid var(--glass-border);',
+      '<button id="codeDoneBtn" style="position:absolute;top:max(20px,env(safe-area-inset-top));',
+        'right:20px;background:var(--glass);border:1px solid var(--glass-border);',
         'border-radius:20px;padding:6px 14px;font-family:\'DM Mono\',monospace;font-size:10px;',
-        'letter-spacing:0.06em;color:var(--muted);cursor:pointer">\u2190 back</button>',
-      '<p style="font-family:\'Fraunces\',serif;font-style:italic;font-weight:300;font-size:14px;',
-        'color:rgba(245,237,224,0.4);margin:0 0 32px">share this with '+nickname+'</p>',
-      '<div id="codeCard" style="background:rgba(201,148,58,0.04);',
-        'border:1px solid rgba(201,148,58,0.15);border-radius:20px;',
-        'padding:32px 40px;margin-bottom:24px;cursor:pointer;transition:all 200ms ease">',
-        '<p style="font-family:\'Fraunces\',serif;font-style:italic;font-weight:300;font-size:22px;',
-          'color:var(--gold);letter-spacing:0.04em;line-height:1.6;text-align:center;margin:0">'+code+'</p>',
-        '<p style="font-family:\'DM Mono\',monospace;font-size:8px;letter-spacing:0.1em;',
-          'color:rgba(201,148,58,0.3);margin:14px 0 0;text-align:center">tap to copy</p>',
+        'letter-spacing:0.06em;color:var(--muted);cursor:pointer">close</button>',
+
+      '<div style="width:56px;height:56px;border-radius:50%;',
+        'background:rgba(201,148,58,0.08);border:1px solid rgba(201,148,58,0.35);',
+        'display:flex;align-items:center;justify-content:center;margin:0 0 22px">',
+        '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#c9943a" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">',
+        '<path d="M4 6l8 7 8-7"/><path d="M4 6v12h16V6"/></svg>',
       '</div>',
-      '<p style="font-family:\'Fraunces\',serif;font-style:italic;font-size:12px;',
-        'color:rgba(245,237,224,0.25);line-height:1.7;margin:0 0 28px;max-width:260px">',
-        'when they enter this in their app,<br>you\u2019ll walk alongside each other.<br><br>expires in 48 hours.</p>',
-      '<button id="shareCodeBtn" style="background:rgba(201,148,58,0.1);',
+
+      '<p style="font-family:\'Fraunces\',serif;font-style:italic;font-weight:300;font-size:20px;',
+        'color:rgba(245,237,224,0.88);margin:0 0 14px;max-width:300px;line-height:1.45">invitation sent.</p>',
+
+      '<p style="font-family:\'Fraunces\',serif;font-style:italic;font-weight:300;font-size:13.5px;',
+        'color:rgba(245,237,224,0.55);margin:0 0 10px;max-width:320px;line-height:1.7">',
+        'if <span style="color:var(--gold)">'+email.replace(/</g,'&lt;')+'</span> is a GratitudeChain user,<br>',
+        'they\u2019ll see your invitation next time they open the app.</p>',
+
+      '<p style="font-family:\'Fraunces\',serif;font-style:italic;font-weight:300;font-size:12.5px;',
+        'color:rgba(245,237,224,0.35);margin:0 0 32px;max-width:300px;line-height:1.7">',
+        'they won\u2019t be told who sent it until they accept.</p>',
+
+      '<button id="sentDoneBtn" style="background:rgba(201,148,58,0.1);',
         'border:1px solid rgba(201,148,58,0.3);border-radius:20px;padding:12px 28px;',
         'font-family:\'Fraunces\',serif;font-style:italic;font-size:13px;',
-        'color:var(--gold);cursor:pointer;margin-bottom:16px;transition:all 200ms ease">',
-        'share via\u2026 \u2197</button>',
-      '<button id="codeDoneBtn" style="background:none;border:none;',
-        'font-family:\'Fraunces\',serif;font-style:italic;font-size:12px;',
-        'color:rgba(245,237,224,0.2);cursor:pointer">done for now</button>'
+        'color:var(--gold);cursor:pointer;transition:all 200ms ease">done</button>'
     ].join('');
 
     overlay.style.opacity = '1';
 
-    // save pending link
-    var links = JSON.parse(localStorage.getItem('gc_links')||'[]');
-    links.push({
-      id: 'link_'+Date.now(),
-      nickname: nickname,
-      code: code,
-      status: 'pending',
-      their_dates: [],
-      created_at: todayISO(),
-      year: new Date().getFullYear()
-    });
-    localStorage.setItem('gc_links', JSON.stringify(links));
-    populateWalkingSection();
-
-    document.getElementById('codeCard').addEventListener('click', function(){
-      if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(code).then(function(){
-          var lbl = document.querySelector('#codeCard p:last-child');
-          if(lbl){
-            lbl.textContent = 'copied \u2713';
-            setTimeout(function(){ lbl.textContent = 'tap to copy'; }, 2000);
-          }
-        }).catch(function(){});
-      }
-    });
-
-    document.getElementById('shareCodeBtn').addEventListener('click', function(){
-      var shareText = 'walk alongside me this year on GratitudeChain.\n\nyour code: '+code+'\n\nenter it in the Held tab.';
-      if(navigator.share){
-        navigator.share({ title:'walk alongside me', text: shareText }).catch(function(){});
-      } else if(navigator.clipboard && navigator.clipboard.writeText){
-        navigator.clipboard.writeText(shareText).catch(function(){});
-      }
-    });
-
-    document.getElementById('codeDoneBtn').addEventListener('click', function(){
+    function _close(){
       overlay.style.opacity = '0';
       setTimeout(function(){ if(overlay.parentNode) overlay.remove(); }, 500);
-    });
-
-    document.getElementById('codeBack').addEventListener('click', function(){
-      overlay.style.opacity = '0';
-      setTimeout(function(){
-        if(overlay.parentNode) overlay.remove();
-        showLinkInviteFlow();
-      }, 500);
-    });
+    }
+    document.getElementById('codeDoneBtn').addEventListener('click', _close);
+    document.getElementById('sentDoneBtn').addEventListener('click', _close);
   }, 500);
-}
-
-// Accept a link by code (phase 1 — local-only lookup)
-function acceptLinkByCode(code){
-  var links = JSON.parse(localStorage.getItem('gc_links')||'[]');
-  var found = null;
-  for(var i = 0; i < links.length; i++){
-    if(links[i].code === code && links[i].status === 'pending'){ found = links[i]; break; }
-  }
-  if(!found) return {ok:false, reason:'not-found'};
-  found.status = 'active';
-  localStorage.setItem('gc_links', JSON.stringify(links));
-  populateWalkingSection();
-  return {ok:true, link:found};
 }
 
 // Wire the "+ link someone" button once the DOM is ready

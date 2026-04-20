@@ -32,16 +32,22 @@
     goToProfile('apple');
   });
 
-  // Step 2: profile form — name + birthday
-  var nameInput = $('profileName');
-  var bdayInput = $('profileBday');
-  var submitBtn = $('profileSubmit');
+  // Step 2: profile form — name + email + birthday
+  var nameInput  = $('profileName');
+  var emailInput = $('profileEmail');
+  var bdayInput  = $('profileBday');
+  var submitBtn  = $('profileSubmit');
 
+  function _isValidEmail(v){
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(v||'').trim());
+  }
   function checkReady(){
-    if(nameInput.value.trim().length>0) submitBtn.classList.add('ready');
-    else submitBtn.classList.remove('ready');
+    var ok = nameInput.value.trim().length > 0
+          && _isValidEmail(emailInput.value);
+    submitBtn.classList.toggle('ready', ok);
   }
   nameInput.addEventListener('input', checkReady);
+  if(emailInput) emailInput.addEventListener('input', checkReady);
 
   // ── Custom calendar picker — matches the app's dark/gold aesthetic ──
   (function initBdayCalendar(){
@@ -209,16 +215,41 @@
   })();
 
   submitBtn.addEventListener('click', function(){
-    var name = nameInput.value.trim();
+    var name  = nameInput.value.trim();
+    var email = (emailInput ? emailInput.value : '').trim().toLowerCase();
     if(!name){ nameInput.focus(); return; }
-    // save user
-    var userData = {name:name, birthday:bdayInput.value||'', provider:authProvider, created:new Date().toISOString()};
+    if(!_isValidEmail(email)){ emailInput && emailInput.focus(); return; }
+    // save user locally
+    var userData = {
+      name: name,
+      email: email,
+      birthday: bdayInput.value || '',
+      provider: authProvider,
+      created: new Date().toISOString()
+    };
     localStorage.setItem('gc_user', JSON.stringify(userData));
     document.body.classList.add('has-user');
+    // register with backend so email is discoverable for alongside linking.
+    // Fire-and-forget — app proceeds immediately even if Cosmos is unreachable.
+    try{
+      var userId = localStorage.getItem('gc_user_id') || '';
+      if(userId && typeof API_BASE !== 'undefined'){
+        fetch(API_BASE + '/user/register', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({
+            user_id: userId,
+            email: email,
+            name: name,
+            birthday: bdayInput.value || ''
+          })
+        }).catch(function(){ /* offline — will retry on next entry submit */ });
+      }
+    }catch(e){}
     // fade out profile, show onboard
     pf.classList.add('fade');
     setTimeout(function(){
-      pf.style.display='none';
+      pf.style.display = 'none';
       runOnboard();
     }, 800);
   });

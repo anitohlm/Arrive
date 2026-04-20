@@ -8,3 +8,5 @@ python-dotenv
 fastapi[all]
 uvicorn[standard]
 httpx
+slowapi>=0.1.9
+email-validator

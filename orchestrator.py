@@ -76,7 +76,12 @@ def handle_submit_entry(
     # Index entry in AI Search for memory resurface.
     # We build a text-only projection so the large base64 payloads never
     # hit the search index — memory recall works on content/mood alone.
+    # Belt-and-suspenders cap: Pydantic already limits content to 2000 chars,
+    # this 4000-char truncation prevents search-index bloat from adversarial payloads.
+    SEARCH_CONTENT_CAP = 4000
     search_doc = {k: entry[k] for k in ("id","userId","content","mood","intention","dayNumber","timestamp")}
+    if len(search_doc.get("content", "")) > SEARCH_CONTENT_CAP:
+        search_doc["content"] = search_doc["content"][:SEARCH_CONTENT_CAP]
     try:
         index_entry(search_doc)
     except Exception:
