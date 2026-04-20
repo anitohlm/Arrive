@@ -1,4 +1,5 @@
 // ═══ RESTORE STATE ON RELOAD ════════════════════════
+// Load order: streak.js must be loaded before this module (`hasLogged` is read at module top).
 if(hasLogged){
   $('s-splash').classList.add('logged');
   // homeStreak is set unconditionally below with splashDay (same calendar-based computation)

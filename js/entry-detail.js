@@ -11,23 +11,37 @@
     if(e.target === overlay) closeEntryDetail();
   });
 
+  // User-authored fields (entry.text, entry.ai, entry.emo, entry.intent) are rendered
+  // via innerHTML, so every interpolation MUST pass through _escHtml (capsule.js:312)
+  // or a safer primitive. Attachment data URLs are only accepted if they start with
+  // "data:" — anything else (including javascript:) is dropped.
+  function _safeDataUrl(u){
+    return (typeof u === 'string' && /^data:/i.test(u)) ? _escHtml(u) : '';
+  }
   window.openEntryDetail = function(entry){
     var inner = $('entryDetailInner');
+    var emo = _escHtml(entry.emo || '');
+    var intent = _escHtml(entry.intent || '');
+    var date = _escHtml((entry.date || '').toUpperCase());
+    var dayNum = Number(entry.day) || 0;
+    var dayLabel = String(dayNum).padStart(3, '0');
+    var text = _escHtml(entry.text || '');
+    var ai = _escHtml(entry.ai || '');
     var html = '';
     html += '<button class="ed-close" onclick="closeEntryDetail()">← back</button>';
     // header: emotion icon + name
     html += '<div class="ed-header">';
-    if(entry.emo) html += '<img class="ed-emo-icon" src="assets/logogchain.svg" alt="'+entry.emo+'">';
-    html += '<div><div class="ed-emo-name">'+(entry.emo||'')+'</div>';
-    html += '<div class="ed-day">DAY '+String(entry.day).padStart(3,'0')+' \u00B7 '+(entry.date||'').toUpperCase()+'</div>';
+    if(emo) html += '<img class="ed-emo-icon" src="assets/logogchain.svg" alt="'+emo+'">';
+    html += '<div><div class="ed-emo-name">'+emo+'</div>';
+    html += '<div class="ed-day">DAY '+dayLabel+' \u00B7 '+date+'</div>';
     html += '</div></div>';
     html += '<div class="ed-rule"></div>';
     // full entry text
-    html += '<div class="ed-entry">\u201C'+entry.text+'\u201D</div>';
+    html += '<div class="ed-entry">\u201C'+text+'\u201D</div>';
     // AI insight
-    if(entry.ai){
+    if(ai){
       html += '<div class="ed-rule"></div>';
-      html += '<div class="ed-ai">'+entry.ai+'</div>';
+      html += '<div class="ed-ai">'+ai+'</div>';
     }
     // photos — render actual thumbnails if data present, else legacy badge
     var photos = Array.isArray(entry.photos) ? entry.photos : [];
@@ -36,7 +50,8 @@
       html += '<div class="ed-photos-grid">';
       photos.forEach(function(p){
         if(p && p.dataUrl){
-          html += '<img class="ed-photo" src="'+p.dataUrl+'" alt="">';
+          var safe = _safeDataUrl(p.dataUrl);
+          if(safe) html += '<img class="ed-photo" src="'+safe+'" alt="">';
         }
       });
       html += '</div>';
@@ -46,15 +61,16 @@
     }
     // voice — inline audio player if data present, else legacy badge
     if(entry.voice && entry.voice.dataUrl){
-      html += '<div class="ed-voice-player"><audio controls src="'+entry.voice.dataUrl+'"></audio></div>';
+      var safeVoice = _safeDataUrl(entry.voice.dataUrl);
+      if(safeVoice) html += '<div class="ed-voice-player"><audio controls src="'+safeVoice+'"></audio></div>';
     } else if(entry.hasVoice){
       html += '<div class="ed-voice"><div class="ed-badge">voice memo attached</div></div>';
     }
     // badges
     html += '<div class="ed-badges">';
-    if(entry.emo) html += '<span class="ed-badge">'+entry.emo+'</span>';
-    if(entry.intent) html += '<span class="ed-badge">'+entry.intent+'</span>';
-    html += '<span class="ed-badge">day '+entry.day+'</span>';
+    if(emo) html += '<span class="ed-badge">'+emo+'</span>';
+    if(intent) html += '<span class="ed-badge">'+intent+'</span>';
+    html += '<span class="ed-badge">day '+dayNum+'</span>';
     html += '</div>';
     inner.innerHTML = html;
     overlay.classList.add('open');

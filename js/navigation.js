@@ -1,4 +1,5 @@
 // ═══ BOTTOM NAV ═════════════════════════════════════
+// Load order: portrait.js must be loaded before this module (captures `go` at module top).
 var navShown = false;
 function showNav(){
   if(navShown) return;
