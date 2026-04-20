@@ -1029,6 +1029,141 @@ body.theme-morning .nav-tab.active span.icon img{opacity:1;filter:sepia(1) satur
 .ph-stat-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted)}
 .ph-mem-card{padding:18px;background:var(--card-bg);border-radius:14px;border:1px solid var(--card-border);width:100%}
 
+/* ═══ PARCHMENT MODAL — the alongside philosophy, physical-but-digital ═══ */
+.parchment-modal{
+  position:fixed;inset:0;z-index:210;
+  background:rgba(7,5,3,0.72);
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  display:flex;align-items:center;justify-content:center;
+  padding:24px;
+  opacity:0;pointer-events:none;
+  transition:opacity 340ms var(--ease);
+}
+.parchment-modal.open{opacity:1;pointer-events:auto}
+.parchment-modal[hidden]{display:none}
+
+.parchment-card{
+  position:relative;
+  width:100%;max-width:380px;
+  padding:56px 34px 42px;
+  text-align:center;
+  /* layered warm gradients to suggest aged paper — warmest near upper-left */
+  background:
+    radial-gradient(ellipse at 22% 12%, #f6ecd1 0%, transparent 55%),
+    radial-gradient(ellipse at 78% 84%, #e9dab4 0%, transparent 50%),
+    linear-gradient(145deg, #f1e3c4 0%, #e8d7b1 55%, #e2cea3 100%);
+  border-radius:4px 12px 4px 10px; /* slightly asymmetric — hand-torn feel */
+  /* depth + warm vignette + hairline inner border */
+  box-shadow:
+    0 28px 72px rgba(0,0,0,0.55),
+    0 6px 24px rgba(0,0,0,0.35),
+    0 0 0 1px rgba(120,86,36,0.18),
+    inset 0 0 140px rgba(120,86,36,0.10),
+    inset 0 0 0 1px rgba(255,245,216,0.25);
+  transform:translateY(18px) scale(0.96);
+  transition:transform 420ms cubic-bezier(.22,.61,.36,1);
+  overflow:hidden;
+}
+.parchment-modal.open .parchment-card{
+  transform:translateY(0) scale(1);
+}
+
+/* subtle grain — faint repeating lines to simulate paper fiber */
+.parchment-card::before{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    repeating-linear-gradient(
+      92deg,
+      transparent 0,
+      rgba(100,70,25,0.018) 1.5px,
+      transparent 3.5px
+    ),
+    repeating-linear-gradient(
+      2deg,
+      transparent 0,
+      rgba(100,70,25,0.014) 2px,
+      transparent 5px
+    );
+  mix-blend-mode:multiply;
+  opacity:0.85;
+  border-radius:inherit;
+}
+/* soft aged vignette — darkens the corners like old paper */
+.parchment-card::after{
+  content:'';position:absolute;inset:0;pointer-events:none;
+  background:
+    radial-gradient(ellipse at 8% 6%, rgba(130,90,30,0.18) 0%, transparent 35%),
+    radial-gradient(ellipse at 94% 92%, rgba(130,90,30,0.22) 0%, transparent 40%),
+    radial-gradient(ellipse at center, transparent 45%, rgba(100,65,20,0.14) 100%);
+  mix-blend-mode:multiply;
+  border-radius:inherit;
+}
+
+/* top flourish — a lone sigil instead of a heading */
+.parchment-top-flourish{
+  display:flex;justify-content:center;margin:0 0 22px;
+  opacity:0.55;
+}
+.parchment-sigil{
+  font-family:'Fraunces',serif;font-size:22px;
+  color:#9a6b2a;
+  letter-spacing:0.4em;padding-left:0.4em;
+}
+
+.parchment-title{
+  font-family:'Fraunces',serif;font-style:italic;font-weight:400;
+  font-size:19px;line-height:1.6;
+  color:#3d2a12;
+  margin:0 auto 22px;max-width:280px;
+  letter-spacing:-0.003em;
+}
+.parchment-body{
+  font-family:'Fraunces',serif;font-style:italic;font-weight:300;
+  font-size:14.5px;line-height:1.85;
+  color:rgba(61,42,18,0.78);
+  margin:0 auto 16px;max-width:280px;
+}
+.parchment-body--close{margin-bottom:10px}
+.parchment-footnote{
+  font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:0.2em;text-transform:uppercase;
+  color:rgba(90,60,20,0.5);
+  margin:0 0 22px;
+}
+
+.parchment-rule{
+  width:44px;height:1px;margin:0 auto 24px;
+  background:linear-gradient(90deg, transparent, rgba(130,90,30,0.5), transparent);
+}
+
+.parchment-actions{
+  display:flex;flex-direction:column;align-items:center;gap:14px;
+}
+.parchment-primary{
+  padding:11px 28px;
+  background:rgba(154,107,42,0.12);
+  border:1px solid rgba(130,90,30,0.55);
+  border-radius:999px;
+  font-family:'Fraunces',serif;font-style:italic;font-weight:400;
+  font-size:14px;color:#6b4914;
+  letter-spacing:-0.002em;
+  cursor:pointer;
+  transition:all 220ms var(--ease);
+}
+.parchment-primary:hover{
+  background:rgba(154,107,42,0.2);
+  border-color:rgba(130,90,30,0.8);
+}
+.parchment-primary:active{transform:scale(.97)}
+.parchment-secondary{
+  background:none;border:none;padding:6px 12px;
+  font-family:'Fraunces',serif;font-style:italic;
+  font-size:12.5px;color:rgba(90,60,20,0.45);
+  cursor:pointer;
+  transition:color 200ms var(--ease);
+}
+.parchment-secondary:hover{color:rgba(90,60,20,0.75)}
+
 /* ═══ MEMORIES — heatmap constellation + memory-agent card ═══ */
 .mem-wrap{
   width:100%;max-width:520px;margin:0 auto;

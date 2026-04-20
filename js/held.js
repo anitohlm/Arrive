@@ -703,45 +703,101 @@ function setHeldTab(tab){
 // expose for inline onclick handlers
 window.setHeldTab = setHeldTab;
 
+// Move the parchment modal out of its tab container so parent opacity /
+// visibility / transform states never affect it. Modals belong at body root.
+(function relocateParchment(){
+  var philosEl = document.getElementById('alongsidePhilosophy');
+  if(philosEl && philosEl.parentElement !== document.body){
+    document.body.appendChild(philosEl);
+  }
+})();
+
+function _openParchmentModal(){
+  var philosEl = document.getElementById('alongsidePhilosophy');
+  if(!philosEl) return;
+  // Defensive re-parent in case some later code moved it back.
+  if(philosEl.parentElement !== document.body){
+    document.body.appendChild(philosEl);
+  }
+  var laterBtn = document.getElementById('philosLaterBtn');
+  var seen = localStorage.getItem('gc_link_philosophy_seen');
+  if(laterBtn) laterBtn.textContent = seen ? 'back' : 'maybe later';
+  philosEl.hidden = false;
+  requestAnimationFrame(function(){ philosEl.classList.add('open'); });
+}
+function _closeParchmentModal(){
+  var philosEl = document.getElementById('alongsidePhilosophy');
+  if(!philosEl) return;
+  philosEl.classList.remove('open');
+  setTimeout(function(){ philosEl.hidden = true; }, 360);
+}
+
 function populateAlongsideTab(){
   var seen = localStorage.getItem('gc_link_philosophy_seen');
   var links = [];
   try{ links = JSON.parse(localStorage.getItem('gc_links')||'[]'); }catch(e){}
-  var philosEl = document.getElementById('alongsidePhilosophy');
   var activeEl = document.getElementById('alongsideActive');
-  if(!philosEl || !activeEl) return;
+  if(!activeEl) return;
 
+  // Active panel is always visible underneath; philosophy is a modal on top.
+  activeEl.style.display = 'block';
+  populateWalkingSection();
+
+  // First-ever visit → float the parchment on top so they read the rule.
   if(!seen && links.length === 0){
-    philosEl.style.display = 'block';
-    activeEl.style.display = 'none';
-  } else {
-    philosEl.style.display = 'none';
-    activeEl.style.display = 'block';
-    populateWalkingSection();
+    _openParchmentModal();
   }
 }
 
-// inline philosophy buttons
+// Parchment modal wiring — philosophy is now a modal overlay.
 (function(){
+  function dismissPhilosophy(){
+    localStorage.setItem('gc_link_philosophy_seen', '1');
+    _closeParchmentModal();
+  }
+
   var linkBtn = document.getElementById('philosLinkBtn');
   if(linkBtn){
     linkBtn.addEventListener('click', function(){
-      localStorage.setItem('gc_link_philosophy_seen', '1');
-      document.getElementById('alongsidePhilosophy').style.display = 'none';
-      document.getElementById('alongsideActive').style.display = 'block';
-      populateWalkingSection();
-      setTimeout(function(){ showLinkInviteFlow(); }, 200);
+      dismissPhilosophy();
+      setTimeout(function(){
+        if(typeof showLinkInviteFlow === 'function') showLinkInviteFlow();
+      }, 380);
     });
   }
   var laterBtn = document.getElementById('philosLaterBtn');
   if(laterBtn){
-    laterBtn.addEventListener('click', function(){
-      localStorage.setItem('gc_link_philosophy_seen', '1');
-      document.getElementById('alongsidePhilosophy').style.display = 'none';
-      document.getElementById('alongsideActive').style.display = 'block';
-      populateWalkingSection();
+    laterBtn.addEventListener('click', dismissPhilosophy);
+  }
+
+  // "about walking alongside →" link on the active panel — re-opens the
+  // parchment modal. Doesn't clear gc_link_philosophy_seen so tab-reopens
+  // continue to go straight to the active panel.
+  var aboutLink = document.getElementById('aboutAlongsideLink');
+  if(aboutLink){
+    aboutLink.addEventListener('click', _openParchmentModal);
+  }
+
+  // Backdrop tap — click outside the card closes the modal.
+  var modal = document.getElementById('alongsidePhilosophy');
+  if(modal){
+    modal.addEventListener('click', function(e){
+      if(e.target === modal){
+        localStorage.setItem('gc_link_philosophy_seen', '1');
+        _closeParchmentModal();
+      }
     });
   }
+
+  // Esc closes the modal too.
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Escape') return;
+    var philosEl = document.getElementById('alongsidePhilosophy');
+    if(philosEl && !philosEl.hidden){
+      localStorage.setItem('gc_link_philosophy_seen', '1');
+      _closeParchmentModal();
+    }
+  });
 })();
 
 // inline accept-code input + button (alongside tab)

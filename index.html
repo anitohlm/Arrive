@@ -8,7 +8,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,300;1,9..144,400&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css?v=24">
+<link rel="stylesheet" href="css/styles.css?v=27">
 </head>
 <body>
 
@@ -330,22 +330,22 @@
     <!-- TAB 2: alongside -->
     <div id="heldAlongside" style="width:100%;display:none;flex-direction:column;gap:0">
 
-      <!-- Philosophy (first-time only) -->
-      <div id="alongsidePhilosophy" style="display:none;text-align:center;padding:16px 8px">
-        <p style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:16px;color:rgba(245,237,224,0.75);line-height:1.85;margin:0 auto 16px;max-width:280px">
-          your practice is yours alone.<br>always.
-        </p>
-        <p style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px;color:rgba(245,237,224,0.4);line-height:1.85;margin:0 auto 16px;max-width:280px">
-          but some people choose to walk<br>with someone —<br>not sharing their words,<br>just their presence.
-        </p>
-        <p style="font-family:'Fraunces',serif;font-style:italic;font-weight:300;font-size:14px;color:rgba(245,237,224,0.4);line-height:1.85;margin:0 auto 40px;max-width:280px">
-          they will see that you showed up.<br>nothing more.<br><br>up to three people.
-        </p>
-        <button class="knot-btn" id="philosLinkBtn" style="margin-bottom:20px">
-          <span class="knot-icon"></span>link someone
-        </button>
-        <br>
-        <button id="philosLaterBtn" style="background:none;border:none;font-family:'Fraunces',serif;font-style:italic;font-size:12px;color:rgba(245,237,224,0.2);cursor:pointer;padding:8px">maybe later</button>
+      <!-- Philosophy — parchment-paper modal (first-time auto-open + re-readable from "about" link) -->
+      <div id="alongsidePhilosophy" class="parchment-modal" hidden>
+        <div class="parchment-card" role="document">
+          <div class="parchment-top-flourish">
+            <span class="parchment-sigil">✧</span>
+          </div>
+          <p class="parchment-title">your practice is yours alone.<br>always.</p>
+          <p class="parchment-body">but some people choose to walk<br>with someone —<br>not sharing their words,<br>just their presence.</p>
+          <p class="parchment-body parchment-body--close">they will see that you showed up.<br>nothing more.</p>
+          <p class="parchment-footnote">up to three people.</p>
+          <div class="parchment-rule"></div>
+          <div class="parchment-actions">
+            <button class="parchment-primary" id="philosLinkBtn">link someone</button>
+            <button class="parchment-secondary" id="philosLaterBtn">maybe later</button>
+          </div>
+        </div>
       </div>
 
       <!-- Active state -->
@@ -364,6 +364,9 @@
           <button id="acceptCodeBtn" style="background:rgba(201,148,58,0.08);border:1px solid rgba(201,148,58,0.2);border-radius:12px;padding:12px 16px;font-family:'Fraunces',serif;font-style:italic;font-size:12px;color:rgba(201,148,58,0.5);cursor:pointer;white-space:nowrap;transition:all 200ms ease">accept</button>
         </div>
         <p id="acceptCodeMsg" style="font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.08em;color:rgba(201,148,58,0.4);margin:10px 0 0;min-height:16px"></p>
+
+        <!-- return to the philosophy screen (re-readable anytime) -->
+        <button id="aboutAlongsideLink" style="display:block;background:none;border:none;margin:36px auto 0;padding:8px 12px;font-family:'Fraunces',serif;font-style:italic;font-size:11.5px;color:rgba(201,148,58,0.45);cursor:pointer;letter-spacing:0.02em;transition:color 200ms ease">about walking alongside →</button>
       </div>
     </div>
 
@@ -753,18 +756,18 @@
 
 
 <!-- ═══ SCRIPTS (loaded in dependency order) ═══════════ -->
-<script src="js/data.js?v=24"></script>
-<script src="js/state.js?v=24"></script>
-<script src="js/onboarding.js?v=24"></script>
-<script src="js/memories.js?v=24"></script>
-<script src="js/streak.js?v=24"></script>
-<script src="js/held.js?v=24"></script>
-<script src="js/portrait.js?v=24"></script>
-<script src="js/navigation.js?v=24"></script>
-<script src="js/screens.js?v=24"></script>
-<script src="js/attachments.js?v=24"></script>
-<script src="js/ceremonies.js?v=24"></script>
-<script src="js/entry-detail.js?v=24"></script>
-<script src="js/capsule.js?v=24"></script>
+<script src="js/data.js?v=27"></script>
+<script src="js/state.js?v=27"></script>
+<script src="js/onboarding.js?v=27"></script>
+<script src="js/memories.js?v=27"></script>
+<script src="js/streak.js?v=27"></script>
+<script src="js/held.js?v=27"></script>
+<script src="js/portrait.js?v=27"></script>
+<script src="js/navigation.js?v=27"></script>
+<script src="js/screens.js?v=27"></script>
+<script src="js/attachments.js?v=27"></script>
+<script src="js/ceremonies.js?v=27"></script>
+<script src="js/entry-detail.js?v=27"></script>
+<script src="js/capsule.js?v=27"></script>
 </body>
 </html>
