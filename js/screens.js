@@ -563,11 +563,57 @@ function runInsightSequence(){
   $('birthdayLine').style.opacity='0';
   $('birthdayLine').textContent='';
 
-  // ── live reflection fetch ── fires immediately, cache on window
-  // so a late response can swap in without disrupting the staggered UI.
+  // ── AI-first reveal ──
+  // Previously: hardcoded showed at t=1400ms, AI crossfaded in when it arrived.
+  // Now: wait for the AI response (up to MAX_WAIT_MS) and only fall back to
+  // the hardcoded insight if the AI doesn't arrive in time. Users see the
+  // friend-voice paragraph first, not a placeholder. If AI beats the
+  // soft deadline (EARLIEST_REVEAL_MS) we still honor the minimum so the
+  // loading-dots animation gets a beat of screen time and the cascade
+  // below feels paced rather than snapping open.
   var _reflectionReqId = (window._reflectionReqId||0) + 1;
   window._reflectionReqId = _reflectionReqId;
-  window._reflectionResult = null;
+
+  var EARLIEST_REVEAL_MS = 1400;  // don't reveal before this (keeps the opening rhythm)
+  var MAX_WAIT_MS        = 4500;  // hard fallback to hardcoded if AI is slow / offline
+
+  var _revealed = false;
+  var _aiResult = null;
+  var _startTs  = Date.now();
+
+  function _revealInsightText(text){
+    if(_revealed) return;
+    if(_reflectionReqId !== window._reflectionReqId) return; // stale call
+    _revealed = true;
+    $('loadingDots').classList.add('hide');
+    var txtEl = $('insightText');
+    txtEl.textContent = text;
+    txtEl.classList.add('vis');
+    // kick off the rest of the cascade relative to the reveal moment
+    setTimeout(function(){ showInsightMemory(emo); }, 800);
+    setTimeout(function(){ $('bridgeRule').classList.add('vis'); }, 1400);
+    setTimeout(function(){ $('bridgeQ').classList.add('vis'); }, 2200);
+    if(isBirthday && birthYear > 0){
+      setTimeout(function(){
+        var age = new Date().getFullYear() - birthYear;
+        $('birthdayLine').textContent = 'today the chain marks ' + age + ' years of you.';
+        $('birthdayLine').style.opacity = '0.7';
+      }, 3000);
+      setTimeout(function(){ $('beginFooter').classList.add('vis'); }, 3800);
+    } else {
+      setTimeout(function(){ $('beginFooter').classList.add('vis'); }, 3000);
+    }
+  }
+
+  function _tryReveal(){
+    if(_revealed) return;
+    var elapsed = Date.now() - _startTs;
+    if(_aiResult && elapsed >= EARLIEST_REVEAL_MS){
+      _revealInsightText(_aiResult);
+    }
+  }
+
+  // fire AI fetch
   (function(){
     var _userName = '';
     try{ _userName = (JSON.parse(localStorage.getItem('gc_user')||'{}').name)||''; }catch(e){}
@@ -577,48 +623,27 @@ function runInsightSequence(){
       body: JSON.stringify({mood: emo, intention: intent||'', name: _userName})
     }).then(function(r){ return r.json(); })
       .then(function(data){
-        // only apply if this response is for the current sequence
         if(_reflectionReqId !== window._reflectionReqId) return;
         if(!data || !data.success || !data.insight) return;
+        _aiResult = data.insight;
         window._reflectionResult = data.insight;
-        // if the insight paragraph is already on screen, crossfade the text
-        var txtEl = $('insightText');
-        if(txtEl && txtEl.classList.contains('vis') && txtEl.textContent){
-          txtEl.style.transition = 'opacity 400ms ease';
-          txtEl.style.opacity = '0';
-          setTimeout(function(){
-            if(_reflectionReqId !== window._reflectionReqId) return;
-            txtEl.textContent = data.insight;
-            txtEl.style.opacity = '1';
-          }, 420);
-        }
+        _tryReveal();
       })
-      .catch(function(){ /* fail quietly — hardcoded fallback stays */ });
+      .catch(function(){ /* fail quietly — fallback timer below handles it */ });
   })();
 
-  // timed sequence
-  setTimeout(()=>$('insightRule1').classList.add('vis'), 400);
-  setTimeout(()=>$('loadingDots').classList.add('hide'), 1200);
-  setTimeout(()=>{
-    // prefer live AI if it beat the 1400ms beat; otherwise show hardcoded now
-    // and the fetch resolver above will crossfade it in when ready.
-    $('insightText').textContent = window._reflectionResult || INSIGHTS[emo];
-    $('insightText').classList.add('vis');
-  }, 1400);
-  setTimeout(()=>showInsightMemory(emo), 2200);
-  setTimeout(()=>$('bridgeRule').classList.add('vis'), 2800);
-  setTimeout(()=>$('bridgeQ').classList.add('vis'), 3600);
-  // birthday line — fades in 800ms after bridgeQ
-  if(isBirthday && birthYear > 0){
-    setTimeout(()=>{
-      var age = new Date().getFullYear() - birthYear;
-      $('birthdayLine').textContent = 'today the chain marks ' + age + ' years of you.';
-      $('birthdayLine').style.opacity = '0.7';
-    }, 4400);
-    setTimeout(()=>$('beginFooter').classList.add('vis'), 5200);
-  } else {
-    setTimeout(()=>$('beginFooter').classList.add('vis'), 4400);
-  }
+  // opening beat: ornamental rule always shows at 400ms
+  setTimeout(function(){ $('insightRule1').classList.add('vis'); }, 400);
+
+  // at EARLIEST_REVEAL_MS, try to reveal (if AI already arrived)
+  setTimeout(_tryReveal, EARLIEST_REVEAL_MS + 20);
+
+  // hard fallback: if AI still hasn't arrived by MAX_WAIT_MS, show hardcoded
+  setTimeout(function(){
+    if(_revealed) return;
+    if(_reflectionReqId !== window._reflectionReqId) return;
+    _revealInsightText(INSIGHTS[emo]);
+  }, MAX_WAIT_MS);
 }
 // skip on tap
 $('s-insight').addEventListener('click', e => {

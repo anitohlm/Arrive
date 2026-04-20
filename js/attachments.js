@@ -165,7 +165,11 @@ $('journalSubmit').addEventListener('click',()=>{
   $('postInsightEmo').textContent = emo;
   var displayEntry = entry.length > 150 ? entry.slice(0,147) + '\u2026' : entry;
   $('postInsightEntry').textContent = '\u201C' + displayEntry + '\u201D';
-  $('postInsightAi').textContent = POST_AI[emo] || 'The chain grew.';
+  // AI-first reveal: start the text area empty so the friend-voice line
+  // from Foundry is what the user reads, not a placeholder. The loading
+  // dot below stays visible until AI arrives (or the timeout below fires).
+  $('postInsightAi').textContent = '';
+  $('postInsightAi').style.opacity = '';
   // show loading dot while AI fetch runs
   $('aiLoadingDot').classList.add('vis');
   // stash the draft — not committed until user taps carry it forward
@@ -181,33 +185,44 @@ $('journalSubmit').addEventListener('click',()=>{
     ? { dataUrl: journalAttachments.voice.dataUrl, mime: journalAttachments.voice.mime }
     : null;
   go('s-journal','s-post-insight');
-  // safety timeout — hide the dot even if fetch hangs
-  var aiTimeout = setTimeout(function(){
+  // AI-first reveal. If AI arrives quickly, show it. If it takes longer
+  // than MAX_WAIT_MS, fall back to the hardcoded POST_AI[emo] so the
+  // screen never stays empty.
+  var MAX_WAIT_MS = 4500;
+  var _resolved = false;
+  function _revealPostInsight(text){
+    if(_resolved) return;
+    _resolved = true;
     $('aiLoadingDot').classList.remove('vis');
-  }, 5000);
-  // call AI insight API (non-blocking — updates text when ready)
-  // Hardcoded POST_AI already shown on screen above; when AI lands, crossfade in.
+    var el = $('postInsightAi');
+    el.style.transition = 'opacity 400ms ease';
+    el.style.opacity = '0';
+    setTimeout(function(){
+      el.textContent = text;
+      el.style.opacity = '1';
+    }, 200);
+  }
+  // hard fallback — hardcoded wins if AI too slow / offline
+  var aiTimeout = setTimeout(function(){
+    if(!_resolved) _revealPostInsight(POST_AI[emo] || 'the chain grew.');
+  }, MAX_WAIT_MS);
+
   fetch(API_BASE + '/post-insight', {
     method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({content:entry, mood:emo, day_number:dayNum-1})
   }).then(function(r){return r.json()}).then(function(data){
     clearTimeout(aiTimeout);
-    $('aiLoadingDot').classList.remove('vis');
-    if(data.success && data.insight){
-      var el = $('postInsightAi');
-      el.style.transition = 'opacity 400ms ease';
-      el.style.opacity = '0';
-      setTimeout(function(){
-        el.textContent = data.insight;
-        el.style.opacity = '1';
-        // remember the AI version so the saved entry stores it, not the fallback
-        window._pendingAi = data.insight;
-      }, 420);
+    if(data && data.success && data.insight){
+      _revealPostInsight(data.insight);
+      // remember the AI version so the saved entry stores it, not the fallback
+      window._pendingAi = data.insight;
+    } else if(!_resolved){
+      _revealPostInsight(POST_AI[emo] || 'the chain grew.');
     }
   }).catch(function(){
     clearTimeout(aiTimeout);
-    $('aiLoadingDot').classList.remove('vis');
+    if(!_resolved) _revealPostInsight(POST_AI[emo] || 'the chain grew.');
     _showOfflineBanner();
   });
 });
