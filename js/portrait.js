@@ -743,6 +743,16 @@ function showMonthEndCeremony(){
   var currentMonth = new Date().toISOString().slice(0,7);
   if(localStorage.getItem('gc_ceremony_seen_'+currentMonth)) return;
   if(document.getElementById('monthEndOverlay')) return;
+
+  // Self-sufficient AI prefetch — if no caller prefetched, fire now so
+  // the reflection text is ready by the time the ceremony's monthly
+  // reflection slot tries to consume window._monthlyReflectionPrefetch.
+  // Callers that DO prefetch (real-flow submit, demo month-end button)
+  // see their promise preserved because prefetchMonthlyReflection is
+  // idempotent — it overwrites with the latest request.
+  if(!window._monthlyReflectionPrefetch && typeof prefetchMonthlyReflection === 'function'){
+    prefetchMonthlyReflection();
+  }
   // gc_ceremony_seen is written in beginDismissal, not here —
   // so a crash or backgrounded app doesn't permanently block the ceremony
 

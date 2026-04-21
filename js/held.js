@@ -382,75 +382,251 @@ function _renderYearPage2(pageEl, d){
     };
   }
 
-  var rows = top5.map(function(emo, i){
+  // Build the legend chips (small colored dot + emotion label + percentage).
+  // Two columns of 3 so it fits compactly below the donut.
+  var legendRows = top6.map(function(emo, i){
     var count = d.emoCounts[emo];
     var pct = Math.round(count / d.total * 100);
-    var relativeW = Math.round((count / topCount) * 100); // 0-100 relative to top
     var color = (KNOT_PARAMS[emo] || KNOT_FALLBACK).color;
     var rgb = _hexToRgb(color);
     var tint = 'rgba('+rgb.r+','+rgb.g+','+rgb.b;
-    var delay = 120 + i * 90;
+    var delay = 900 + i * 80; // start after donut is drawn
 
     return ''
-      // row wrapper — staggered fade-in via inline animation
-      + '<div class="_yearcarry-row" style="'
-      +   'position:relative;'
-      +   'display:grid;grid-template-columns:14px 1fr auto;align-items:center;'
-      +   'gap:14px;padding:10px 12px;margin:0 -12px 6px;'
-      +   'border-radius:12px;'
-      +   'background:linear-gradient(90deg,'+tint+',0.05) 0%,'+tint+',0) 70%);'
-      +   'opacity:0;transform:translateY(6px);'
-      +   'animation:_yrcarryIn 600ms '+(delay)+'ms cubic-bezier(.2,.7,.25,1) forwards;'
+      + '<div class="_yearcarry-chip" style="'
+      +   'display:flex;align-items:center;gap:10px;'
+      +   'padding:8px 10px;border-radius:10px;'
+      +   'background:linear-gradient(90deg,'+tint+',0.07) 0%,'+tint+',0) 80%);'
+      +   'opacity:0;transform:translateY(4px);'
+      +   'animation:_yrcarryIn 500ms '+delay+'ms cubic-bezier(.2,.7,.25,1) forwards;'
       + '">'
-      // color dot
       +   '<span style="'
-      +     'display:block;width:10px;height:10px;border-radius:50%;'
+      +     'flex:0 0 8px;width:8px;height:8px;border-radius:50%;'
       +     'background:'+color+';'
-      +     'box-shadow:0 0 12px '+tint+',0.55), 0 0 3px '+tint+',0.9) inset;'
+      +     'box-shadow:0 0 10px '+tint+',0.55);'
       +   '"></span>'
-      // emotion name + bar
-      +   '<div style="display:flex;flex-direction:column;gap:6px;min-width:0">'
-      +     '<span style="'
-      +       'font-family:Fraunces,serif;font-style:italic;font-weight:300;'
-      +       'font-size:17px;letter-spacing:-0.01em;'
-      +       'color:rgba(245,237,224,0.92);'
-      +     '">'+emo+'</span>'
-      +     '<div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);overflow:hidden">'
-      +       '<div style="'
-      +         'width:'+relativeW+'%;height:100%;'
-      +         'background:linear-gradient(90deg,'+tint+',0.3) 0%,'+color+' 100%);'
-      +         'box-shadow:0 0 8px '+tint+',0.45);'
-      +         'transform-origin:left;transform:scaleX(0);'
-      +         'animation:_yrcarryBar 800ms '+(delay+200)+'ms cubic-bezier(.2,.7,.25,1) forwards;'
-      +       '"></div>'
-      +     '</div>'
-      +   '</div>'
-      // count + percentage on right
-      +   '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">'
-      +     '<span style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:16px;color:'+color+';opacity:0.95">'+pct+'%</span>'
-      +     '<span style="font-family:DM Mono,monospace;font-size:8px;color:rgba(245,237,224,0.35);letter-spacing:0.08em">'+count+(count===1?' day':' days')+'</span>'
-      +   '</div>'
+      +   '<span style="'
+      +     'flex:1;font-family:Fraunces,serif;font-style:italic;font-weight:300;'
+      +     'font-size:13px;color:rgba(245,237,224,0.88);'
+      +     'white-space:nowrap;overflow:hidden;text-overflow:ellipsis;'
+      +   '">'+emo+'</span>'
+      +   '<span style="'
+      +     'font-family:DM Mono,monospace;font-size:10px;'
+      +     'color:'+color+';opacity:0.85;'
+      +   '">'+pct+'%</span>'
       + '</div>';
   }).join('');
 
-  // inject keyframes once (idempotent — lookup by id)
+  // inject keyframes once
   if(!document.getElementById('_yearcarryKeyframes')){
     var style = document.createElement('style');
     style.id = '_yearcarryKeyframes';
     style.textContent =
-      '@keyframes _yrcarryIn { to { opacity: 1; transform: translateY(0); } }' +
-      '@keyframes _yrcarryBar { to { transform: scaleX(1); } }';
+      '@keyframes _yrcarryIn { to { opacity: 1; transform: translateY(0); } }';
     document.head.appendChild(style);
   }
 
   var inner = ''
     + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.42;text-transform:uppercase;letter-spacing:0.22em;margin:0 0 10px;text-align:center">what you carried</p>'
-    + '<div style="width:28px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,148,58,0.5),transparent);margin:0 auto 22px"></div>'
-    + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:36px;letter-spacing:-0.01em;color:rgba(245,237,224,0.95);text-align:center;margin:0">'+d.total+'</p>'
-    + '<p style="font-family:DM Mono,monospace;font-size:9px;color:rgba(245,237,224,0.35);letter-spacing:0.18em;text-align:center;text-transform:uppercase;margin:2px 0 28px">mornings held</p>'
-    + '<div style="width:100%;max-width:340px;margin:0 auto">' + rows + '</div>';
+    + '<div style="width:28px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,148,58,0.5),transparent);margin:0 auto 16px"></div>'
+    // chart canvas — the focal point
+    + '<canvas id="_yearDonutChart" width="480" height="480" style="width:240px;height:240px;display:block;margin:0 auto 6px"></canvas>'
+    + '<p style="font-family:DM Mono,monospace;font-size:9px;color:rgba(245,237,224,0.32);letter-spacing:0.18em;text-align:center;text-transform:uppercase;margin:0 0 20px">the shape of the year</p>'
+    // legend grid
+    + '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px 12px;width:100%;max-width:340px;margin:0 auto">' + legendRows + '</div>';
 
-  pageEl.innerHTML = _yearPageWrap(inner, {padX:'36px'});
+  pageEl.innerHTML = _yearPageWrap(inner, {padX:'28px'});
+
+  // Kick off the donut draw on next frame so layout is done.
+  requestAnimationFrame(function(){
+    _drawYearDonut(top6, d);
+  });
+}
+
+// Rose-bloom chart: each top emotion is a PETAL radiating from center.
+// Petal length = frequency; petal color = emotion palette. Unique to this
+// app — echoes the rose-curve pendant metaphor. Animates each petal in
+// sequence from the center outward like a slow bloom.
+function _drawYearDonut(topEmos, d){
+  var canvas = document.getElementById('_yearDonutChart');
+  if(!canvas) return;
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var cx = W/2, cy = H/2;
+  var maxR = Math.min(W,H) * 0.42;
+  var minR = maxR * 0.22; // smallest petal floor so rare emotions still read
+
+  var topTotal = topEmos.reduce(function(s,e){ return s + (d.emoCounts[e]||0); }, 0);
+  var otherCount = Math.max(0, d.total - topTotal);
+  var petals = topEmos.map(function(e){
+    return { emo:e, count:d.emoCounts[e], color:(KNOT_PARAMS[e]||KNOT_FALLBACK).color };
+  });
+  if(otherCount > 0){
+    petals.push({ emo:'other', count:otherCount, color:'#6d6a65' });
+  }
+
+  var topCount = petals[0] ? petals[0].count : 1;
+  var N = petals.length;
+  if(N === 0) return;
+
+  // distribute petals around circle, largest at top, alternating sides for
+  // visual balance on descending frequencies
+  var order = petals.slice();
+  var placed = new Array(N);
+  var L = 0, R = N-1;
+  order.forEach(function(p, i){
+    if(i % 2 === 0) placed[L++] = p; else placed[R--] = p;
+  });
+  placed.forEach(function(p, i){
+    p.angle = -Math.PI/2 + (i / N) * Math.PI * 2;
+    // petal length proportional to its share of the top emotion (not total),
+    // clamped to [minR, maxR] so rare emotions still read
+    var ratio = Math.min(1, p.count / topCount);
+    p.length = minR + (maxR - minR) * ratio;
+    p.width  = 0.08 + (Math.PI*2 / N) * 0.34; // half-width in radians
+  });
+
+  var t0 = performance.now();
+  var DURATION = 1400;
+  var STAGGER = 140; // ms per petal
+  function ease(t){ return 1 - Math.pow(1-t, 3); }
+
+  // Bézier petal path: tip at (cx + cos*len, cy + sin*len),
+  // control points at ±width perpendicular to the angle at ~60% length.
+  function drawPetal(p, progress){
+    if(progress <= 0) return;
+    var tipX = cx + Math.cos(p.angle) * p.length * progress;
+    var tipY = cy + Math.sin(p.angle) * p.length * progress;
+    var baseR = minR * 0.5;
+    var baseX = cx + Math.cos(p.angle) * baseR;
+    var baseY = cy + Math.sin(p.angle) * baseR;
+
+    // perpendicular vector
+    var perpX = -Math.sin(p.angle), perpY = Math.cos(p.angle);
+    var controlOffset = p.length * progress * 0.55;
+    var widthPx = Math.sin(p.width) * p.length * progress * 0.85;
+
+    var c1x = cx + Math.cos(p.angle) * controlOffset + perpX * widthPx;
+    var c1y = cy + Math.sin(p.angle) * controlOffset + perpY * widthPx;
+    var c2x = cx + Math.cos(p.angle) * controlOffset - perpX * widthPx;
+    var c2y = cy + Math.sin(p.angle) * controlOffset - perpY * widthPx;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(baseX, baseY);
+    ctx.quadraticCurveTo(c1x, c1y, tipX, tipY);
+    ctx.quadraticCurveTo(c2x, c2y, baseX, baseY);
+    ctx.closePath();
+
+    // gradient fill from center-tint to bright tip
+    var grad = ctx.createRadialGradient(baseX, baseY, 0, tipX, tipY, p.length*progress);
+    grad.addColorStop(0, p.color + '33');
+    grad.addColorStop(0.5, p.color + 'cc');
+    grad.addColorStop(1, p.color);
+    ctx.fillStyle = grad;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 18;
+    ctx.fill();
+
+    // thin outline in palette color for definition
+    ctx.shadowBlur = 0;
+    ctx.lineWidth = 0.6;
+    ctx.strokeStyle = p.color + '66';
+    ctx.stroke();
+
+    // small circle at tip (the "bloom dot")
+    ctx.beginPath();
+    ctx.arc(tipX, tipY, 3 + 2*progress, 0, Math.PI*2);
+    var tipGrad = ctx.createRadialGradient(tipX, tipY, 0, tipX, tipY, 6);
+    tipGrad.addColorStop(0, '#fff8e0');
+    tipGrad.addColorStop(0.5, p.color);
+    tipGrad.addColorStop(1, p.color + '00');
+    ctx.fillStyle = tipGrad;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur = 12;
+    ctx.fill();
+
+    ctx.restore();
+  }
+
+  function drawCenter(globalProgress){
+    // soft golden aura
+    var auraR = minR * 1.4;
+    var grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, auraR);
+    grad.addColorStop(0, 'rgba(201,148,58,0.35)');
+    grad.addColorStop(0.6, 'rgba(201,148,58,0.1)');
+    grad.addColorStop(1, 'rgba(201,148,58,0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(cx, cy, auraR, 0, Math.PI*2);
+    ctx.fill();
+
+    // central disk with gold rim
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, minR * 0.52, 0, Math.PI*2);
+    var diskGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, minR * 0.52);
+    diskGrad.addColorStop(0, 'rgba(40,28,18,0.9)');
+    diskGrad.addColorStop(1, 'rgba(20,15,10,0.95)');
+    ctx.fillStyle = diskGrad;
+    ctx.fill();
+    ctx.lineWidth = 0.8;
+    ctx.strokeStyle = 'rgba(201,148,58,0.55)';
+    ctx.stroke();
+    ctx.restore();
+
+    // center number
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, globalProgress * 2);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(245,237,224,0.95)';
+    ctx.font = 'italic 300 42px "Fraunces", serif';
+    ctx.fillText(String(d.total), cx, cy - 6);
+    ctx.fillStyle = 'rgba(201,148,58,0.6)';
+    ctx.font = '500 9px "DM Mono", monospace';
+    ctx.fillText('MORNINGS', cx, cy + 22);
+    ctx.restore();
+  }
+
+  function drawThreads(){
+    // fine gold threads from center to each petal base — echoes the chain
+    ctx.save();
+    ctx.strokeStyle = 'rgba(201,148,58,0.12)';
+    ctx.lineWidth = 0.5;
+    placed.forEach(function(p){
+      var baseR = minR * 0.5;
+      var startX = cx + Math.cos(p.angle) * baseR;
+      var startY = cy + Math.sin(p.angle) * baseR;
+      var endX = cx + Math.cos(p.angle) * maxR * 1.05;
+      var endY = cy + Math.sin(p.angle) * maxR * 1.05;
+      ctx.beginPath();
+      ctx.moveTo(startX, startY);
+      ctx.lineTo(endX, endY);
+      ctx.stroke();
+    });
+    ctx.restore();
+  }
+
+  function frame(now){
+    var elapsed = now - t0;
+    ctx.clearRect(0,0,W,H);
+    drawThreads();
+
+    var allDone = true;
+    placed.forEach(function(p, i){
+      var local = (elapsed - i * STAGGER) / DURATION;
+      var progress = Math.max(0, Math.min(1, ease(local)));
+      if(progress < 1) allDone = false;
+      drawPetal(p, progress);
+    });
+
+    // center appears as first petal starts
+    drawCenter(Math.min(1, elapsed / (DURATION * 0.6)));
+
+    if(!allDone) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
 }
 
 // Page 3 — A moment that held
@@ -470,12 +646,136 @@ function _renderYearPage3(pageEl, d){
 // Page 4 — You arrived
 function _renderYearPage4(pageEl, d){
   var word = _numberToWords(d.total);
+  var total = d.total || 0;
+  var pct = Math.round((total / 365) * 100);
+
+  // ── personalize with the user's name ──
+  // Light sanitization + proper-case so the name reads as a noun ("Alterina").
+  var userName = '';
+  try {
+    var u = JSON.parse(localStorage.getItem('gc_user') || '{}');
+    var raw = (u.name || '').trim();
+    if(raw && raw.length <= 40 &&
+       raw.replace(/[\s'\-]/g, '').match(/^[a-zA-Z\u00c0-\u024f]+$/)){
+      userName = _toProperCase(raw);
+    }
+  } catch(e){}
+
+  // Helper: drop the name in naturally. Only used on ONE line per tier
+  // so it doesn't feel like the app is shouting their name.
+  function N(openingWithoutName, openingWithName){
+    return userName ? openingWithName : openingWithoutName;
+  }
+
+  // Tiered witness copy — sentence-case throughout so proper nouns and
+  // sentence starts read correctly. App-voice cadence preserved.
+  var witness;
+  if(total >= 365){
+    witness = [
+      'Three hundred sixty-five is not a round number people reach by accident.',
+      'Every morning of the year — through holidays, travel, exhaustion, the days that asked too much — you returned.',
+      N(
+        'Most practices die at week two. Yours held for fifty-two.',
+        'Most practices die at week two, ' + userName + '. Yours held for fifty-two.'
+      ),
+      'This is what it looks like when someone decides to be a witness to their own life, every single day, without skipping the inconvenient ones.',
+      'The chain does not ask you to be proud of this.',
+      'It only records the shape of what you did, and what you did was rare.',
+      'A whole year of arrivals is not a trophy. It is evidence.'
+    ];
+  } else if(total >= 300){
+    witness = [
+      total + ' mornings is not casual.',
+      'It is a shape you carved into your year on purpose — morning after morning, even when no one was watching and nothing was asking you to.',
+      'The days you missed were the ones that asked more than you could give; the others, you gave.',
+      N(
+        'Most of the year, you kept the thread.',
+        'Most of the year, ' + userName + ', you kept the thread.'
+      ),
+      'That is not a small thing. It does not feel impressive from the inside — consistent things rarely do — but from where the chain sits, it is what practice actually looks like.',
+      'You showed up when the showing up was the whole point.'
+    ];
+  } else if(total >= 200){
+    witness = [
+      total + ' mornings. More than half of the year named.',
+      'A practice does not need to be perfect to be real. Yours is real.',
+      'What did not get written down was still lived — but what did made a record, and records are what let you look back and see yourself.',
+      N(
+        'There is something honest about an incomplete year that has been tended to anyway.',
+        'There is something honest, ' + userName + ', about an incomplete year that has been tended to anyway.'
+      ),
+      'You kept returning. Not every day, but enough days to count as staying.',
+      'The chain does not grade. It witnesses. And it witnessed a lot this year.'
+    ];
+  } else if(total >= 100){
+    witness = [
+      total + ' mornings is a hundred days of remembering to come back.',
+      'That sounds small until you try it — most people never make it past thirty.',
+      'The chain does not ask for every morning. It asks that you return when you can.',
+      N(
+        'You returned enough that the thread is still intact.',
+        'You returned enough, ' + userName + ', that the thread is still intact.'
+      ),
+      'The days you did not arrive are not failures; they are just days that asked something else of you.',
+      'What matters is that the practice is alive. It is.'
+    ];
+  } else if(total >= 30){
+    witness = [
+      total + ' mornings is more than most people manage.',
+      'Habits this quiet are easy to abandon — no one reminds you, no one rewards you, no one notices if you skip.',
+      N(
+        'You noticed. You came back anyway.',
+        userName + ', you noticed. You came back anyway.'
+      ),
+      'The thread holds what you gave it, and what you gave was real.',
+      'A practice begins somewhere. This is your somewhere.',
+      'There is no rush to make it bigger than it is.'
+    ];
+  } else {
+    witness = [
+      total + ' mornings is not a failure.',
+      'It is a beginning the chain will remember.',
+      N(
+        'Starting is the hardest part, and you started.',
+        'Starting is the hardest part, ' + userName + ', and you started.'
+      ),
+      'The days you came, you named something true. That is what this practice is.',
+      'The number does not have to be big. It has to be honest.',
+      'Whatever comes next, the thread is already here.'
+    ];
+  }
+
+  // Build the witness block with staggered fade-in per sentence
+  var witnessHtml = witness.map(function(s, i){
+    var delay = 1100 + i * 240;
+    return '<p style="'
+      + 'font-family:Fraunces,serif;font-style:italic;font-weight:300;'
+      + 'font-size:14px;line-height:1.75;letter-spacing:0.005em;'
+      + 'color:rgba(245,237,224,0.72);'
+      + 'text-align:center;max-width:340px;margin:0 auto 10px;'
+      + 'opacity:0;transform:translateY(5px);'
+      + 'animation:_yrArriveIn 720ms ' + delay + 'ms cubic-bezier(.2,.7,.25,1) forwards;'
+      + '">' + s + '</p>';
+  }).join('');
+
+  // Inject keyframes once
+  if(!document.getElementById('_yearArriveKeyframes')){
+    var style = document.createElement('style');
+    style.id = '_yearArriveKeyframes';
+    style.textContent = '@keyframes _yrArriveIn { to { opacity: 1; transform: translateY(0); } }';
+    document.head.appendChild(style);
+  }
+
   var inner = ''
-    + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.4;text-transform:uppercase;letter-spacing:0.18em;margin:0">mornings</p>'
+    + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.42;text-transform:uppercase;letter-spacing:0.22em;margin:0">mornings</p>'
     + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:52px;color:var(--gold);letter-spacing:-0.02em;margin:12px 0;text-align:center;line-height:1.15">'+word+'</p>'
     + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:15px;color:rgba(245,237,224,0.5);text-align:center;margin:0">mornings you arrived</p>'
-    + '<p style="font-family:DM Mono,monospace;font-size:9px;color:rgba(201,148,58,0.4);letter-spacing:0.08em;margin:28px 0 0">out of 365</p>';
-  pageEl.innerHTML = _yearPageWrap(inner, {gap:'14px'});
+    + '<p style="font-family:DM Mono,monospace;font-size:9px;color:rgba(201,148,58,0.4);letter-spacing:0.08em;margin:22px 0 0">'+pct+'% of the year</p>'
+    // gold divider between the number and the witness copy
+    + '<div style="width:28px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,148,58,0.5),transparent);margin:28px auto 22px"></div>'
+    + '<div style="width:100%">' + witnessHtml + '</div>';
+
+  pageEl.innerHTML = _yearPageWrap(inner, {gap:'0'});
 }
 
 // Page 5 — The year in twelve
@@ -489,8 +789,15 @@ function _renderYearPage5(pageEl, d){
       + '<p data-year-tile-word="'+i+'" style="font-family:Fraunces,serif;font-style:italic;font-size:11px;color:rgba(245,237,224,0.5);margin:0;min-height:14px"></p>'
       + '</div>';
   }
+  // "You made these" witness sits here, BEFORE the 12 tiles. Framed as
+  // achievement — the user's emotions are the material these pendants
+  // are built from. Nothing denying, nothing subtractive.
   var inner = ''
-    + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.4;text-transform:uppercase;letter-spacing:0.18em;margin:0 0 16px">the year in twelve</p>'
+    + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.42;text-transform:uppercase;letter-spacing:0.22em;margin:0 0 8px;text-align:center">the year in twelve</p>'
+    + '<div style="width:28px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,148,58,0.5),transparent);margin:0 auto 14px"></div>'
+    + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:20px;color:rgba(245,237,224,0.92);text-align:center;margin:0 0 10px;line-height:1.45">You made these.</p>'
+    + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:13px;color:rgba(245,237,224,0.7);text-align:center;margin:0 auto 6px;line-height:1.7;max-width:340px">Every petal, every color, every curve below comes from what you felt this year.</p>'
+    + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:13px;color:rgba(245,237,224,0.7);text-align:center;margin:0 auto 18px;line-height:1.7;max-width:340px">Each shape is the math of your emotions — the days you showed up, the words you named, the quiet you honored. These are yours, earned and woven.</p>'
     + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:14px;width:100%">'+tilesHtml+'</div>';
   pageEl.innerHTML = _yearPageWrap(inner, {gap:'12px'});
 
@@ -523,19 +830,154 @@ function _renderYearPage5(pageEl, d){
 
 // Page 6 — The thread held
 function _renderYearPage6(pageEl, d){
+  // AI-authored year witness, rendered as sentence-per-block with breathing
+  // room instead of one wall of text. Personalized with the user's name
+  // when available. Querying via pageEl (not document) because pages are
+  // detached at render time.
   var closing = YEAR_CLOSING_LINES[d.dominant] || 'a whole year held. the chain remembers it all.';
+  var userName = '';
+  try {
+    var u = JSON.parse(localStorage.getItem('gc_user') || '{}');
+    var _raw = (u.name || '').trim();
+    if(_raw && _raw.length <= 40 &&
+       _raw.replace(/[\s'\-]/g, '').match(/^[a-zA-Z\u00c0-\u024f]+$/)){
+      userName = _toProperCase(_raw);
+    }
+  } catch(e){}
+
+  var nameLine = userName
+    ? '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:16px;color:rgba(201,148,58,0.6);text-align:center;margin:0 0 6px">For '+ _escForHtml(userName) +',</p>'
+    : '';
+
   var inner = ''
-    + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.4;text-transform:uppercase;letter-spacing:0.18em;margin:0">the thread held</p>'
-    + '<div style="width:40px;height:1px;background:linear-gradient(90deg,transparent,#c9943a,transparent);opacity:0.6"></div>'
-    + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:18px;color:var(--gold);line-height:1.7;text-align:center;margin:0">'+closing+'</p>';
-  pageEl.innerHTML = _yearPageWrap(inner, {padX:'36px', gap:'20px'});
+    + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.42;text-transform:uppercase;letter-spacing:0.22em;margin:0 0 10px;text-align:center">the thread held</p>'
+    + '<div style="width:28px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,148,58,0.5),transparent);margin:0 auto 18px"></div>'
+    + nameLine
+    + '<div data-year-narrative-wrap="1" style="width:100%;max-width:400px;margin:0 auto">'
+    +   '<p data-year-narrative-line="1" style="'
+    +     'font-family:Fraunces,serif;font-style:italic;font-weight:300;'
+    +     'font-size:16px;line-height:1.85;'
+    +     'color:rgba(245,237,224,0.82);'
+    +     'text-align:center;margin:0;'
+    +     'transition:opacity 500ms ease;'
+    +   '">' + _escForHtml(closing) + '</p>'
+    + '</div>'
+    + '<p style="'
+    +   'font-family:DM Mono,monospace;font-size:9px;color:rgba(201,148,58,0.32);'
+    +   'letter-spacing:0.18em;text-align:center;text-transform:uppercase;'
+    +   'margin:24px 0 0;'
+    + '">\u2014 the chain, witnessing</p>';
+  pageEl.innerHTML = _yearPageWrap(inner, {padX:'28px', gap:'0'});
+
+  function _narrativeWrap(){ return pageEl.querySelector('[data-year-narrative-wrap]'); }
+
+  // Split narrative into readable sentence blocks. Handles both lowercase
+  // app-voice punctuation ("x. y.") and inline em-dashes by preserving them.
+  // Each sentence becomes its own <p> with subtle stagger-in.
+  function _splitSentences(text){
+    if(!text) return [];
+    // split on sentence-ending punctuation followed by space+letter
+    var parts = text.match(/[^.!?]+[.!?]+(?:["\u201d]?)(?:\s|$)/g);
+    if(!parts) return [text.trim()];
+    return parts.map(function(s){ return s.trim(); }).filter(Boolean);
+  }
+
+  function _applyAi(){
+    var ai = window._yearInsights;
+    if(!ai || !ai.year_narrative) return;
+    var wrap = _narrativeWrap();
+    if(!wrap) return;
+    if(wrap.dataset.narrativeApplied === '1') return;
+    wrap.dataset.narrativeApplied = '1';
+
+    var sentences = _splitSentences(ai.year_narrative);
+    if(sentences.length === 0) return;
+
+    // Fade out the floor line, then inject per-sentence blocks with stagger.
+    wrap.style.transition = 'opacity 340ms ease';
+    wrap.style.opacity = '0';
+
+    // inject keyframes once
+    if(!document.getElementById('_yearNarrativeKeyframes')){
+      var style = document.createElement('style');
+      style.id = '_yearNarrativeKeyframes';
+      style.textContent =
+        '@keyframes _yrNarIn { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:translateY(0); } }';
+      document.head.appendChild(style);
+    }
+
+    setTimeout(function(){
+      var html = sentences.map(function(s, i){
+        // Capitalize sentence start + any proper nouns the AI name-dropped.
+        // Model outputs are all lowercase; we title-case sentence openings
+        // so the rendered copy reads as proper prose, not a twitter thread.
+        var shown = _capitalizeFirst(s.trim());
+        if(userName){
+          // turn embedded lowercase user-name occurrences into proper case
+          var lowered = userName.toLowerCase();
+          var re = new RegExp('\\b' + lowered.replace(/[.*+?^${}()|[\]\\]/g,'\\$&') + '\\b', 'g');
+          shown = shown.replace(re, userName);
+        }
+        // First sentence gets a subtle larger-size treatment; the rest are even.
+        var sizeRem = i === 0 ? 17 : 15.5;
+        var opacity = i === 0 ? 0.92 : 0.78;
+        var delay = 80 + i * 140;
+        return '<p style="'
+          + 'font-family:Fraunces,serif;font-style:italic;font-weight:300;'
+          + 'font-size:' + sizeRem + 'px;line-height:1.7;'
+          + 'letter-spacing:0.005em;'
+          + 'color:rgba(245,237,224,' + opacity + ');'
+          + 'text-align:center;margin:0 0 14px;'
+          + 'opacity:0;transform:translateY(6px);'
+          + 'animation:_yrNarIn 640ms ' + delay + 'ms cubic-bezier(.2,.7,.25,1) forwards;'
+          + '">' + _escForHtml(shown) + '</p>';
+      }).join('');
+      wrap.innerHTML = html;
+      wrap.style.opacity = '1';
+    }, 360);
+  }
+
+  if(window._yearInsights && window._yearInsights.year_narrative){
+    _applyAi();
+  } else {
+    var checks = 0;
+    var pollId = setInterval(function(){
+      checks++;
+      if(window._yearInsights && window._yearInsights.year_narrative){
+        clearInterval(pollId); _applyAi();
+      } else if(checks > 40){
+        clearInterval(pollId);
+      }
+    }, 200);
+  }
+}
+
+// HTML escape helper scoped to held.js narrative blocks so user names
+// (or AI output containing literal < / > / &) can't break layout.
+function _escForHtml(s){
+  return String(s||'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#39;');
 }
 
 // Page 7 — Carry one forward (pendant chooser inlined)
 function _renderYearPage7(pageEl, d){
+  // Page 5 already framed WHAT the pendants are (you made these, they're
+  // calculated from your emotions). This page is about the ACT of choosing
+  // — which month do you want to carry with you? Copy here is an
+  // invitation, not an explanation.
   var header = ''
-    + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.4;text-transform:uppercase;letter-spacing:0.18em;margin:0 0 16px;text-align:center">carry one forward</p>'
-    + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:17px;color:rgba(245,237,224,0.75);text-align:center;margin:0 0 24px;line-height:1.6">one month becomes your pendant.<br>it hangs with you into year two.</p>';
+    + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.42;text-transform:uppercase;letter-spacing:0.22em;margin:0 0 10px;text-align:center">carry one forward</p>'
+    + '<div style="width:28px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,148,58,0.5),transparent);margin:0 auto 16px"></div>'
+    // primary headline — about the choice itself
+    + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:20px;color:rgba(245,237,224,0.92);text-align:center;margin:0 0 14px;line-height:1.45">Which one do you keep?</p>'
+    // three breath-sized invitations to choose
+    + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:14px;color:rgba(245,237,224,0.72);text-align:center;margin:0 0 10px;line-height:1.7;max-width:340px;margin-left:auto;margin-right:auto">Pick the month that meant something — the one that held you, the one you held most, the one you are not ready to let go of.</p>'
+    + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:14px;color:rgba(245,237,224,0.72);text-align:center;margin:0 0 10px;line-height:1.7;max-width:340px;margin-left:auto;margin-right:auto">It does not have to be the brightest month. It can be the hardest. It can be the quietest. There is no wrong choice here.</p>'
+    + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:14px;color:rgba(245,237,224,0.72);text-align:center;margin:0 0 22px;line-height:1.7;max-width:340px;margin-left:auto;margin-right:auto">Whichever you choose becomes the pendant on your chain. It will hang with you into year two.</p>';
 
   var cardsWrap = document.createElement('div');
   cardsWrap.style.cssText = 'width:100%;max-height:60vh;overflow-y:auto;-webkit-overflow-scrolling:touch';
@@ -583,20 +1025,29 @@ function _renderYearPage7(pageEl, d){
 
     card.addEventListener('click', function(){
       var year = d.startDate.getFullYear();
-      // Store both `ym` and `monthISO` (same value, different field names)
-      // so every reader — old and new — resolves the chosen month correctly.
-      // Also derive monthIdx for readers that prefer it (portrait.js convention).
       var _mIdx = parseInt(ym.split('-')[1], 10) - 1;
       localStorage.setItem('gc_pendant_year_'+year, JSON.stringify({
         ym: ym,
-        monthISO: ym,          // alias for drawPendant compatibility
+        monthISO: ym,
         monthIdx: _mIdx,
         monthName: monthName,
         dominant: mDom,
         count: monthEntries.length
       }));
       if (typeof window._invalidatePendantCache === 'function') window._invalidatePendantCache();
-      if (typeof _dismissAnnualCeremony === 'function') _dismissAnnualCeremony();
+      // Show the "your necklace" witness message before dismissing the
+      // ceremony. Gives the chosen moment its weight — the pendant isn't
+      // just a picked month, it's the necklace they made from a whole year.
+      _showNecklaceWitness({
+        monthName: monthName,
+        dominant: mDom,
+        count: monthEntries.length,
+        totalMornings: d.total,
+        // pass the actual month's entries so the witness can render the
+        // CHOSEN pendant rose-curve at full fidelity (not just a tinted orb)
+        monthEntries: monthEntries,
+        monthIdx: _mIdx
+      });
     });
   });
 
@@ -608,10 +1059,291 @@ function _renderYearPage7(pageEl, d){
   pageEl.appendChild(wrap);
 }
 
+// Capitalize proper nouns (user names, month names) to read cleanly as nouns
+// while the rest of the app voice stays in lowercase. Accepts things like
+// "alterina" → "Alterina", "mary-jane" → "Mary-Jane", "o'brien" → "O'Brien".
+function _toProperCase(s){
+  if(!s) return s;
+  return String(s).toLowerCase().replace(/(^|[\s'\-])([a-zA-Z\u00c0-\u024f])/g, function(_, sep, ch){
+    return sep + ch.toUpperCase();
+  });
+}
+
+// Capitalize the first alphabetic letter of a sentence. Preserves the rest.
+function _capitalizeFirst(s){
+  if(!s) return s;
+  return String(s).replace(/^(\s*)([a-z\u00e0-\u024f])/, function(_, sp, ch){
+    return sp + ch.toUpperCase();
+  });
+}
+
+// The "your necklace" witness — shown after the user picks their pendant,
+// before dismissing the year-end ceremony. Crossfades over the ceremony
+// overlay with a longer reflection on what the pendant actually IS.
+function _showNecklaceWitness(opts){
+  opts = opts || {};
+  var monthName = _toProperCase((opts.monthName || '').toString());
+  var dominant = opts.dominant || 'calm';
+  var count = opts.count || 0;
+  var totalMornings = opts.totalMornings || 0;
+
+  // personalize with name — keep as-entered if it's already cased, else proper-case it
+  var userName = '';
+  try {
+    var u = JSON.parse(localStorage.getItem('gc_user') || '{}');
+    var raw = (u.name || '').trim();
+    if(raw && raw.length <= 40 &&
+       raw.replace(/[\s'\-]/g, '').match(/^[a-zA-Z\u00c0-\u024f]+$/)){
+      userName = _toProperCase(raw);
+    }
+  } catch(e){}
+
+  var emotionWord = (typeof PORTRAIT_WORDS !== 'undefined' && PORTRAIT_WORDS[dominant]) || dominant;
+  var palette = (typeof KNOT_PARAMS !== 'undefined' && KNOT_PARAMS[dominant])
+    ? KNOT_PARAMS[dominant]
+    : { color:'#c9943a', glow:'rgba(201,148,58,0.4)' };
+
+  // The witness copy — 6 sentences. Sentence-case throughout (proper nouns
+  // capitalized, sentence starts capitalized) while preserving the tender
+  // cadence. Places the name once, naturally.
+  function N(without, with_){ return userName ? with_ : without; }
+  var lines = [
+    'This is your necklace of the year.',
+    'It is a keepsake of what you felt, and of the self who showed up to feel it.',
+    N(
+      'It is the shape you made by showing up ' + totalMornings + ' mornings — woven from your own honest days.',
+      userName + ', it is the shape you made by showing up ' + totalMornings + ' mornings — woven from your own honest days.'
+    ),
+    'The pendant at its heart is ' + monthName + ' — the month that held your ' + emotionWord + ' most fully.',
+    'It carries the color of what you felt, the weight of what you wrote, the quiet of everything the chain witnessed.',
+    'Keep it. Wear it somewhere you can feel it. It is yours because you made it.'
+  ];
+
+  var overlay = document.getElementById('yearCeremonyOverlay');
+  if(!overlay) return;
+
+  // Create the witness layer, fade out existing content first
+  var existingContent = overlay.firstElementChild;
+  if(existingContent){
+    existingContent.style.transition = 'opacity 500ms ease';
+    existingContent.style.opacity = '0';
+    existingContent.style.pointerEvents = 'none';
+  }
+
+  var layer = document.createElement('div');
+  layer.id = 'necklaceWitnessLayer';
+  layer.style.cssText = [
+    'position:absolute','inset:0','z-index:5',
+    'display:flex','flex-direction:column','align-items:center','justify-content:flex-start',
+    // anchor the pendant near the top of the viewport and let copy flow below
+    'padding:max(48px, calc(env(safe-area-inset-top) + 32px)) 24px 96px',
+    'opacity:0','transition:opacity 800ms ease',
+    'pointer-events:auto',
+    'overflow-y:auto','-webkit-overflow-scrolling:touch'
+  ].join(';');
+
+  // inject keyframes once
+  if(!document.getElementById('_necklaceWitnessKeyframes')){
+    var style = document.createElement('style');
+    style.id = '_necklaceWitnessKeyframes';
+    style.textContent =
+      '@keyframes _nwIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }' +
+      '@keyframes _nwBreath { 0%,100% { transform: scale(1); } 50% { transform: scale(1.035); } }' +
+      '@keyframes _nwHaloBreath { 0%,100% { opacity: 0.85; transform: scale(1); } 50% { opacity: 1; transform: scale(1.08); } }';
+    document.head.appendChild(style);
+  }
+
+  var rgb = (function(){
+    var h = (palette.color||'#c9943a').replace('#','');
+    return {
+      r: parseInt(h.slice(0,2),16),
+      g: parseInt(h.slice(2,4),16),
+      b: parseInt(h.slice(4,6),16)
+    };
+  })();
+  var tint = 'rgba(' + rgb.r + ',' + rgb.g + ',' + rgb.b;
+
+  var sentencesHtml = lines.map(function(s, i){
+    var delay = 1100 + i * 420;
+    var sizeRem = i === 0 ? 20 : (i === 5 ? 17 : 15);
+    var opacity = i === 0 ? 0.95 : (i === 5 ? 0.85 : 0.75);
+    return '<p style="'
+      + 'font-family:Fraunces,serif;font-style:italic;font-weight:300;'
+      + 'font-size:' + sizeRem + 'px;line-height:1.7;letter-spacing:0.005em;'
+      + 'color:rgba(245,237,224,' + opacity + ');'
+      + 'text-align:center;margin:0 0 14px;max-width:400px;'
+      + 'opacity:0;transform:translateY(8px);'
+      + 'animation:_nwIn 900ms ' + delay + 'ms cubic-bezier(.2,.7,.25,1) forwards;'
+      + '">' + _escForHtml(s) + '</p>';
+  }).join('');
+
+  // Pendant "stage" — bigger, sits near the top, with a halo + real rose curve
+  // canvas so the colors/petals pop instead of a blurred orb.
+  var PENDANT_SIZE = 180; // logical CSS px
+  var pendantStageHtml = ''
+    + '<div style="position:relative;width:' + PENDANT_SIZE + 'px;height:' + PENDANT_SIZE + 'px;margin:0 0 28px;">'
+    // outer soft halo — palette tint
+    +   '<div style="position:absolute;inset:-40px;border-radius:50%;'
+    +     'background:radial-gradient(circle,' + tint + ',0.28) 0%,' + tint + ',0.1) 45%,' + tint + ',0) 75%);'
+    +     'opacity:0;'
+    +     'animation:_nwIn 1400ms 100ms cubic-bezier(.2,.7,.25,1) forwards, _nwHaloBreath 5s 1500ms ease-in-out infinite;'
+    +   '"></div>'
+    // inner brighter ring halo
+    +   '<div style="position:absolute;inset:0;border-radius:50%;'
+    +     'box-shadow:0 0 60px ' + tint + ',0.45), 0 0 140px ' + tint + ',0.22), inset 0 0 0 1px ' + tint + ',0.18);'
+    +     'opacity:0;animation:_nwIn 1200ms 250ms cubic-bezier(.2,.7,.25,1) forwards;'
+    +   '"></div>'
+    // canvas where the actual rose-curve pendant renders
+    +   '<canvas id="_necklacePendantCv" width="' + (PENDANT_SIZE * 2) + '" height="' + (PENDANT_SIZE * 2) + '" '
+    +     'style="position:relative;width:' + PENDANT_SIZE + 'px;height:' + PENDANT_SIZE + 'px;display:block;'
+    +     'opacity:0;'
+    +     'animation:_nwIn 1200ms 400ms cubic-bezier(.2,.7,.25,1) forwards, _nwBreath 6s 1600ms ease-in-out infinite;'
+    +     'filter:drop-shadow(0 8px 40px ' + tint + ',0.55));'
+    +   '"></canvas>'
+    + '</div>';
+
+  layer.innerHTML = ''
+    + pendantStageHtml
+    // label
+    + '<p style="'
+    +   'font-family:DM Mono,monospace;font-size:10px;color:rgba(201,148,58,0.65);'
+    +   'letter-spacing:0.26em;text-transform:uppercase;margin:0 0 26px;'
+    +   'opacity:0;animation:_nwIn 800ms 650ms cubic-bezier(.2,.7,.25,1) forwards;'
+    + '">woven ' + _escForHtml(monthName) + '</p>'
+    // sentences
+    + '<div style="width:100%;max-width:420px">' + sentencesHtml + '</div>'
+    // dismiss prompt
+    + '<p id="_necklaceDismiss" style="'
+    +   'position:fixed;bottom:calc(36px + env(safe-area-inset-bottom));'
+    +   'left:50%;transform:translateX(-50%);'
+    +   'font-family:Fraunces,serif;font-style:italic;font-weight:300;'
+    +   'font-size:13px;color:rgba(201,148,58,0.55);margin:0;'
+    +   'cursor:pointer;opacity:0;'
+    +   'animation:_nwIn 600ms ' + (1100 + lines.length * 420 + 500) + 'ms cubic-bezier(.2,.7,.25,1) forwards;'
+    + '">tap to carry it with you</p>';
+
+  overlay.appendChild(layer);
+  requestAnimationFrame(function(){ layer.style.opacity = '1'; });
+
+  // Draw the real rose-curve pendant on the canvas using the user's actual
+  // month entries. Uses the same renderer as the year grid / chain clasp so
+  // petal count, color blend, and curve exactly match what they picked.
+  requestAnimationFrame(function(){
+    var cv = document.getElementById('_necklacePendantCv');
+    if(!cv) return;
+    if(opts.monthEntries && opts.monthEntries.length > 0 && typeof drawKnotOnCanvas === 'function'){
+      drawKnotOnCanvas(cv, opts.monthEntries, opts.monthIdx || 0);
+    } else if(typeof _drawKnotGeometry === 'function' && opts.monthEntries){
+      // fallback: direct geometry call
+      var ctx = cv.getContext('2d');
+      var dpr = Math.min(window.devicePixelRatio||1, 2);
+      cv.width  = PENDANT_SIZE * dpr;
+      cv.height = PENDANT_SIZE * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      _drawKnotGeometry(ctx, PENDANT_SIZE/2, PENDANT_SIZE/2, PENDANT_SIZE * 0.42, opts.monthEntries, opts.monthIdx || 0);
+    }
+  });
+
+  // Dismiss on tap (anywhere on the layer) or Escape
+  function _dismiss(){
+    layer.style.opacity = '0';
+    setTimeout(function(){
+      if (typeof _dismissAnnualCeremony === 'function') _dismissAnnualCeremony();
+    }, 600);
+  }
+  // give the copy a beat to appear before accepting taps
+  setTimeout(function(){
+    layer.addEventListener('click', _dismiss);
+    document.addEventListener('keydown', function onKey(e){
+      if(e.key === 'Escape'){
+        document.removeEventListener('keydown', onKey);
+        _dismiss();
+      }
+    });
+  }, 1400);
+}
+
 function _showAnnualCeremony(){
   if (document.getElementById('yearCeremonyOverlay')) return;
   var d = _buildYearCeremonyData();
   if (d.total === 0) return;
+
+  // ── AI YEAR NARRATIVE FETCH ──
+  // Consume the prefetch kicked off by the demo panel or submit handler.
+  // If none exists, fire a fresh fetch here. Either way, stash the result
+  // on window._yearInsights so Page 6 can crossfade it in when it lands.
+  // Rich JS fallback below if the backend never responds (or Foundry
+  // returns a short narrative).
+  (function(){
+    var RICH_FALLBACK = {
+      closing_line: 'the chain remembers every morning you arrived.',
+      year_narrative: (
+        'this is the shape of your year — the quiet accumulation of arrivals, morning after morning, through whatever the days actually held. ' +
+        'some months were fuller than others; that is how years go. ' +
+        'you wrote from light days and hard ones, and both made it onto the thread. ' +
+        'the contrasts are real — hope and weight can live in the same year, and yours did. ' +
+        'what this asked of you is not small: attention, honesty, the willingness to name the moment even when the moment was not easy. ' +
+        'the chain does not ask you to be proud. it only witnesses that you came back.'
+      ),
+      pendant_whisper: 'it will hang with you into what comes next.'
+    };
+
+    // If the AI narrative is too short (backend returned a 1-2 sentence
+    // legacy response), prefer the rich fallback instead of a thin one.
+    function _chooseNarrative(ai){
+      if(!ai) return RICH_FALLBACK;
+      var n = ai.year_narrative || '';
+      if(n.length < 180) {
+        // keep other fields but upgrade the narrative
+        return {
+          closing_line: ai.closing_line || RICH_FALLBACK.closing_line,
+          year_narrative: RICH_FALLBACK.year_narrative,
+          pendant_whisper: ai.pendant_whisper || RICH_FALLBACK.pendant_whisper
+        };
+      }
+      return ai;
+    }
+
+    // Pre-seed with rich fallback so Page 6 has good copy even if AI never lands
+    if(!window._yearInsights) window._yearInsights = RICH_FALLBACK;
+
+    var _promise = window._yearlyInsightsPrefetch;
+    window._yearlyInsightsPrefetch = null;
+
+    if(!_promise){
+      // compose payload from ceremony data
+      var _userName = '';
+      try { _userName = (JSON.parse(localStorage.getItem('gc_user')||'{}').name || '').trim(); } catch(e){}
+      var payload = {
+        total_mornings: d.total,
+        dominant_emotion: d.dominant || 'calm',
+        year_word: d.word || 'stillness',
+        fullest_month: d.fullestMonthName || '',
+        top_emotions: (d.sortedEmos || []).slice(0,4),
+        longest_entry_excerpt: d.longestEntry ? (d.longestEntry.text || '').slice(0,500) : '',
+        name: _userName
+      };
+      _promise = fetch(API_BASE + '/yearly-insights', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(payload)
+      }).then(function(r){ return r.json(); })
+        .catch(function(){ return null; });
+    }
+    // 6-second deadline — if the AI hasn't landed by then, stick with
+    // the rich fallback rather than leaving users watching a spinner.
+    var _settled = false;
+    _promise.then(function(data){
+      if(_settled) return;
+      _settled = true;
+      window._yearInsights = _chooseNarrative(data);
+    });
+    setTimeout(function(){
+      if(_settled) return;
+      _settled = true;
+      // rich fallback already in place; no-op
+    }, 6000);
+  })();
 
   var reduced = false;
   try { reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch(e) {}

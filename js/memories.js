@@ -217,8 +217,41 @@ function _renderMemAgentCard(entries){
   var metaEl = document.getElementById('memAgentMeta');
   var textEl = document.getElementById('memAgentText');
   var dateEl = document.getElementById('memAgentDate');
+  var photosEl = document.getElementById('memAgentPhotos');
   if(metaEl) metaEl.textContent = 'DAY ' + String(picked.day || '').padStart(3,'0') + ' — ' + (picked.emo || '');
   if(textEl) textEl.textContent = '\u201C' + picked.text + '\u201D';
+
+  // ── Photos ──
+  // If the recalled entry carried photos (user-attached base64 data URLs),
+  // render them as a small gallery above the quote so the memory returns
+  // with its visual context, not just text. Data URLs are validated to
+  // prevent injection of arbitrary schemes.
+  if(photosEl){
+    photosEl.innerHTML = '';
+    var photos = Array.isArray(picked.photos) ? picked.photos : [];
+    var safe = photos.filter(function(p){
+      return p && typeof p.dataUrl === 'string' &&
+             /^data:image\/(jpeg|png|webp);base64,/i.test(p.dataUrl);
+    }).slice(0, 3); // cap at 3 to match upload limit
+    if(safe.length === 0){
+      photosEl.hidden = true;
+      photosEl.classList.remove('mem-agent-photos--1','mem-agent-photos--2','mem-agent-photos--3');
+    } else {
+      photosEl.hidden = false;
+      photosEl.classList.remove('mem-agent-photos--1','mem-agent-photos--2','mem-agent-photos--3');
+      photosEl.classList.add('mem-agent-photos--' + safe.length);
+      safe.forEach(function(p, i){
+        var img = document.createElement('img');
+        img.className = 'mem-agent-photo';
+        img.src = p.dataUrl;
+        img.alt = 'memory from day ' + (picked.day || '');
+        img.loading = 'lazy';
+        img.decoding = 'async';
+        img.style.animationDelay = (120 + i * 120) + 'ms';
+        photosEl.appendChild(img);
+      });
+    }
+  }
   if(dateEl){
     var dateTxt = '';
     try{

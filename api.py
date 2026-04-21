@@ -97,6 +97,7 @@ class YearlyInsightsRequest(BaseModel):
     fullest_month: constr(max_length=32)
     top_emotions: List[constr(max_length=64)] = Field(default_factory=list, max_length=20)
     longest_entry_excerpt: Optional[constr(max_length=500)] = ""
+    name: Optional[constr(max_length=64)] = ""
 
 class ReflectionRequest(BaseModel):
     mood: constr(max_length=64)

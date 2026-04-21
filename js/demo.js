@@ -79,18 +79,45 @@
   // `demo:true`) are always kept. A seed only fills in the GAPS in
   // the journey with demo-tagged entries. Real entries on specific
   // dates are never overwritten.
-  function seedJourney(days, includeToday){
+  // opts: { startMode: 'jan1' } — start at Jan 1 of current year instead
+  // of today-minus-N, so seeded data aligns with the Portrait year grid
+  // (which always renders the current calendar year Jan → Dec).
+  function seedJourney(days, includeToday, opts){
+    opts = opts || {};
     var existing = JSON.parse(localStorage.getItem('gc_entries')||'[]');
     var realCount = existing.filter(function(e){ return !e.demo; }).length;
-    var msg = 'seed ' + days + ' days of demo journey?';
+    var jan1Mode = opts.startMode === 'jan1';
+
+    var today = _localISO();
+    var startISO;
+    if(jan1Mode){
+      var yr = new Date().getFullYear();
+      startISO = yr + '-01-01';
+    } else {
+      startISO = _addDays(today, -(days - 1));
+    }
+
+    // In Jan1 mode, recompute days = today - Jan1 + 1 so the seed fills
+    // the current year exactly (not an arbitrary N). Whatever "days" was
+    // passed gets overridden — the button's label is advisory; the real
+    // fill depth is "from Jan 1 until now".
+    if(jan1Mode){
+      var jan1 = new Date(startISO + 'T12:00:00');
+      var now  = new Date(today + 'T12:00:00');
+      days = Math.floor((now - jan1) / (24*60*60*1000)) + 1;
+      if(!includeToday) days -= 1; // don't seed today if caller said so
+    }
+
+    var daysLabel = jan1Mode
+      ? (days + ' days (Jan 1 to today)')
+      : (days + ' days');
+    var msg = 'seed ' + daysLabel + ' of demo journey?';
     if(realCount > 0){
       msg += '\n\nyour ' + realCount + ' real ' + (realCount===1?'entry':'entries') +
              ' will be preserved — demo entries only fill the gaps.';
     }
     if(!confirm(msg)) return;
 
-    var today = _localISO();
-    var startISO = _addDays(today, -(days - 1));
     localStorage.setItem('gc_start_date', startISO);
     localStorage.setItem('gc_day', String(days));
     localStorage.setItem('gc_onboard_seen', '1');
@@ -269,10 +296,14 @@
     // is firing.
     var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
     if(entries.length < 365){
-      if(!confirm('year-end needs a full year. seed 365 days first? (current: ' + entries.length + ')')) return;
+      if(!confirm('year-end needs a full year. seed the current year (Jan 1 to today) first?\n\nchain will start at January 1.')) return;
       localStorage.setItem('_demoFireYearEndOnBoot', '1');
-      _clearPendantChoices();  // ← fresh pick, not a re-run over old choice
-      seedJourney(365, true);
+      _clearPendantChoices();
+      // Seed from Jan 1 of current year so the Portrait year grid (which
+      // always renders Jan→Dec of the current year) fills 100%. The "365"
+      // argument is overridden by startMode:'jan1' — the real fill depth
+      // becomes (today - Jan 1 + 1).
+      seedJourney(365, true, { startMode: 'jan1' });
       return;
     }
     if(typeof _showAnnualCeremony === 'function'){
@@ -632,11 +663,26 @@
       if(!open) refreshStateInspector();
     });
 
+    // Actions that open a full-screen ceremony / overlay should also close
+    // the demo panel so the ceremony isn't obscured. Listed here once so
+    // the dispatch below can check via a set.
+    var _AUTOCLOSE_ACTS = {
+      'month-end':1, 'birthday':1, 'year-end':1,
+      'ms-7':1, 'ms-100':1, 'ms-200':1, 'ms-250':1, 'ms-300':1,
+      'grace':1
+    };
+
     // click dispatch
     panel.addEventListener('click', function(e){
       var act = e.target.closest('[data-act]');
       if(!act) return;
       var a = act.dataset.act;
+      // Close the demo panel before firing any action that opens a
+      // ceremony — otherwise the panel overlays the ceremony and the
+      // judges can't see the actual thing we're demoing.
+      if(_AUTOCLOSE_ACTS[a]){
+        panel.style.display = 'none';
+      }
       if(a === 'seed-7')   return seedJourney(7);
       if(a === 'seed-14')  return seedJourney(14);
       if(a === 'seed-30')  return seedJourney(30);

@@ -175,6 +175,8 @@ function prefetchYearlyInsights(){
       }
     }
     var yearWord = (typeof PORTRAIT_WORDS !== 'undefined' && PORTRAIT_WORDS[dominant]) || dominant;
+    var _userName = '';
+    try { _userName = (JSON.parse(localStorage.getItem('gc_user')||'{}').name || '').trim(); } catch(e){}
     window._yearlyInsightsPrefetch = fetch(API_BASE + '/yearly-insights', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -184,7 +186,8 @@ function prefetchYearlyInsights(){
         year_word: yearWord,
         fullest_month: fullestMonth,
         top_emotions: topEmos.slice(0,4),
-        longest_entry_excerpt: longest
+        longest_entry_excerpt: longest,
+        name: _userName
       })
     }).then(function(r){ return r.json(); })
       .catch(function(){ return null; });

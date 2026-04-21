@@ -124,7 +124,9 @@ try{ void function(){
     ctx.setTransform(dpr,0,0,dpr,0,0);
     // necklace centered, slightly above vertical center to account for nav + status
     NECKLACE_CX = W * 0.5;
-    NECKLACE_CY = H * 0.42;
+    // Necklace sits higher now (0.36 instead of 0.42) so the clasp + pendant
+    // have room to breathe beneath it without crowding the bottom nav.
+    NECKLACE_CY = H * 0.36;
     NECKLACE_R  = Math.min(W, H) * 0.36;
     placeAllKnotsOnCircle();
   }
@@ -458,13 +460,35 @@ try{ void function(){
           })
         : [];
 
+      // Build a FULL 3-layer blend (full/mid/dom + per-emotion layer colors)
+      // to match _drawKnotGeometry exactly — otherwise the pendant on the
+      // chain renders mono while the pendant card on Page 7 is multi-color.
       if(typeof _blendKnotParams === 'function' && monthEntries.length > 0){
         var bl = _blendKnotParams(monthEntries, chosenMonthIdx);
-        kp = bl.full;
+        var topEmos = (bl.full && bl.full._topEmos) || [];
+        function _emoColor(emo){ return (KNOT_PARAMS[emo]||KNOT_FALLBACK).color; }
+        kp = {
+          full: bl.full,
+          mid:  bl.mid,
+          dom:  bl.dom,
+          // per-layer colors mirror _drawKnotGeometry (outer=blended, mid=#2, inner=#3)
+          layerColors: [
+            bl.full.color,
+            topEmos[1] ? _emoColor(topEmos[1]) : bl.mid.color,
+            topEmos[2] ? _emoColor(topEmos[2]) : (topEmos[1] ? _emoColor(topEmos[1]) : bl.dom.color)
+          ],
+          // legacy single-color field for the glow / sparkle that still read one color
+          color: bl.full.color,
+          glow:  bl.full.glow,
+          strokeW: bl.full.strokeW,
+          petals: bl.full.petals
+        };
       } else if(choice.dominant && KNOT_PARAMS && KNOT_PARAMS[choice.dominant]){
         // held.js stores the dominant emotion at choose-time — honor it even
         // if the month's entries no longer exist (e.g. demo reset).
-        kp = KNOT_PARAMS[choice.dominant];
+        var p = KNOT_PARAMS[choice.dominant];
+        kp = { full: p, mid: p, dom: p, layerColors: [p.color, p.color, p.color],
+               color: p.color, glow: p.glow, strokeW: p.strokeW, petals: p.petals };
       } else {
         var emoCounts = {};
         monthEntries.forEach(function(e){
@@ -472,9 +496,11 @@ try{ void function(){
         });
         var dominant = Object.keys(emoCounts)
           .sort(function(a,b){ return emoCounts[b]-emoCounts[a]; })[0] || 'calm';
-        kp = (KNOT_PARAMS && KNOT_PARAMS[dominant])
+        var fb = (KNOT_PARAMS && KNOT_PARAMS[dominant])
           || KNOT_FALLBACK
-          || {petals:5,sharp:0.3,round:0.7,strokeW:1.4,twist:0.25,color:'#c9943a'};
+          || {petals:5,sharp:0.3,round:0.7,strokeW:1.4,twist:0.25,color:'#c9943a',glow:'rgba(201,148,58,0.3)'};
+        kp = { full: fb, mid: fb, dom: fb, layerColors: [fb.color, fb.color, fb.color],
+               color: fb.color, glow: fb.glow, strokeW: fb.strokeW, petals: fb.petals };
       }
 
       _pendantCacheSig    = sig;
@@ -485,7 +511,10 @@ try{ void function(){
     // ── geometry — pendant hangs below clasp ──
     var claspPt  = angleToPoint(Math.PI / 2);
     var pendantCx = claspPt.x;
-    var pendantCy = claspPt.y + 56;
+    // Bigger pendant + more breathing room below the clasp. The necklace
+    // was moved up (NECKLACE_CY 0.42 → 0.36) so there's space for a
+    // bigger pendant without crowding the bottom nav.
+    var pendantCy = claspPt.y + 72;
 
     var rgb = (function(h){
       h = h.replace('#','');
@@ -495,68 +524,95 @@ try{ void function(){
     })(kp.color);
     var cStr = 'rgba('+rgb[0]+','+rgb[1]+','+rgb[2];
 
-    // ── thread ──
+    // ── thread (longer to match the new gap) ──
     ctx.save();
     ctx.beginPath();
-    ctx.moveTo(claspPt.x, claspPt.y + 16);
-    ctx.lineTo(pendantCx,  pendantCy  - 28);
-    ctx.strokeStyle = 'rgba(201,148,58,0.45)';
-    ctx.lineWidth   = 1.0;
+    ctx.moveTo(claspPt.x, claspPt.y + 18);
+    ctx.lineTo(pendantCx,  pendantCy  - 36);
+    ctx.strokeStyle = 'rgba(201,148,58,0.55)';
+    ctx.lineWidth   = 1.1;
     ctx.stroke();
     ctx.restore();
 
-    // ── glow halo ──
+    // ── glow halo — bigger and brighter so the pendant's palette pops
+    // against the dark splash background. Two layers: a soft outer wash
+    // and a tighter inner ring that tints the rose-curve with its color.
     var pulse = 1 + 0.055 * Math.sin(Date.now() / 1350 * Math.PI);
-    var R = 26;
+    var R = 34;  // was 26 — ~30% bigger, dialed back from v=92's 44
+    // outer wash (big, soft)
     var pgrd = ctx.createRadialGradient(
       pendantCx, pendantCy, 0,
-      pendantCx, pendantCy, R * 2.2 * pulse
+      pendantCx, pendantCy, R * 2.6 * pulse
     );
-    pgrd.addColorStop(0,   cStr + ',0.22)');
-    pgrd.addColorStop(0.5, cStr + ',0.08)');
+    pgrd.addColorStop(0,   cStr + ',0.38)');
+    pgrd.addColorStop(0.35,cStr + ',0.16)');
     pgrd.addColorStop(1,   'rgba(0,0,0,0)');
     ctx.fillStyle = pgrd;
     ctx.beginPath();
-    ctx.arc(pendantCx, pendantCy, R * 2.2 * pulse, 0, Math.PI * 2);
+    ctx.arc(pendantCx, pendantCy, R * 2.6 * pulse, 0, Math.PI * 2);
+    ctx.fill();
+    // inner tight ring (bright, tinted)
+    var pgrd2 = ctx.createRadialGradient(
+      pendantCx, pendantCy, R * 0.6,
+      pendantCx, pendantCy, R * 1.35 * pulse
+    );
+    pgrd2.addColorStop(0, cStr + ',0.0)');
+    pgrd2.addColorStop(1, cStr + ',0.28)');
+    ctx.fillStyle = pgrd2;
+    ctx.beginPath();
+    ctx.arc(pendantCx, pendantCy, R * 1.35 * pulse, 0, Math.PI * 2);
     ctx.fill();
 
-    // ── rose curve (3 layers, slow rotation) ──
+    // ── rose curve (3 layers — mirrors _drawKnotGeometry) ──
+    // Each layer uses its OWN params (full/mid/dom) and its OWN emotion color
+    // so the pendant on the chain matches the pendant card shown on Page 7
+    // of the year-end ceremony. Previously all 3 layers shared one color,
+    // which stripped the multi-emotion richness from the rose.
     var seed     = (choice.monthIdx || 0) * 137.5;
     var rotation = Date.now() * 0.00003;
+    var layerColors = kp.layerColors || [kp.color, kp.color, kp.color];
+    var layerParams = [kp.full || kp, kp.mid || kp, kp.dom || kp];
+    var layerRMults = [0.95, 0.80, 0.65];   // match _drawKnotGeometry
+    var layerAlphas = [1.00, 0.75, 0.55];
+    var layerOffs   = [0, Math.PI/12, Math.PI/6];
     ctx.save();
     for(var layer = 0; layer < 3; layer++){
-      var layerR = R * (0.95 - layer * 0.15);
-      var lAlpha = (1 - layer * 0.28) * 0.88;
-      var STEPS  = 200;
+      var lp = layerParams[layer];
+      var lColor = layerColors[layer];
+      var layerR = R * layerRMults[layer];
+      var lAlpha = layerAlphas[layer] * 0.88;
+      var STEPS  = 240;
       ctx.beginPath();
       for(var i = 0; i <= STEPS; i++){
         var t  = (i / STEPS) * Math.PI * 2;
-        var k  = kp.petals % 2 === 0 ? kp.petals / 2 : kp.petals;
-        var r1 = Math.abs(Math.cos(k * t + kp.twist * Math.PI));
-        var r2 = Math.pow(r1, 1 - kp.round * 0.5 + kp.sharp * 0.3);
-        var h  = 1 + kp.sharp * 0.15 * Math.cos((kp.petals * 2 + 1) * t + seed);
+        var k  = lp.petals % 2 === 0 ? lp.petals / 2 : lp.petals;
+        var r1 = Math.abs(Math.cos(k * t + lp.twist * Math.PI));
+        var r2 = Math.pow(r1, 1 - lp.round * 0.5 + lp.sharp * 0.3);
+        var h  = 1 + lp.sharp * 0.15 * Math.cos((lp.petals * 2 + 1) * t + seed);
         var r  = layerR * r2 * h;
-        var angle = t + layer * 0.04 + rotation;
+        var angle = t + layerOffs[layer] + rotation;
         var x = pendantCx + r * Math.cos(angle);
         var y = pendantCy + r * Math.sin(angle);
         if(i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
       }
       ctx.closePath();
       ctx.globalAlpha = lAlpha * 0.09;
-      ctx.fillStyle   = kp.color;
+      ctx.fillStyle   = lColor;
       ctx.fill();
       ctx.globalAlpha = lAlpha;
-      ctx.strokeStyle = kp.color;
-      ctx.lineWidth   = kp.strokeW * (1 - layer * 0.2) * 0.55;
+      ctx.strokeStyle = lColor;
+      ctx.lineWidth   = lp.strokeW * (1 - layer * 0.2) * 0.55;
       ctx.lineCap     = 'round';
       ctx.stroke();
     }
     ctx.restore();
 
     // ── diamond spark — crowns the center of the rose ──
+    // Scale the spark with the pendant's radius so it stays proportional
+    // when R changes (pendant was resized from 26 → 44).
 
     // outer bloom
-    var sparkR = 6.5 * pulse;
+    var sparkR = (R * 0.26) * pulse;
     var bloom = ctx.createRadialGradient(
       pendantCx, pendantCy, 0,
       pendantCx, pendantCy, sparkR * 3.5
@@ -584,8 +640,8 @@ try{ void function(){
     ctx.arc(pendantCx, pendantCy, sparkR, 0, Math.PI * 2);
     ctx.fill();
 
-    // 4 long rays
-    var rl = 16 * pulse;
+    // 4 long rays — scale with pendant radius
+    var rl = (R * 0.66) * pulse;
     ctx.strokeStyle = 'rgba(255,255,255,0.70)';
     ctx.lineWidth   = 0.85;
     ctx.globalAlpha = 0.85;
