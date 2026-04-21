@@ -32,6 +32,8 @@ app.add_middleware(
         "http://127.0.0.1:8765",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
+        "http://localhost:8800",  # claude preview port
+        "http://127.0.0.1:8800",
     ],
     allow_credentials=False,
     allow_methods=["*"],

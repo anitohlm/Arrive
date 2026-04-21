@@ -681,7 +681,35 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .post-insight-emo{font-family:'Fraunces',serif;font-size:22px;color:var(--gold);font-weight:300;letter-spacing:.02em}
 .post-insight-rule{width:40px;height:1px;background:var(--gold);opacity:.2}
 .post-insight-entry{font-family:'Fraunces',serif;font-style:italic;font-size:15px;color:var(--text);line-height:1.7;opacity:.8}
-.post-insight-ai{font-family:'Fraunces',serif;font-style:italic;font-size:14px;color:var(--gold);line-height:1.7;opacity:.7}
+.post-insight-ai{font-family:'Fraunces',serif;font-style:italic;font-size:14px;color:var(--gold);line-height:1.7;opacity:.7;white-space:pre-wrap;text-align:left;max-width:420px}
+/* Safety / crisis response — triggered when the AI is replaced by the
+   safety-first fallback (abuse / self-harm / suicide disclosure). More
+   upright register (not italic), higher contrast, slightly more padding
+   so the resources read as actionable rather than poetic. */
+.post-insight-ai.is-safety{
+  font-style:normal;
+  font-size:13.5px;
+  color:rgba(245,237,224,0.92);
+  opacity:1;
+  line-height:1.6;
+  padding:16px 18px;
+  background:rgba(201,148,58,0.06);
+  border:1px solid rgba(201,148,58,0.3);
+  border-radius:14px;
+  max-width:460px;
+}
+/* In safety mode the CTA becomes "close. i'm here." and should NOT pulse
+   with the gold glow — a crisis moment shouldn't push the user forward.
+   The knot icon is hidden; the button reads as a soft dismiss, not an
+   invitation to "carry" the entry onto the chain. */
+.post-insight-btn--safety .knot-icon{display:none}
+.post-insight-btn--safety{
+  filter:none !important;
+  opacity:.75;
+  font-size:12px;
+  letter-spacing:.02em;
+}
+.post-insight-btn--safety:hover{opacity:1}
 .post-insight-ai-wrap{display:flex;align-items:flex-start;gap:8px;justify-content:center}
 .ai-loading-dot{display:none;width:6px;height:6px;border-radius:50%;background:var(--gold);margin-top:8px;flex-shrink:0;animation:aiDotPulse 1.2s ease-in-out infinite}
 .ai-loading-dot.vis{display:inline-block}

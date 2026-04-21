@@ -439,16 +439,32 @@ try{ void function(){
       choice = {};
       try{ choice = JSON.parse(saved); }catch(e){ return; }
 
+      // ── resolve the month key ──
+      // Two different ceremony paths wrote this choice with different field
+      // names:  the held.js annual ceremony stores `ym` ("YYYY-MM");
+      // the older portrait.js path stores `monthISO` (same format).
+      // Accept either so pendant choice renders correctly from both paths.
+      var chosenYm = choice.monthISO || choice.ym || null;
+      var chosenMonthIdx = typeof choice.monthIdx === 'number'
+        ? choice.monthIdx
+        : (chosenYm ? (parseInt(chosenYm.split('-')[1], 10) - 1) : 0);
+
       // ── use blended params if available, fall back to dominant ──
       var allEntries = [];
       try{ allEntries = JSON.parse(localStorage.getItem('gc_entries')||'[]'); }catch(e){}
-      var monthEntries = allEntries.filter(function(e){
-        return e.dateISO && e.dateISO.slice(0,7) === choice.monthISO;
-      });
+      var monthEntries = chosenYm
+        ? allEntries.filter(function(e){
+            return e.dateISO && e.dateISO.slice(0,7) === chosenYm;
+          })
+        : [];
 
       if(typeof _blendKnotParams === 'function' && monthEntries.length > 0){
-        var bl = _blendKnotParams(monthEntries, choice.monthIdx||0);
+        var bl = _blendKnotParams(monthEntries, chosenMonthIdx);
         kp = bl.full;
+      } else if(choice.dominant && KNOT_PARAMS && KNOT_PARAMS[choice.dominant]){
+        // held.js stores the dominant emotion at choose-time — honor it even
+        // if the month's entries no longer exist (e.g. demo reset).
+        kp = KNOT_PARAMS[choice.dominant];
       } else {
         var emoCounts = {};
         monthEntries.forEach(function(e){

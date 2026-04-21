@@ -69,18 +69,53 @@
   function _rand(arr){ return arr[Math.floor(Math.random() * arr.length)]; }
 
   // ── main actions ───────────────────────────────────────────────
-  function seedJourney(days){
-    if(!confirm('seed ' + days + ' days of demo journey? this will overwrite existing entries.')) return;
+  // includeToday: when true, today is also seeded as a logged entry
+  // (used by year-end demo where we want the ceremony to fire on a
+  // complete 365-day chain without the user also being prompted to
+  // write today's live entry). Default false — leaves today open so
+  // the judges can write a real entry on top of the seeded chain.
+  //
+  // PRESERVATION RULE: real entries the user wrote (anything without
+  // `demo:true`) are always kept. A seed only fills in the GAPS in
+  // the journey with demo-tagged entries. Real entries on specific
+  // dates are never overwritten.
+  function seedJourney(days, includeToday){
+    var existing = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+    var realCount = existing.filter(function(e){ return !e.demo; }).length;
+    var msg = 'seed ' + days + ' days of demo journey?';
+    if(realCount > 0){
+      msg += '\n\nyour ' + realCount + ' real ' + (realCount===1?'entry':'entries') +
+             ' will be preserved — demo entries only fill the gaps.';
+    }
+    if(!confirm(msg)) return;
+
     var today = _localISO();
     var startISO = _addDays(today, -(days - 1));
     localStorage.setItem('gc_start_date', startISO);
     localStorage.setItem('gc_day', String(days));
     localStorage.setItem('gc_onboard_seen', '1');
 
+    // Build a set of ISO dates that already have a REAL (non-demo) entry
+    // so the seeder skips those and never clobbers user-authored work.
+    var realByDate = {};
+    existing.forEach(function(e){
+      if(!e.demo){
+        var iso = (e.dateISO || e.date || e.timestamp || '').slice(0,10);
+        if(iso) realByDate[iso] = e;
+      }
+    });
+
     var entries = [];
     var loggedDates = [];
-    for(var i = 0; i < days - 1; i++){ // leave today unlogged so user can still write
+    var upper = includeToday ? days : (days - 1);
+    for(var i = 0; i < upper; i++){
       var dISO = _addDays(startISO, i);
+      if(realByDate[dISO]){
+        // already a real entry on this date — keep it, don't seed over it
+        entries.push(realByDate[dISO]);
+        loggedDates.push(dISO);
+        continue;
+      }
       var emoPick = _rand(DEMO_EMOTIONS);
       entries.push({
         day: i + 1,
@@ -90,13 +125,34 @@
         dateISO: dISO,
         date: dISO,
         timestamp: dISO + 'T09:30:00.000Z',
-        ai: ''
+        ai: '',
+        demo: true   // tag so future seeds / resets know this is disposable
       });
       loggedDates.push(dISO);
     }
+
+    // Also keep any REAL entries that fell OUTSIDE the seeded window
+    // (e.g. user wrote an entry two years ago, seed only covers the
+    // last 30 days — don't lose the old real entry).
+    existing.forEach(function(e){
+      if(!e.demo){
+        var iso = (e.dateISO || e.date || e.timestamp || '').slice(0,10);
+        if(iso && loggedDates.indexOf(iso) < 0){
+          entries.push(e);
+          loggedDates.push(iso);
+        }
+      }
+    });
+
     localStorage.setItem('gc_entries', JSON.stringify(entries));
     localStorage.setItem('gc_logged_dates', JSON.stringify(loggedDates));
-    localStorage.removeItem('gc_logged_today');
+    // If today has a real entry, keep gc_logged_today set so splash reads
+    // "logged today". Otherwise honor the includeToday flag for year-end.
+    if(realByDate[today] || includeToday){
+      localStorage.setItem('gc_logged_today', new Date().toDateString());
+    } else {
+      localStorage.removeItem('gc_logged_today');
+    }
     _toast('seeded ' + days + ' days. reloading…');
     setTimeout(function(){ location.reload(); }, 700);
   }
@@ -136,6 +192,9 @@
     var ym = new Date().toISOString().slice(0,7);
     localStorage.removeItem('gc_ceremony_seen_' + ym);
     localStorage.removeItem('gc_portrait_seen_' + ym);
+    // Prefetch AI so the reflection text is ready the moment the ceremony
+    // opens (same behavior as real month-end submits).
+    if(typeof prefetchMonthlyReflection === 'function') prefetchMonthlyReflection();
     if(typeof showMonthEndCeremony === 'function'){
       showMonthEndCeremony();
       _toast('month-end ceremony firing');
@@ -145,32 +204,80 @@
   }
 
   function triggerBirthdayCeremony(){
-    // Set birthday to today (so data is consistent) then fire the ceremony
-    // function directly — no reload, no waiting for splash to re-boot.
+    // Fire the birthday ceremony without leaving permanent residue. We
+    // temporarily set birthday = today + a fake birthYear so the ceremony
+    // has real data, but we snapshot the original values and restore them
+    // when the ceremony dismisses. Otherwise every future insight screen
+    // would show "today the chain marks N years of you" because isBirthday
+    // is computed from u.birthday on every boot.
     var u = JSON.parse(localStorage.getItem('gc_user')||'{}');
+    var originalBirthday = u.birthday || null;
+    var originalBirthYear = u.birthYear || null;
+    var originalName = u.name || null;
     var today = new Date();
     u.birthday = pad(today.getMonth()+1) + '-' + pad(today.getDate());
     if(!u.birthYear) u.birthYear = today.getFullYear() - 25;
     if(!u.name) u.name = 'demo';
     localStorage.setItem('gc_user', JSON.stringify(u));
+
+    function _restore(){
+      var cur = JSON.parse(localStorage.getItem('gc_user')||'{}');
+      if(originalBirthday === null) delete cur.birthday; else cur.birthday = originalBirthday;
+      if(originalBirthYear === null) delete cur.birthYear; else cur.birthYear = originalBirthYear;
+      if(originalName === null) delete cur.name; else cur.name = originalName;
+      localStorage.setItem('gc_user', JSON.stringify(cur));
+      // Also patch the module-level isBirthday/birthYear globals so the
+      // current session doesn't keep showing the "years of you" line on
+      // subsequent insight screens until the next reload.
+      try{
+        if(typeof isBirthday !== 'undefined') window.isBirthday = false;
+        if(typeof birthYear !== 'undefined') window.birthYear = 0;
+      }catch(e){}
+    }
+
     if(typeof runBirthdayCeremony === 'function'){
-      runBirthdayCeremony(function(){});
+      runBirthdayCeremony(_restore);
       _toast('birthday ceremony firing');
     } else {
+      _restore();
       _toast('ceremony fn not loaded yet');
     }
   }
 
+  // Clear any previously-chosen pendant so the year-end ceremony starts
+  // from a clean state — the WHOLE POINT of year-end is that the user
+  // picks their pendant, so any leftover choice from earlier demo runs
+  // would render on the chain and contradict the "fresh pick" premise.
+  function _clearPendantChoices(){
+    var keys = [];
+    for(var i = 0; i < localStorage.length; i++){
+      var k = localStorage.key(i);
+      if(k && k.indexOf('gc_pendant_year_') === 0) keys.push(k);
+    }
+    keys.forEach(function(k){ localStorage.removeItem(k); });
+    if(typeof window._invalidatePendantCache === 'function'){
+      window._invalidatePendantCache();
+    }
+  }
+
   function triggerYearEndCeremony(){
-    // Fire the annual ceremony directly without requiring 365 entries.
-    // If the helper isn't available yet, fall back to seeding.
+    // Year-end is a full-year milestone — the ceremony is meant to land
+    // after 365 mornings. If the user isn't at a full year yet, seed 365
+    // days first (with confirmation) then fire the ceremony on reload.
+    // includeToday=true so the chain is visually complete and the splash
+    // doesn't also ask the user to write today's entry while the ceremony
+    // is firing.
+    var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+    if(entries.length < 365){
+      if(!confirm('year-end needs a full year. seed 365 days first? (current: ' + entries.length + ')')) return;
+      localStorage.setItem('_demoFireYearEndOnBoot', '1');
+      _clearPendantChoices();  // ← fresh pick, not a re-run over old choice
+      seedJourney(365, true);
+      return;
+    }
     if(typeof _showAnnualCeremony === 'function'){
-      // ensure there's SOME data so the ceremony has something to display
-      var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
-      if(entries.length < 30){
-        _toast('needs a seeded journey first — click 100 days');
-        return;
-      }
+      _clearPendantChoices();  // ← fresh pick
+      if(typeof prefetchYearlyInsights === 'function') prefetchYearlyInsights();
       _showAnnualCeremony();
       _toast('year-end ceremony firing');
     } else {
@@ -233,17 +340,114 @@
     setTimeout(function(){ location.reload(); }, 600);
   }
 
-  function resetAll(){
-    if(!confirm('wipe ALL local data? this clears entries, streaks, user, links. cannot be undone locally.')) return;
+  // Keys that are USER IDENTITY or USER-CREATED content. These are NEVER
+  // wiped by the default reset — they survive demo seed/reset cycles so
+  // the judges (or the user) don't lose their name, email, birthday, or
+  // any real entries they wrote.
+  var _PROTECTED_KEYS = [
+    'gc_user_id',             // first-boot UUID
+    'gc_user',                // name + email + birthday + birthYear
+    'gc_theme',               // preference
+    'gc_onboard_seen',        // don't re-show the 3-line intro
+    'gc_notif_enabled',       // preference
+    'gc_link_philosophy_seen',// preference
+    'gc_time_capsules',       // user-created future-self letters
+    'gc_api_base',            // dev override
+  ];
+
+  // Remove only the demo-tagged entries, keep the real ones.
+  function clearDemoDataOnly(){
+    var existing = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+    var realEntries = existing.filter(function(e){ return !e.demo; });
+    var wiped = existing.length - realEntries.length;
+    if(wiped === 0){
+      _toast('no demo entries to clear');
+      return;
+    }
+    if(!confirm('clear ' + wiped + ' demo ' + (wiped===1?'entry':'entries') +
+                '? (' + realEntries.length + ' real ' +
+                (realEntries.length===1?'entry':'entries') + ' will be kept)')) return;
+
+    // rebuild loggedDates from real entries only
+    var realIsos = {};
+    realEntries.forEach(function(e){
+      var iso = (e.dateISO || e.date || e.timestamp || '').slice(0,10);
+      if(iso) realIsos[iso] = true;
+    });
+    localStorage.setItem('gc_entries', JSON.stringify(realEntries));
+    localStorage.setItem('gc_logged_dates', JSON.stringify(Object.keys(realIsos)));
+    // also drop ceremony / portrait seen flags for months that no longer have entries
+    var keysToCheck = [];
+    for(var i = 0; i < localStorage.length; i++){
+      var k = localStorage.key(i);
+      if(k && (k.indexOf('gc_portrait_seen_') === 0 || k.indexOf('gc_ceremony_seen_') === 0)){
+        keysToCheck.push(k);
+      }
+    }
+    keysToCheck.forEach(function(k){
+      var ym = k.split('_').pop();
+      var hasRealForMonth = realEntries.some(function(e){
+        return ((e.dateISO || e.date || e.timestamp || '')+'').slice(0,7) === ym;
+      });
+      if(!hasRealForMonth) localStorage.removeItem(k);
+    });
+    // recompute start date from oldest real entry, or clear
+    if(realEntries.length > 0){
+      var oldestIso = realEntries.map(function(e){
+        return (e.dateISO || e.date || e.timestamp || '').slice(0,10);
+      }).filter(Boolean).sort()[0];
+      if(oldestIso) localStorage.setItem('gc_start_date', oldestIso);
+    } else {
+      localStorage.removeItem('gc_start_date');
+    }
+    _toast('demo cleared. reloading…');
+    setTimeout(function(){ location.reload(); }, 500);
+  }
+
+  function resetJourney(){
+    var existing = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+    var realCount = existing.filter(function(e){ return !e.demo; }).length;
+    var msg = 'reset the demo journey?\n\n' +
+              'this clears demo entries, streaks, and ceremony flags.\n\n' +
+              'your NAME, EMAIL, BIRTHDAY, and TIME CAPSULES are preserved.';
+    if(realCount > 0){
+      msg += '\n\n⚠  this will also delete ' + realCount + ' REAL ' +
+             (realCount===1?'entry':'entries') + ' you wrote. ' +
+             'click cancel and use "clear demo data only" if you want to keep them.';
+    }
+    if(!confirm(msg)) return;
+    var protectedSet = {};
+    _PROTECTED_KEYS.forEach(function(k){ protectedSet[k] = true; });
+    var keys = [];
+    for(var i = 0; i < localStorage.length; i++){
+      var k = localStorage.key(i);
+      if(k && k.indexOf('gc_') === 0 && !protectedSet[k]) keys.push(k);
+    }
+    keys.forEach(function(k){ localStorage.removeItem(k); });
+    _toast('journey cleared. reloading…');
+    setTimeout(function(){ location.reload(); }, 500);
+  }
+
+  function resetEverything(){
+    if(!confirm(
+      '☠\u00a0NUCLEAR RESET\u00a0☠\n\n' +
+      'this wipes EVERYTHING, including your name, email, birthday, ' +
+      'time capsules, and every preference.\n\n' +
+      'this cannot be undone locally. are you sure?'
+    )) return;
+    if(!confirm('really really sure? this is the one you cannot take back.')) return;
     var keys = [];
     for(var i = 0; i < localStorage.length; i++){
       var k = localStorage.key(i);
       if(k && k.indexOf('gc_') === 0) keys.push(k);
     }
     keys.forEach(function(k){ localStorage.removeItem(k); });
-    _toast('wiped. reloading…');
+    _toast('wiped everything. reloading…');
     setTimeout(function(){ location.reload(); }, 500);
   }
+
+  // legacy alias — anything wired to "reset" now does the safe reset
+  function resetAll(){ resetJourney(); }
 
   function setMood(emo){
     // Shortcut — pre-select an emotion so the dev doesn't have to click through.
@@ -387,7 +591,19 @@
       + '</div>'
 
       + '<div class="_demoSection" style="margin-top:8px">'
-      +   '<button class="_demoAct _demoDanger" data-act="reset">reset everything</button>'
+      +   '<div class="_demoLbl">reset</div>'
+      +   '<div class="_demoRow">'
+      +     '<button class="_demoAct" data-act="clear-demo">clear demo data only</button>'
+      +   '</div>'
+      +   '<p style="font-family:\'DM Mono\',monospace;font-size:9px;color:rgba(245,237,224,0.4);margin:6px 0 10px;line-height:1.5">removes seeded demo entries. keeps everything you wrote.</p>'
+      +   '<div class="_demoRow">'
+      +     '<button class="_demoAct" data-act="reset-journey">reset journey (demo + real)</button>'
+      +   '</div>'
+      +   '<p style="font-family:\'DM Mono\',monospace;font-size:9px;color:rgba(245,237,224,0.4);margin:6px 0 10px;line-height:1.5">clears ALL entries. keeps name, email, birthday, time capsules.</p>'
+      +   '<div class="_demoRow">'
+      +     '<button class="_demoAct _demoDanger" data-act="reset-all">nuclear reset</button>'
+      +   '</div>'
+      +   '<p style="font-family:\'DM Mono\',monospace;font-size:9px;color:rgba(245,237,224,0.4);margin:6px 0 0;line-height:1.5">wipes EVERYTHING including profile.</p>'
       + '</div>';
 
     // stylesheet for panel internals
@@ -436,7 +652,10 @@
       if(a === 'ms-250')   return triggerMilestone(250);
       if(a === 'ms-300')   return triggerMilestone(300);
       if(a === 'grace')    return triggerGraceDay();
-      if(a === 'reset')    return resetAll();
+      if(a === 'clear-demo')    return clearDemoDataOnly();
+      if(a === 'reset-journey') return resetJourney();
+      if(a === 'reset-all')     return resetEverything();
+      if(a === 'reset')    return resetAll(); // legacy fallback
     });
 
     // enter key on input = jump
@@ -467,10 +686,62 @@
     ].join('\n');
   }
 
+  // ── self-heal demo residue ─────────────────────────────────────
+  // Previous demo birthday triggers left u.birthday permanently set to
+  // today, which made every insight screen show "today the chain marks
+  // 25 years of you" forever. Detect that specific fingerprint (bday =
+  // today's MM-DD AND birthYear = today-25, the demo's default) and
+  // clear it silently on boot so users who hit the old buggy demo don't
+  // have to manually reset.
+  function _healDemoResidue(){
+    try{
+      var u = JSON.parse(localStorage.getItem('gc_user')||'{}');
+      if(!u.birthday) return;
+      var now = new Date();
+      var todayMd = pad(now.getMonth()+1) + '-' + pad(now.getDate());
+      if(u.birthday === todayMd && u.birthYear === now.getFullYear() - 25 && (u.name === 'demo' || !u.name)){
+        delete u.birthday;
+        delete u.birthYear;
+        if(u.name === 'demo') delete u.name;
+        localStorage.setItem('gc_user', JSON.stringify(u));
+        // reload so module-level isBirthday recomputes
+        location.reload();
+      }
+    }catch(e){}
+  }
+
+  // ── one-shot boot handlers ─────────────────────────────────────
+  // If year-end was requested on a journey that didn't yet have 365 days,
+  // we seeded + reloaded. On the fresh boot, honor the queued ceremony.
+  function _maybeFireQueuedCeremonies(){
+    if(localStorage.getItem('_demoFireYearEndOnBoot') === '1'){
+      localStorage.removeItem('_demoFireYearEndOnBoot');
+      // Belt-and-suspenders: even though triggerYearEndCeremony clears
+      // pendant choices before queueing the reload, clear again here in
+      // case anything else wrote one during boot (e.g. migration code).
+      _clearPendantChoices();
+      if(typeof prefetchYearlyInsights === 'function') prefetchYearlyInsights();
+      setTimeout(function(){
+        var splash = document.getElementById('s-splash');
+        if(!splash || !splash.classList.contains('active')) return;
+        if(typeof _showAnnualCeremony === 'function'){
+          _showAnnualCeremony();
+          _toast('year-end ceremony firing');
+        }
+      }, 1800);
+    }
+  }
+
   // ── init ──────────────────────────────────────────────────────
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', buildPanel);
+    document.addEventListener('DOMContentLoaded', function(){
+      _healDemoResidue();     // runs before panel so reload doesn't double-fire
+      buildPanel();
+      _maybeFireQueuedCeremonies();
+    });
   } else {
+    _healDemoResidue();
     buildPanel();
+    _maybeFireQueuedCeremonies();
   }
 })();

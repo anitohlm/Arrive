@@ -37,14 +37,35 @@ const KNOT_PARAMS = {
   bored:       {petals:4, sharp:0.2, round:0.6,  strokeW:0.8, twist:0.1,  color:'#8e8878', glow:'rgba(142,136,120,0.18)'},
   insecure:    {petals:5, sharp:0.5, round:0.4,  strokeW:1.1, twist:0.45, color:'#a08a90', glow:'rgba(160,138,144,0.25)'},
   upset:       {petals:6, sharp:0.75,round:0.25, strokeW:1.6, twist:0.5,  color:'#b07040', glow:'rgba(176,112,64,0.3)'},
+  // Fourth wave — 2026-04-21 (filling gaps the demo seed list exposed)
+  exhausted:   {petals:4, sharp:0.2, round:0.55, strokeW:1.8, twist:0.1,  color:'#786e82', glow:'rgba(120,110,130,0.25)'},
+  frustrated:  {petals:5, sharp:0.75,round:0.25, strokeW:1.5, twist:0.5,  color:'#b4503c', glow:'rgba(180,80,60,0.3)'},
 };
 const KNOT_FALLBACK = KNOT_PARAMS.calm;
 
+// Shared "real-first" filter: if ANY user-authored entry exists in a pool,
+// demo-tagged entries are ignored for dominant-emotion calculations. Keeps
+// seeded demo data from outvoting what the user actually wrote.
+function _realFirst(entries){
+  var all = entries || [];
+  var real = all.filter(function(e){ return !e.demo; });
+  return real.length > 0 ? real : all;
+}
+
 // pure geometry — draws rose curve at (cx,cy) with radius R on any context.
 // weighted blend of up to top-4 emotions by entry count — used by all three knot renderers
+//
+// PRIORITY RULE: when BOTH demo-tagged and real (user-authored) entries
+// exist in the pool, only real entries shape the pendant. This keeps
+// demo seeding from polluting the visual — the pendant you see reflects
+// what YOU wrote, not the random seeds. Demo entries still render as
+// knots on the chain and as dots in the constellation; they just don't
+// vote on the pendant's color or petal-shape.
 function _blendKnotParams(entries, monthIndex){
+  var pool = _realFirst(entries);
+
   var emoCounts = {};
-  (entries||[]).forEach(function(e){
+  pool.forEach(function(e){
     if(e.emo) emoCounts[e.emo] = (emoCounts[e.emo]||0) + 1;
   });
 
@@ -740,8 +761,12 @@ function showMonthEndCeremony(){
   if(monthEntries.length === 0) return;
   var monthIndex = now.getMonth();
 
+  // real-first: if the user has any authored entries this month, those
+  // alone determine dominant emotion / word / message. Demo seeds don't
+  // drown out a single real entry.
+  var _poolForDom = _realFirst(monthEntries);
   var emoCounts = {};
-  monthEntries.forEach(function(e){ if(e.emo) emoCounts[e.emo] = (emoCounts[e.emo]||0) + 1; });
+  _poolForDom.forEach(function(e){ if(e.emo) emoCounts[e.emo] = (emoCounts[e.emo]||0) + 1; });
   var dominant = Object.keys(emoCounts).sort(function(a,b){return emoCounts[b]-emoCounts[a]})[0] || 'calm';
   var monthWord = PORTRAIT_WORDS[dominant] || dominant;
   var monthMsg = PORTRAIT_MESSAGES[dominant] || 'you were here. the chain remembers.';
@@ -871,26 +896,33 @@ function showMonthEndCeremony(){
     'opacity:0','transition:opacity 800ms ease'
   ].join(';');
 
-  // ── Live AI monthly reflection — quietly upgrades the hardcoded line ──
+  // ── Live AI monthly reflection — prefers a prefetched promise if one
+  // was kicked off 3.2s earlier (see prefetchMonthlyReflection). Otherwise
+  // fires fresh here. Either way, applies the result to msgEl when it lands.
   (function(){
     var _topEmos = Object.keys(emoCounts)
       .sort(function(a,b){ return emoCounts[b]-emoCounts[a]; })
       .slice(0,4);
     var _monthName = now.toLocaleDateString('en-US',{month:'long'}).toLowerCase();
-    fetch(API_BASE + '/monthly-reflection', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify({
-        month_name: _monthName,
-        mornings: monthEntries.length,
-        dominant: dominant,
-        month_word: monthWord,
-        top_emotions: _topEmos
-      })
-    }).then(function(r){ return r.json(); })
-      .then(function(data){
-        if(!data || !data.success || !data.reflection) return;
-        // crossfade only if the element is still on screen
+    var _promise = window._monthlyReflectionPrefetch;
+    window._monthlyReflectionPrefetch = null;
+    if(!_promise){
+      _promise = fetch(API_BASE + '/monthly-reflection', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          month_name: _monthName,
+          mornings: monthEntries.length,
+          dominant: dominant,
+          month_word: monthWord,
+          top_emotions: _topEmos
+        })
+      }).then(function(r){ return r.json(); })
+        .then(function(data){ return (data && data.success && data.reflection) ? data.reflection : null; })
+        .catch(function(){ return null; });
+    }
+    _promise.then(function(reflection){
+        if(!reflection) return;
         if(!msgEl.parentNode) return;
         var wasVisible = getComputedStyle(msgEl).opacity !== '0';
         if(wasVisible){
@@ -898,15 +930,14 @@ function showMonthEndCeremony(){
           msgEl.style.opacity = '0';
           setTimeout(function(){
             if(!msgEl.parentNode) return;
-            msgEl.textContent = data.reflection;
+            msgEl.textContent = reflection;
             msgEl.style.opacity = '1';
           }, 520);
         } else {
           // not yet faded in — just replace, the scheduled fade will carry the new text
-          msgEl.textContent = data.reflection;
+          msgEl.textContent = reflection;
         }
-      })
-      .catch(function(){ /* hardcoded floor stays */ });
+      });
   })();
 
   knotWrap.appendChild(knotCanvas);
@@ -2280,13 +2311,21 @@ function showYearClosingCeremony(){
       return longest;
     })()
   };
-  fetch(API_BASE + '/yearly-insights', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body: JSON.stringify(_yearPayload)
-  }).then(function(r){ return r.json(); })
-    .then(function(data){ window._yearInsights = data; })
-    .catch(function(){});
+  // Prefer the prefetch kicked off 3.2s earlier by the submit handler
+  // (or by the demo year-end button). Falls back to a fresh fetch if none.
+  (function(){
+    var _promise = window._yearlyInsightsPrefetch;
+    window._yearlyInsightsPrefetch = null;
+    if(!_promise){
+      _promise = fetch(API_BASE + '/yearly-insights', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(_yearPayload)
+      }).then(function(r){ return r.json(); })
+        .catch(function(){ return null; });
+    }
+    _promise.then(function(data){ if(data) window._yearInsights = data; });
+  })();
 
   // ── Build overlay ──
   var overlay = document.createElement('div');
@@ -3146,14 +3185,19 @@ function computeMonthStats(ym){
   if(monthEntries.length === 0){
     return {entries:[], count:0, topEmo:null, secondEmo:null, word:null, msg:null};
   }
+  // Same priority rule as _blendKnotParams: if any real (user-authored)
+  // entries exist this month, only they shape the topEmo / word / msg.
+  // Demo-seeded entries don't override what the user actually wrote.
+  var realEntries = monthEntries.filter(function(e){ return !e.demo; });
+  var statsPool = realEntries.length > 0 ? realEntries : monthEntries;
   var emoCounts = {};
-  monthEntries.forEach(function(e){ if(e.emo) emoCounts[e.emo] = (emoCounts[e.emo]||0) + 1; });
+  statsPool.forEach(function(e){ if(e.emo) emoCounts[e.emo] = (emoCounts[e.emo]||0) + 1; });
   var sorted = Object.keys(emoCounts).sort(function(a,b){return emoCounts[b]-emoCounts[a]});
   var topEmo = sorted[0] || null;
   return {
-    entries: monthEntries,
+    entries: monthEntries,       // full list (demo + real) still drives the chain / grid
     count: monthEntries.length,
-    topEmo: topEmo,
+    topEmo: topEmo,              // but topEmo prefers real
     secondEmo: sorted[1] || null,
     word: PORTRAIT_WORDS[topEmo] || topEmo,
     msg: PORTRAIT_MESSAGES[topEmo] || 'you were here. the chain remembers.',
@@ -3645,11 +3689,15 @@ function showMonthReplay(ym, monthIndex, entries){
     'twenty-one','twenty-two','twenty-three','twenty-four','twenty-five','twenty-six','twenty-seven',
     'twenty-eight','twenty-nine','thirty','thirty-one'];
 
-  // stats
+  // stats — real-first dominant so demo seeds don't outvote real entries
   var emoCounts = {};
   var longestEntry = null, longestLen = -1;
-  entries.forEach(function(e){
+  var _replayPool = _realFirst(entries);
+  _replayPool.forEach(function(e){
     if(e.emo) emoCounts[e.emo] = (emoCounts[e.emo]||0) + 1;
+  });
+  // longest-entry calculation uses the full pool — it's just text stats
+  entries.forEach(function(e){
     var tl = (e.text||'').length;
     if(tl > longestLen){ longestLen = tl; longestEntry = e; }
   });
@@ -4005,9 +4053,9 @@ function openMonthDetail(monthIndex, entries){
   var d = new Date(year, monthIndex, 1);
   $('monthSheetTitle').textContent = d.toLocaleDateString('en-US',{month:'long',year:'numeric'});
 
-  // derive word from entries
+  // derive word from entries — real-first
   var emoCounts = {};
-  (entries||[]).forEach(function(e){ if(e.emo) emoCounts[e.emo] = (emoCounts[e.emo]||0) + 1; });
+  _realFirst(entries||[]).forEach(function(e){ if(e.emo) emoCounts[e.emo] = (emoCounts[e.emo]||0) + 1; });
   var top = Object.keys(emoCounts).sort(function(a,b){return emoCounts[b]-emoCounts[a]})[0] || null;
   $('monthSheetWord').textContent = top ? (PORTRAIT_WORDS[top] || top) : '';
 

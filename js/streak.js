@@ -129,28 +129,38 @@ function showGracePrompt(missedDay){
     '</div></div>';
   document.body.appendChild(overlay);
   requestAnimationFrame(function(){ overlay.classList.add('open'); });
-  // fetch AI grace message (non-blocking — replaces fallback when ready)
-  var lastEmo = '';
-  var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
-  if(entries.length>0) lastEmo = entries[entries.length-1].emo||'';
-  var daysAway = getDayNumber(todayISO()) - missedDay;
-  fetch(API_BASE + '/grace-message',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({days_missed:1, streak_before:missedDay-1, last_emotion:lastEmo, days_away:daysAway})
-  }).then(function(r){return r.json()}).then(function(data){
-    if(data.success && data.message){
-      var el = document.getElementById('graceMsg');
-      if(!el) return;
-      el.style.transition = 'opacity 400ms ease';
-      el.style.opacity = '0';
-      setTimeout(function(){
-        if(!el.parentNode) return; // overlay already dismissed
-        el.textContent = data.message;
-        el.style.opacity = '1';
-      }, 420);
-    }
-  }).catch(function(){ _showOfflineBanner(); });
+  // AI grace message — prefer the prefetch kicked off by the on-load IIFE
+  // below (fires the moment a missed day is detected, 1.5s before this
+  // overlay opens). If no prefetch exists (e.g. demo-grace button), fire
+  // a fresh one here. Crossfade the fallback text when the AI lands.
+  function _applyGraceAi(message){
+    if(!message) return;
+    var el = document.getElementById('graceMsg');
+    if(!el) return;
+    el.style.transition = 'opacity 300ms ease';
+    el.style.opacity = '0';
+    setTimeout(function(){
+      if(!el.parentNode) return; // overlay already dismissed
+      el.textContent = message;
+      el.style.opacity = '1';
+    }, 300);
+  }
+  var _gracePromise = window._graceAiPrefetch;
+  window._graceAiPrefetch = null;
+  if(!_gracePromise){
+    var lastEmo = '';
+    var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+    if(entries.length>0) lastEmo = entries[entries.length-1].emo||'';
+    var daysAway = getDayNumber(todayISO()) - missedDay;
+    _gracePromise = fetch(API_BASE + '/grace-message',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({days_missed:1, streak_before:missedDay-1, last_emotion:lastEmo, days_away:daysAway})
+    }).then(function(r){return r.json()}).then(function(data){
+      return (data && data.success && data.message) ? data.message : null;
+    }).catch(function(){ _showOfflineBanner(); return null; });
+  }
+  _gracePromise.then(_applyGraceAi);
 
   overlay.querySelector('#graceUse').addEventListener('click',function(){
     // fill the missed day
@@ -184,14 +194,30 @@ function showGracePrompt(missedDay){
   });
 }
 
-// check on load: if there's an undeclined missed day and grace is available
+// check on load: if there's an undeclined missed day and grace is available.
+// Kick off the AI grace-message fetch IMMEDIATELY (before the 1.5s overlay
+// delay), so the response is back by the time the overlay opens — that
+// 1.5s of lead time covers a typical Foundry response.
 (function(){
   if(!gcStartDate || !hasLogged) return;
   if(gcGrace.remaining <= 0) return;
   var missed = findUndeclinedMissedDay();
-  if(missed){
-    // show prompt after a short delay so the chain loads first
-    setTimeout(function(){ showGracePrompt(missed); }, 1500);
-  }
+  if(!missed) return;
+
+  // ── prefetch ──
+  var lastEmo = '';
+  var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+  if(entries.length>0) lastEmo = entries[entries.length-1].emo||'';
+  var daysAway = getDayNumber(todayISO()) - missed;
+  window._graceAiPrefetch = fetch(API_BASE + '/grace-message',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({days_missed:1, streak_before:missed-1, last_emotion:lastEmo, days_away:daysAway})
+  }).then(function(r){return r.json()}).then(function(data){
+    return (data && data.success && data.message) ? data.message : null;
+  }).catch(function(){ return null; });
+
+  // show prompt after a short delay so the chain loads first
+  setTimeout(function(){ showGracePrompt(missed); }, 1500);
 })();
 

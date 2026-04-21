@@ -39,7 +39,7 @@ var PORTRAIT_MESSAGES = {
   disappointed:'not the month you hoped for. still the month you made.',
   exhausted:'you showed up tired. that\u2019s the bravest kind of showing up.',
   moved:'something moved you this month. the chain felt it too.',
-  passionate:'you burned for something this month. that is its own kind of love.',
+  passionate:'you burned for something this month. burning like that is a form of love.',
   nervous:'you stayed close to the edge and still arrived. that is bravery.',
   livid:'you were angry. it was real. the chain held that too.',
   lonely:'loneliness is honest about what it wants. the chain kept you company.',
@@ -83,7 +83,7 @@ var PORTRAIT_MESSAGES_PRESENT = {
   disappointed:'not the month you hoped for. still the month you are making.',
   exhausted:'you are showing up tired. that is the bravest kind of showing up.',
   moved:'something is moving you this month. the chain feels it too.',
-  passionate:'you are burning for something this month. that is its own kind of love.',
+  passionate:'you are burning for something this month. burning like this is a form of love.',
   nervous:'you are staying close to the edge and still arriving. that is bravery.',
   livid:'you are angry. it is real. the chain is holding that too.',
   lonely:'loneliness is honest about what it wants. the chain is keeping you company.',
@@ -105,7 +105,7 @@ var YEAR_CLOSING_LINES = {
   calm:        'a whole year of quiet. you honored it.',
   tender:      'soft, and still here. a whole year of that.',
   grateful:    'a year of noticing. the chain remembers it all.',
-  hard:        'a hard year held. that is its own kind of strength.',
+  hard:        'a hard year held. staying through that is a rare strength.',
   heavy:       'you carried what you could. a whole year of it.',
   overwhelmed: 'through the flood, 365 times. you kept arriving.',
   alive:       'you burned bright. the chain burned with you.',
@@ -359,25 +359,98 @@ function _renderYearPage1(pageEl, d){
 }
 
 // Page 2 — What you carried
+// Now features a canvas donut chart showing the ACTUAL proportions of the
+// year's emotions (not just a top-5 text list). Below the chart, a compact
+// legend with colored dots keeps readability. The chart animates its arcs
+// in sequence so it feels composed, not dropped.
 function _renderYearPage2(pageEl, d){
-  var top5 = d.sortedEmos.slice(0,5);
-  var rows = top5.map(function(emo){
+  var top6 = d.sortedEmos.slice(0,6);
+  if(top6.length === 0){
+    pageEl.innerHTML = _yearPageWrap(
+      '<p style="font-family:Fraunces,serif;font-style:italic;font-size:15px;color:rgba(245,237,224,0.5);text-align:center">the chain is quiet.</p>',
+      {padX:'48px'}
+    );
+    return;
+  }
+
+  function _hexToRgb(hex){
+    var h = (hex||'#c9943a').replace('#','');
+    return {
+      r: parseInt(h.slice(0,2),16),
+      g: parseInt(h.slice(2,4),16),
+      b: parseInt(h.slice(4,6),16)
+    };
+  }
+
+  var rows = top5.map(function(emo, i){
     var count = d.emoCounts[emo];
     var pct = Math.round(count / d.total * 100);
+    var relativeW = Math.round((count / topCount) * 100); // 0-100 relative to top
     var color = (KNOT_PARAMS[emo] || KNOT_FALLBACK).color;
-    return '<div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">'
-      + '<span style="font-family:Fraunces,serif;font-style:italic;font-size:15px;color:rgba(245,237,224,0.85);flex:0 0 90px">'+emo+'</span>'
-      + '<div style="flex:1;height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden">'
-      +   '<div style="width:'+pct+'%;height:100%;background:'+color+';opacity:0.8"></div>'
-      + '</div>'
-      + '<span style="font-family:DM Mono,monospace;font-size:10px;color:var(--gold);opacity:0.75">'+pct+'%</span>'
+    var rgb = _hexToRgb(color);
+    var tint = 'rgba('+rgb.r+','+rgb.g+','+rgb.b;
+    var delay = 120 + i * 90;
+
+    return ''
+      // row wrapper — staggered fade-in via inline animation
+      + '<div class="_yearcarry-row" style="'
+      +   'position:relative;'
+      +   'display:grid;grid-template-columns:14px 1fr auto;align-items:center;'
+      +   'gap:14px;padding:10px 12px;margin:0 -12px 6px;'
+      +   'border-radius:12px;'
+      +   'background:linear-gradient(90deg,'+tint+',0.05) 0%,'+tint+',0) 70%);'
+      +   'opacity:0;transform:translateY(6px);'
+      +   'animation:_yrcarryIn 600ms '+(delay)+'ms cubic-bezier(.2,.7,.25,1) forwards;'
+      + '">'
+      // color dot
+      +   '<span style="'
+      +     'display:block;width:10px;height:10px;border-radius:50%;'
+      +     'background:'+color+';'
+      +     'box-shadow:0 0 12px '+tint+',0.55), 0 0 3px '+tint+',0.9) inset;'
+      +   '"></span>'
+      // emotion name + bar
+      +   '<div style="display:flex;flex-direction:column;gap:6px;min-width:0">'
+      +     '<span style="'
+      +       'font-family:Fraunces,serif;font-style:italic;font-weight:300;'
+      +       'font-size:17px;letter-spacing:-0.01em;'
+      +       'color:rgba(245,237,224,0.92);'
+      +     '">'+emo+'</span>'
+      +     '<div style="height:3px;border-radius:2px;background:rgba(255,255,255,0.04);overflow:hidden">'
+      +       '<div style="'
+      +         'width:'+relativeW+'%;height:100%;'
+      +         'background:linear-gradient(90deg,'+tint+',0.3) 0%,'+color+' 100%);'
+      +         'box-shadow:0 0 8px '+tint+',0.45);'
+      +         'transform-origin:left;transform:scaleX(0);'
+      +         'animation:_yrcarryBar 800ms '+(delay+200)+'ms cubic-bezier(.2,.7,.25,1) forwards;'
+      +       '"></div>'
+      +     '</div>'
+      +   '</div>'
+      // count + percentage on right
+      +   '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:2px">'
+      +     '<span style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:16px;color:'+color+';opacity:0.95">'+pct+'%</span>'
+      +     '<span style="font-family:DM Mono,monospace;font-size:8px;color:rgba(245,237,224,0.35);letter-spacing:0.08em">'+count+(count===1?' day':' days')+'</span>'
+      +   '</div>'
       + '</div>';
   }).join('');
+
+  // inject keyframes once (idempotent — lookup by id)
+  if(!document.getElementById('_yearcarryKeyframes')){
+    var style = document.createElement('style');
+    style.id = '_yearcarryKeyframes';
+    style.textContent =
+      '@keyframes _yrcarryIn { to { opacity: 1; transform: translateY(0); } }' +
+      '@keyframes _yrcarryBar { to { transform: scaleX(1); } }';
+    document.head.appendChild(style);
+  }
+
   var inner = ''
-    + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.4;text-transform:uppercase;letter-spacing:0.18em;margin:0 0 24px;text-align:center">what you carried</p>'
-    + '<p style="font-family:Fraunces,serif;font-weight:300;font-size:28px;color:var(--text);text-align:center;margin:0 0 32px">'+d.total+' entries</p>'
-    + rows;
-  pageEl.innerHTML = _yearPageWrap(inner, {padX:'48px'});
+    + '<p style="font-family:DM Mono,monospace;font-size:8px;color:var(--gold);opacity:0.42;text-transform:uppercase;letter-spacing:0.22em;margin:0 0 10px;text-align:center">what you carried</p>'
+    + '<div style="width:28px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,148,58,0.5),transparent);margin:0 auto 22px"></div>'
+    + '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;font-size:36px;letter-spacing:-0.01em;color:rgba(245,237,224,0.95);text-align:center;margin:0">'+d.total+'</p>'
+    + '<p style="font-family:DM Mono,monospace;font-size:9px;color:rgba(245,237,224,0.35);letter-spacing:0.18em;text-align:center;text-transform:uppercase;margin:2px 0 28px">mornings held</p>'
+    + '<div style="width:100%;max-width:340px;margin:0 auto">' + rows + '</div>';
+
+  pageEl.innerHTML = _yearPageWrap(inner, {padX:'36px'});
 }
 
 // Page 3 — A moment that held
@@ -510,8 +583,17 @@ function _renderYearPage7(pageEl, d){
 
     card.addEventListener('click', function(){
       var year = d.startDate.getFullYear();
+      // Store both `ym` and `monthISO` (same value, different field names)
+      // so every reader — old and new — resolves the chosen month correctly.
+      // Also derive monthIdx for readers that prefer it (portrait.js convention).
+      var _mIdx = parseInt(ym.split('-')[1], 10) - 1;
       localStorage.setItem('gc_pendant_year_'+year, JSON.stringify({
-        ym: ym, monthName: monthName, dominant: mDom, count: monthEntries.length
+        ym: ym,
+        monthISO: ym,          // alias for drawPendant compatibility
+        monthIdx: _mIdx,
+        monthName: monthName,
+        dominant: mDom,
+        count: monthEntries.length
       }));
       if (typeof window._invalidatePendantCache === 'function') window._invalidatePendantCache();
       if (typeof _dismissAnnualCeremony === 'function') _dismissAnnualCeremony();

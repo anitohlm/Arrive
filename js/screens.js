@@ -47,11 +47,21 @@ $('homeStreak').textContent = 'morning '+splashDay;
 if(hasLogged) $('loggedMsg').textContent = getLoggedMsg(splashDay);
 
 // Annual ceremony safety net: if pending flag survived a force-close,
-// fire annual now that splash is stable.
+// fire annual now that splash is stable. Guard: only fire if the user
+// is still on splash when the 600ms timer elapses — otherwise the
+// ceremony would overlay arrival / insight / journal, which is jarring.
+// In that case we re-stash the flag so it fires on the next boot-to-splash.
 try {
   if (localStorage.getItem('gc_annual_pending') && !document.getElementById('monthEndOverlay') && !document.getElementById('yearCeremonyOverlay')) {
+    var _pendingYear = localStorage.getItem('gc_annual_pending');
     localStorage.removeItem('gc_annual_pending');
     setTimeout(function(){
+      var splash = document.getElementById('s-splash');
+      if(!splash || !splash.classList.contains('active')){
+        // user moved past splash; defer to next splash visit
+        if(_pendingYear) localStorage.setItem('gc_annual_pending', _pendingYear);
+        return;
+      }
       if (typeof _showAnnualCeremony === 'function') _showAnnualCeremony();
     }, 600);
   }
@@ -791,7 +801,7 @@ const POST_AI = {
   numb:'You arrived numb and still left something. The chain felt it.',
   hopeful:'You named your hope. Now it exists outside of you. That matters.',
   light:'You noticed the lightness. That\u2019s the whole practice.',
-  quiet:'Quiet days deserve their own kind of gratitude. You gave yours.',
+  quiet:'Quiet days deserve noticing too. You gave yours that.',
   foggy:'You found something in the fog. The chain grew.',
   restless:'You gave your restlessness a direction. That\u2019s enough for today.',
   searching:'You named the search. Sometimes that\u2019s the whole answer.',

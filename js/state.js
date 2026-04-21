@@ -104,3 +104,90 @@ document.body.className = 'theme-dark';
 localStorage.setItem('gc_theme', 'dark');
 function setTheme(){ /* dark-only; no-op */ }
 
+
+// ═══ AI PREFETCH HELPERS ═════════════════════════════
+// Called from the submit handler (real users) or the demo panel when we
+// know a ceremony is about to fire. Fires the AI request now so by the
+// time the ceremony actually opens (3.2s later for real submits), the
+// response is in hand instead of making the user wait through a slow
+// Foundry roundtrip AFTER the ceremony animation starts.
+
+function prefetchMonthlyReflection(){
+  try{
+    var now = new Date();
+    var ym = now.toISOString().slice(0,7);
+    var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+    var monthEntries = entries.filter(function(e){
+      var d = (e.dateISO || e.date || e.timestamp || '').slice(0,7);
+      return d === ym;
+    });
+    if(monthEntries.length === 0) return;
+    var counts = {};
+    monthEntries.forEach(function(e){
+      if(e.emo) counts[e.emo] = (counts[e.emo]||0) + 1;
+    });
+    var topEmos = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; });
+    var dominant = topEmos[0] || 'calm';
+    var monthName = now.toLocaleDateString('en-US',{month:'long'}).toLowerCase();
+    var monthWord = (typeof PORTRAIT_WORDS !== 'undefined' && PORTRAIT_WORDS[dominant]) || dominant;
+    window._monthlyReflectionPrefetch = fetch(API_BASE + '/monthly-reflection', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        month_name: monthName,
+        mornings: monthEntries.length,
+        dominant: dominant,
+        month_word: monthWord,
+        top_emotions: topEmos.slice(0,4)
+      })
+    }).then(function(r){ return r.json(); })
+      .then(function(data){ return (data && data.success && data.reflection) ? data.reflection : null; })
+      .catch(function(){ return null; });
+  }catch(e){ window._monthlyReflectionPrefetch = null; }
+}
+
+function prefetchYearlyInsights(){
+  try{
+    var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+    if(entries.length < 30) return; // not enough data to call — ceremony will use defaults
+    var counts = {};
+    var longest = '', longestLen = 0;
+    entries.forEach(function(e){
+      if(e.emo) counts[e.emo] = (counts[e.emo]||0) + 1;
+      var t = (e.text || '').length;
+      if(t > longestLen){ longestLen = t; longest = (e.text||'').slice(0,120); }
+    });
+    var topEmos = Object.keys(counts).sort(function(a,b){ return counts[b]-counts[a]; });
+    var dominant = topEmos[0] || 'calm';
+    // Find fullest month
+    var monthCounts = {};
+    entries.forEach(function(e){
+      var ym = (e.dateISO || e.date || e.timestamp || '').slice(0,7);
+      if(ym) monthCounts[ym] = (monthCounts[ym]||0) + 1;
+    });
+    var fullestYm = Object.keys(monthCounts).sort(function(a,b){ return monthCounts[b]-monthCounts[a]; })[0] || '';
+    var fullestMonth = '';
+    if(fullestYm){
+      var fm = fullestYm.split('-');
+      if(fm.length === 2){
+        fullestMonth = new Date(parseInt(fm[0]), parseInt(fm[1])-1, 1)
+          .toLocaleDateString('en-US',{month:'long'}).toLowerCase();
+      }
+    }
+    var yearWord = (typeof PORTRAIT_WORDS !== 'undefined' && PORTRAIT_WORDS[dominant]) || dominant;
+    window._yearlyInsightsPrefetch = fetch(API_BASE + '/yearly-insights', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        total_mornings: entries.length,
+        dominant_emotion: dominant,
+        year_word: yearWord,
+        fullest_month: fullestMonth,
+        top_emotions: topEmos.slice(0,4),
+        longest_entry_excerpt: longest
+      })
+    }).then(function(r){ return r.json(); })
+      .catch(function(){ return null; });
+  }catch(e){ window._yearlyInsightsPrefetch = null; }
+}
+

@@ -195,6 +195,23 @@ $('journalSubmit').addEventListener('click',()=>{
     _resolved = true;
     $('aiLoadingDot').classList.remove('vis');
     var el = $('postInsightAi');
+    // Safety / crisis responses contain resource lists (multi-line, bullets).
+    // Detect heuristically so we can re-style the block away from the
+    // italic "friend voice" into a clearer, higher-contrast card AND
+    // change the next-action button so it doesn't push the user to
+    // "carry it forward" onto the chain — that framing is wrong when the
+    // response is a crisis acknowledgment.
+    var isSafety = typeof text === 'string' && /\n/.test(text) && /(Lifeline|Hotline|Crisis|Text HOME|988|1-800|findahelpline|https?:\/\/)/i.test(text);
+    el.classList.toggle('is-safety', !!isSafety);
+    var btn = document.getElementById('postInsightBtn');
+    if(btn){
+      btn.dataset.safetyMode = isSafety ? '1' : '';
+      if(btn.lastChild && btn.lastChild.nodeType === 3){
+        btn.lastChild.textContent = isSafety ? 'close. i\u2019m here.' : 'carry it forward';
+      }
+      // Visually subordinate the CTA — crisis moment shouldn't pulse at them.
+      btn.classList.toggle('post-insight-btn--safety', !!isSafety);
+    }
     el.style.transition = 'opacity 400ms ease';
     el.style.opacity = '0';
     setTimeout(function(){
@@ -230,6 +247,30 @@ $('journalSubmit').addEventListener('click',()=>{
 // post-insight "carry it forward" button — commits the entry and triggers fly-to-chain
 $('postInsightBtn').addEventListener('click',function(){
   if(this.disabled) return;
+
+  // Safety-mode short-circuit: the user disclosed abuse / self-harm / suicidal
+  // ideation. We do NOT save this entry to the chain — that framing ("day N
+  // logged, knot added") is wrong for a crisis moment. Instead we gently
+  // dismiss back to splash and clear the in-flight draft. The resources are
+  // still on screen until they leave; nothing is committed to Cosmos or
+  // localStorage gc_entries. If the user wants a normal entry they can come
+  // back and write one.
+  if(this.dataset.safetyMode === '1'){
+    window._pendingEntry = null;
+    window._pendingEmo = null;
+    window._pendingIntent = null;
+    window._pendingAi = null;
+    window._pendingPhotos = null;
+    window._pendingVoice = null;
+    // restore button for next session
+    this.dataset.safetyMode = '';
+    this.classList.remove('post-insight-btn--safety');
+    if(this.lastChild && this.lastChild.nodeType === 3) this.lastChild.textContent = 'carry it forward';
+    // return to splash without marking today as logged
+    go('s-post-insight','s-splash');
+    return;
+  }
+
   var _btnRect = this.getBoundingClientRect(); // capture before any DOM mutations
   this.style.transition = 'none';
   this.disabled = true;
@@ -338,6 +379,13 @@ $('postInsightBtn').addEventListener('click',function(){
     __ceremonyToday.getFullYear(), __ceremonyToday.getMonth()+1, 0
   ).getDate();
   if(__ceremonyToday.getDate() === __ceremonyLastDay){
+    // Prefetch the AI monthly reflection 3.2s before the ceremony opens.
+    // By the time showMonthEndCeremony mounts its text element, the AI
+    // response is typically back and can be applied immediately instead
+    // of crossfading in 1-3s later.
+    if(typeof prefetchMonthlyReflection === 'function'){
+      prefetchMonthlyReflection();
+    }
     setTimeout(function(){ showMonthEndCeremony(); }, 3200);
   }
 
@@ -355,6 +403,11 @@ $('postInsightBtn').addEventListener('click',function(){
       var _today = new Date();
       var _lastDayOfMonth = new Date(_today.getFullYear(), _today.getMonth()+1, 0).getDate();
       var _isMonthEnd = _today.getDate() === _lastDayOfMonth;
+      // Prefetch year-end AI insights the moment we know the ceremony
+      // will fire. 3.2s lead time is usually enough for Foundry to respond.
+      if(typeof prefetchYearlyInsights === 'function'){
+        prefetchYearlyInsights();
+      }
       if (_isMonthEnd) {
         localStorage.setItem('gc_annual_pending', String(_today.getFullYear()));
       } else {

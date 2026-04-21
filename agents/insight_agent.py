@@ -3,6 +3,8 @@ from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.identity import DefaultAzureCredential
 
+from .safety import classify_crisis, safety_response_for
+
 
 def get_client():
     credential = DefaultAzureCredential()
@@ -22,7 +24,19 @@ def generate_post_insight(content: str, mood: str, day_number: int) -> str:
     The quiet reflection shown AFTER the user submits their journal entry.
     This is the last thing they read before their knot lands on the chain.
     Must match GratitudeChain's voice: tender, witnessing, never performative.
+
+    Safety layer: if the entry discloses abuse, self-harm, or suicidal
+    ideation, short-circuit before calling the AI and return a safety
+    response with real resources. A gratitude app is not equipped to
+    handle crisis disclosure in real time — the responsible thing is to
+    surface real help and stop pretending this is a normal journaling
+    moment.
     """
+    # ── crisis short-circuit ──
+    kind = classify_crisis(content)
+    if kind:
+        return safety_response_for(kind)
+
     client = get_client()
 
     response = client.complete(
