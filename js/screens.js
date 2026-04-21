@@ -225,21 +225,38 @@ $('arriveBtn').addEventListener('click',()=>{
   // immediate feedback — dim button
   $('arriveBtn').style.opacity='0.4';
   $('arriveBtn').style.pointerEvents='none';
+
+  // ── AI prefetch ──
+  // Fire /reflection NOW instead of waiting for the insight screen to mount.
+  // Foundry typically takes 1–3s; starting the request here means the
+  // response is often back by the time runInsightSequence runs, so AI
+  // shows up first with minimal visible delay.
+  var _userName = '';
+  try{ _userName = (JSON.parse(localStorage.getItem('gc_user')||'{}').name)||''; }catch(e){}
+  window._reflectionPrefetch = fetch(API_BASE + '/reflection', {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({mood: emo, intention: intent||'', name: _userName})
+  }).then(function(r){ return r.json(); })
+    .then(function(data){ return (data && data.success && data.insight) ? data.insight : null; })
+    .catch(function(){ return null; });
+
   setTimeout(()=>{
     // restore button for next time
     $('arriveBtn').style.opacity='';
     $('arriveBtn').style.pointerEvents='';
-    // kick off /open-app for emotions the backend handles — cache result for breathing + memory
+    // kick off /open-app for ALL emotions — the prompt goes to the journal
+    // screen, and memories/exercise get used for breathing + memory flows.
+    // Prefetching here (not in setupJournal) means the prompt is usually
+    // back by the time the user finishes the insight screen.
     _openAppCache = null;
     _openAppFetch = null;
-    if(BREATHING_EMOTIONS.has(emo)){
-      var userId = localStorage.getItem('gc_user_id') || 'demo-user';
-      _openAppFetch = fetch(API_BASE + '/open-app', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({user_id:userId, mood:emo, intention:intent||'', hours_absent:0})
-      }).then(function(r){ return r.json(); }).then(function(data){ _openAppCache = data; _openAppFetch = null; }).catch(function(){ _openAppFetch = null; _showOfflineBanner(); });
-    }
+    var userId = localStorage.getItem('gc_user_id') || 'demo-user';
+    _openAppFetch = fetch(API_BASE + '/open-app', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({user_id:userId, mood:emo, intention:intent||'', hours_absent:0})
+    }).then(function(r){ return r.json(); }).then(function(data){ _openAppCache = data; _openAppFetch = null; }).catch(function(){ _openAppFetch = null; _showOfflineBanner(); });
     if(BREATHING_EMOTIONS.has(emo)){
       go('s-arrival','s-breathing');
       startBreathingExercise();
@@ -563,19 +580,20 @@ function runInsightSequence(){
   $('birthdayLine').style.opacity='0';
   $('birthdayLine').textContent='';
 
-  // ── AI-first reveal ──
-  // Previously: hardcoded showed at t=1400ms, AI crossfaded in when it arrived.
-  // Now: wait for the AI response (up to MAX_WAIT_MS) and only fall back to
-  // the hardcoded insight if the AI doesn't arrive in time. Users see the
-  // friend-voice paragraph first, not a placeholder. If AI beats the
-  // soft deadline (EARLIEST_REVEAL_MS) we still honor the minimum so the
-  // loading-dots animation gets a beat of screen time and the cascade
-  // below feels paced rather than snapping open.
+  // ── AI-first reveal with prefetch ──
+  // The arrive button starts the /reflection fetch immediately (see
+  // window._reflectionPrefetch in the arriveBtn click handler). By the time
+  // this sequence runs, the AI response may already be back — in which case
+  // we reveal it the moment the opening rule settles.
+  //
+  // EARLIEST_REVEAL_MS is now tiny (400ms) — just long enough for the
+  // decorative rule above to fade in. No more artificial 1400ms pause.
+  // MAX_WAIT_MS stays generous (6000ms) because Foundry occasionally spikes.
   var _reflectionReqId = (window._reflectionReqId||0) + 1;
   window._reflectionReqId = _reflectionReqId;
 
-  var EARLIEST_REVEAL_MS = 1400;  // don't reveal before this (keeps the opening rhythm)
-  var MAX_WAIT_MS        = 4500;  // hard fallback to hardcoded if AI is slow / offline
+  var EARLIEST_REVEAL_MS = 400;
+  var MAX_WAIT_MS        = 6000;
 
   var _revealed = false;
   var _aiResult = null;
@@ -583,13 +601,13 @@ function runInsightSequence(){
 
   function _revealInsightText(text){
     if(_revealed) return;
-    if(_reflectionReqId !== window._reflectionReqId) return; // stale call
+    if(_reflectionReqId !== window._reflectionReqId) return;
     _revealed = true;
     $('loadingDots').classList.add('hide');
     var txtEl = $('insightText');
     txtEl.textContent = text;
     txtEl.classList.add('vis');
-    // kick off the rest of the cascade relative to the reveal moment
+    // cascade relative to reveal
     setTimeout(function(){ showInsightMemory(emo); }, 800);
     setTimeout(function(){ $('bridgeRule').classList.add('vis'); }, 1400);
     setTimeout(function(){ $('bridgeQ').classList.add('vis'); }, 2200);
@@ -613,32 +631,39 @@ function runInsightSequence(){
     }
   }
 
-  // fire AI fetch
+  // Consume the prefetch kicked off from the arrive button. If no prefetch
+  // exists (edge case: navigated to insight without clicking arrive), fall
+  // back to firing the request here.
   (function(){
-    var _userName = '';
-    try{ _userName = (JSON.parse(localStorage.getItem('gc_user')||'{}').name)||''; }catch(e){}
-    fetch(API_BASE + '/reflection', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({mood: emo, intention: intent||'', name: _userName})
-    }).then(function(r){ return r.json(); })
-      .then(function(data){
-        if(_reflectionReqId !== window._reflectionReqId) return;
-        if(!data || !data.success || !data.insight) return;
-        _aiResult = data.insight;
-        window._reflectionResult = data.insight;
-        _tryReveal();
-      })
-      .catch(function(){ /* fail quietly — fallback timer below handles it */ });
+    var prefetch = window._reflectionPrefetch;
+    window._reflectionPrefetch = null;
+    if(!prefetch){
+      var _userName = '';
+      try{ _userName = (JSON.parse(localStorage.getItem('gc_user')||'{}').name)||''; }catch(e){}
+      prefetch = fetch(API_BASE + '/reflection', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({mood: emo, intention: intent||'', name: _userName})
+      }).then(function(r){ return r.json(); })
+        .then(function(data){ return (data && data.success && data.insight) ? data.insight : null; })
+        .catch(function(){ return null; });
+    }
+    prefetch.then(function(insight){
+      if(_reflectionReqId !== window._reflectionReqId) return;
+      if(!insight) return;
+      _aiResult = insight;
+      window._reflectionResult = insight;
+      _tryReveal();
+    });
   })();
 
-  // opening beat: ornamental rule always shows at 400ms
-  setTimeout(function(){ $('insightRule1').classList.add('vis'); }, 400);
+  // opening ornamental rule
+  setTimeout(function(){ $('insightRule1').classList.add('vis'); }, 300);
 
-  // at EARLIEST_REVEAL_MS, try to reveal (if AI already arrived)
+  // earliest-reveal checkpoint — if AI already landed, reveal now
   setTimeout(_tryReveal, EARLIEST_REVEAL_MS + 20);
 
-  // hard fallback: if AI still hasn't arrived by MAX_WAIT_MS, show hardcoded
+  // hard fallback to hardcoded
   setTimeout(function(){
     if(_revealed) return;
     if(_reflectionReqId !== window._reflectionReqId) return;

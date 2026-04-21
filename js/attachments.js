@@ -187,8 +187,8 @@ $('journalSubmit').addEventListener('click',()=>{
   go('s-journal','s-post-insight');
   // AI-first reveal. If AI arrives quickly, show it. If it takes longer
   // than MAX_WAIT_MS, fall back to the hardcoded POST_AI[emo] so the
-  // screen never stays empty.
-  var MAX_WAIT_MS = 4500;
+  // screen never stays empty. 6s gives Foundry room for occasional spikes.
+  var MAX_WAIT_MS = 6000;
   var _resolved = false;
   function _revealPostInsight(text){
     if(_resolved) return;

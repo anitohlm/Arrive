@@ -3391,10 +3391,14 @@ function renderPortraitYear(){
   var now = new Date();
   var currentMonth = now.getMonth();
   var currentYear = now.getFullYear();
-  var startDateObj = gcStartDate ? new Date(gcStartDate) : now;
-  var startMonth = startDateObj.getMonth();
-  var startYear  = startDateObj.getFullYear();
-  var endYear = startYear + Math.floor((startMonth + 11) / 12);
+  // Year grid always starts at January of the current year — this makes
+  // the year view read as a real calendar (Jan → Dec) rather than a
+  // rolling 12-month window from the user's start date. Past months
+  // before start date show as "future"-style placeholders (since no
+  // entries exist for them).
+  var startMonth = 0;
+  var startYear  = currentYear;
+  var endYear = currentYear;
   $('portraitYearLabel').textContent = endYear > startYear
     ? startYear + ' \u2014 ' + endYear
     : String(startYear);
