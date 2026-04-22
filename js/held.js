@@ -147,7 +147,13 @@ function _buildYearCeremonyData(){
   try { entries = JSON.parse(localStorage.getItem('gc_entries') || '[]'); } catch(e) {}
   var startDateStr = localStorage.getItem('gc_start_date') || '';
   var startDate = startDateStr ? new Date(startDateStr) : new Date();
-  var endDate = new Date();
+  // End date represents the FULL year the ceremony is reviewing, not
+  // "today". Previously this rendered as "january to april" because today
+  // is April 22 — but a year-end ceremony is meant to close a completed
+  // 365-day arc. Compute endDate = startDate + 364 days so the label reads
+  // "january to december" (or whatever the actual year's closing month is).
+  var endDate = new Date(startDate);
+  endDate.setDate(endDate.getDate() + 364);
 
   // emotion counts across all entries
   var emoCounts = {};
@@ -1135,8 +1141,12 @@ function _showNecklaceWitness(opts){
   layer.style.cssText = [
     'position:absolute','inset:0','z-index:5',
     'display:flex','flex-direction:column','align-items:center','justify-content:flex-start',
-    // anchor the pendant near the top of the viewport and let copy flow below
     'padding:max(48px, calc(env(safe-area-inset-top) + 32px)) 24px 96px',
+    // Solid backdrop so the splash chain behind the ceremony overlay
+    // doesn't bleed through on wide viewports. The overlay's own 92%
+    // opacity isn't enough on iPad — at this zoom the remaining 8%
+    // lets the chain outline show through faintly. Force full opacity.
+    'background:#0e0a06',
     'opacity:0','transition:opacity 800ms ease',
     'pointer-events:auto',
     'overflow-y:auto','-webkit-overflow-scrolling:touch'

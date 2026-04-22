@@ -2334,10 +2334,11 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
   .post-insight-wrap{max-width:460px}
   .post-insight-ai{max-width:500px;font-size:15px;line-height:1.75}
 
-  /* Year-end ceremony pages were built flex:0 0 100vw — that's fine, but
-     the INNER content column should cap so the text doesn't stretch edge
-     to edge on a 1024px iPad. */
-  #yearCeremonyOverlay > div > div{max-width:540px;margin:0 auto}
+  /* Year-end ceremony pages are built with `flex:0 0 100vw` — don't cap
+     the page element itself (that breaks the pager's 100vw translate steps
+     and makes adjacent pages bleed in). Instead cap ONLY the deeper inner
+     content columns inside each page, via the page-6 wrap and page-5 year
+     grid styles already in their respective renderers. */
 
   /* Necklace witness + demo toast both benefit from a max-width */
   #necklaceWitnessLayer > div,
@@ -2380,8 +2381,8 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
   .screen,.placeholder-screen{padding-bottom:calc(116px + env(safe-area-inset-bottom))}
   .arrive-footer{bottom:calc(104px + env(safe-area-inset-bottom))}
 
-  /* Ceremony overlay content column grows slightly */
-  #yearCeremonyOverlay > div > div{max-width:620px}
+  /* Ceremony overlay inner columns grow slightly on laptop — but NOT
+     the page-container itself (same reason as the 768px rule). */
   #necklaceWitnessLayer > div,
   #necklaceWitnessLayer > p{max-width:620px !important}
 
