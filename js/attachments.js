@@ -219,29 +219,39 @@ $('journalSubmit').addEventListener('click',()=>{
       el.style.opacity = '1';
     }, 200);
   }
-  // hard fallback — hardcoded wins if AI too slow / offline
-  var aiTimeout = setTimeout(function(){
-    if(!_resolved) _revealPostInsight(POST_AI[emo] || 'the chain grew.');
-  }, MAX_WAIT_MS);
-
-  fetch(API_BASE + '/post-insight', {
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({content:entry, mood:emo, day_number:dayNum-1})
-  }).then(function(r){return r.json()}).then(function(data){
-    clearTimeout(aiTimeout);
-    if(data && data.success && data.insight){
-      _revealPostInsight(data.insight);
-      // remember the AI version so the saved entry stores it, not the fallback
-      window._pendingAi = data.insight;
-    } else if(!_resolved){
+  // OFFLINE-FIRST: the post-insight agent is the ONLY agent that would see
+  // the user's entry text. In offline-first mode we skip the network call
+  // entirely and use the curated hardcoded line per emotion. The entry
+  // never leaves the device.
+  if(window.GC_OFFLINE_FIRST){
+    // brief delay so the loading dot gets a beat of screen time
+    setTimeout(function(){
       _revealPostInsight(POST_AI[emo] || 'the chain grew.');
-    }
-  }).catch(function(){
-    clearTimeout(aiTimeout);
-    if(!_resolved) _revealPostInsight(POST_AI[emo] || 'the chain grew.');
-    _showOfflineBanner();
-  });
+    }, 400);
+  } else {
+    // Cloud-sync path (opt-in). Hard fallback on timeout / offline.
+    var aiTimeout = setTimeout(function(){
+      if(!_resolved) _revealPostInsight(POST_AI[emo] || 'the chain grew.');
+    }, MAX_WAIT_MS);
+
+    fetch(API_BASE + '/post-insight', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({content:entry, mood:emo, day_number:dayNum-1})
+    }).then(function(r){return r.json()}).then(function(data){
+      clearTimeout(aiTimeout);
+      if(data && data.success && data.insight){
+        _revealPostInsight(data.insight);
+        window._pendingAi = data.insight;
+      } else if(!_resolved){
+        _revealPostInsight(POST_AI[emo] || 'the chain grew.');
+      }
+    }).catch(function(){
+      clearTimeout(aiTimeout);
+      if(!_resolved) _revealPostInsight(POST_AI[emo] || 'the chain grew.');
+      _showOfflineBanner();
+    });
+  }
 });
 
 // post-insight "carry it forward" button — commits the entry and triggers fly-to-chain
@@ -346,23 +356,30 @@ $('postInsightBtn').addEventListener('click',function(){
   // ── Best-effort Cosmos write (fire-and-forget) ──
   // Ships the entry (with attachments, if any) to the backend so the memory
   // agent, AI Search index, and cross-device sync can use it. Silent on failure.
-  (function(){
-    try{
-      var userId = localStorage.getItem('gc_user_id') || 'demo-user';
-      fetch(API_BASE + '/submit-entry', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          user_id: userId,
-          content: entry,
-          mood: pendingEmo,
-          intention: pendingIntent || '',
-          photos: pendingPhotos, // [{dataUrl,width,height}]
-          voice:  pendingVoice   // {dataUrl,mime} | null
-        })
-      }).catch(function(){ /* offline / backend down — ignore */ });
-    }catch(e){ /* no-op */ }
-  })();
+  // ── Cloud write gate ──
+  // OFFLINE-FIRST: by default, Arrive does NOT transmit the user's entry
+  // text, photos, or voice to the backend. Everything stays on-device in
+  // localStorage. Flip window.GC_OFFLINE_FIRST to false to re-enable
+  // cloud sync (future opt-in backup).
+  if(!window.GC_OFFLINE_FIRST){
+    (function(){
+      try{
+        var userId = localStorage.getItem('gc_user_id') || 'demo-user';
+        fetch(API_BASE + '/submit-entry', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({
+            user_id: userId,
+            content: entry,
+            mood: pendingEmo,
+            intention: pendingIntent || '',
+            photos: pendingPhotos,
+            voice:  pendingVoice
+          })
+        }).catch(function(){ /* offline / backend down — ignore */ });
+      }catch(e){ /* no-op */ }
+    })();
+  }
   // clear pending flags
   window._pendingEmo = null;
   window._pendingIntent = null;

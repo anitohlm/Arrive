@@ -2294,3 +2294,103 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
 
 /* ═══ REDUCED MOTION ═════════════════════════════════ */
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.001ms!important;animation-delay:0ms!important;transition-duration:.001ms!important}.touch-hint,.brand-mark{opacity:.7!important}}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   TABLET + DESKTOP RESPONSIVE LAYOUT
+   The app was built phone-first. These breakpoints fix overlaps and keep
+   the experience feeling intentional on iPad Pro, iPad Air, and desktop
+   browsers. Two tiers:
+     • ≥ 768px  (iPad portrait, larger phones in landscape)
+     • ≥ 1024px (iPad Pro, small laptops)
+   Rules: cap widths, center fixed elements, ensure every screen has
+   bottom padding > nav height, and normalize oversized hit areas.
+   ═════════════════════════════════════════════════════════════════════ */
+@media(min-width:768px){
+
+  /* Bottom nav stays EDGE-TO-EDGE at the bottom — same pattern as phone.
+     The tabs themselves are centered inside via `.nav-tab { flex:1; max-width:80px }`
+     so no matter how wide the viewport, the row of 5 tabs caps around
+     400px and sits centered. Don't turn the nav into a floating pill —
+     it reads as broken when disconnected from the bottom edge. */
+  .bottom-nav{justify-content:center;gap:8px}
+
+  /* Every screen gets predictable bottom padding so fixed arrive-footer
+     and nav never sit on top of content. */
+  .screen,.placeholder-screen{padding-bottom:calc(100px + env(safe-area-inset-bottom))}
+
+  /* Arrive footer (the "arrive" CTA above nav) — keep it centered with nav */
+  .arrive-footer{max-width:520px}
+
+  /* Splash canvas stays viewport-filling; chain radius is capped inside
+     entry-detail.js resize() so it reads as phone-proportioned. */
+
+  /* Splash text block (brand + streak + whisper) centered with breathing room */
+  .home-status{max-width:520px;margin:0 auto;padding:0 24px}
+
+  /* Insight + post-insight screens get wider copy blocks — phone-tight
+     measures look starved at this size. */
+  #s-insight{max-width:580px;padding-left:40px;padding-right:40px}
+  .insight-text,.bridge-q{max-width:420px}
+  .post-insight-wrap{max-width:460px}
+  .post-insight-ai{max-width:500px;font-size:15px;line-height:1.75}
+
+  /* Year-end ceremony pages were built flex:0 0 100vw — that's fine, but
+     the INNER content column should cap so the text doesn't stretch edge
+     to edge on a 1024px iPad. */
+  #yearCeremonyOverlay > div > div{max-width:540px;margin:0 auto}
+
+  /* Necklace witness + demo toast both benefit from a max-width */
+  #necklaceWitnessLayer > div,
+  #necklaceWitnessLayer > p,
+  .forming-toast{max-width:540px !important}
+
+  /* Demo panel — on tablet it can sit more visually grounded */
+  #_demoPanel{width:340px}
+
+  /* Memory heatmap grid — spreads too wide otherwise */
+  .mem-wrap,.mem-heatmap-section,.mem-agent-card{max-width:540px;margin-left:auto;margin-right:auto}
+
+  /* Portrait screen wraps wider on tablet */
+  #s-portrait .ph-wrap{max-width:560px}
+
+  /* Arrival screen bumps its container cap for more breathing room */
+  #s-arrival{max-width:560px}
+  #s-arrival .arrival,#arrivalInner{max-width:460px}
+
+  /* Parchment / entry-detail modal — center with a reasonable cap */
+  .parchment-modal .parchment-card,.entry-detail{max-width:560px}
+
+  /* Held screen alongside-card sizing */
+  #s-held .ph-wrap{max-width:560px}
+}
+
+@media(min-width:1024px){
+
+  /* iPad Pro + desktop. Chain-radius cap lives in entry-detail.js resize();
+     CSS here handles nav placement + copy widths. */
+
+  /* Push the bottom nav away from the very edge — 1024+ viewports have
+     enough vertical space that seeing the nav float above the bottom edge
+     reads as intentional, not broken. */
+  .bottom-nav{bottom:max(16px, env(safe-area-inset-bottom));border-radius:24px;border:1px solid rgba(201,148,58,0.12)}
+  .bottom-nav.show{transform:translateX(-50%) translateY(0)}
+  .screen,.placeholder-screen{padding-bottom:calc(116px + env(safe-area-inset-bottom))}
+  .arrive-footer{bottom:calc(104px + env(safe-area-inset-bottom))}
+
+  /* Ceremony overlay content column grows slightly */
+  #yearCeremonyOverlay > div > div{max-width:620px}
+  #necklaceWitnessLayer > div,
+  #necklaceWitnessLayer > p{max-width:620px !important}
+
+  /* Typography bumps up half a step for reading-distance on laptop */
+  .insight-text{font-size:16px}
+  .post-insight-ai{font-size:16px}
+}
+
+/* Landscape tablet (short viewport height) — shrink vertical padding so
+   content fits without awkward scroll. */
+@media(min-width:900px) and (max-height:820px){
+  #s-insight{padding-top:24px;padding-bottom:80px}
+  #s-arrival{padding-top:24px}
+  .arrive-footer{bottom:calc(72px + env(safe-area-inset-bottom))}
+}

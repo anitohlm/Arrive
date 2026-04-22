@@ -65,34 +65,48 @@ def get_monthly_reflection(
     dominant: str,
     month_word: str,
     top_emotions: list = None,
+    name: str = "",
 ) -> str:
     """
-    Produces the reflection line shown on the month-end ceremony overlay —
-    one quiet sentence that witnesses the shape of the month. Falls back to
-    empty string on error so the frontend keeps the hardcoded PORTRAIT_MESSAGES
-    line.
+    Produces the reflection PARAGRAPH shown on the month-end ceremony overlay.
+    3 to 5 short sentences witnessing the shape of the month — mirrors the
+    yearly witness voice at a smaller scale. Returns empty string on error;
+    the frontend falls back to its rich hardcoded paragraph.
     """
     try:
         client = get_client()
         tops = ", ".join(top_emotions or []) if top_emotions else dominant
+        # sanitize name — only clean alphabetic strings get into the prompt
+        clean_name = (name or "").strip()
+        name_piece = ""
+        if clean_name and len(clean_name) <= 40 and clean_name.replace(" ", "").replace("-", "").replace("'", "").isalpha():
+            name_piece = f"Their name is {clean_name.lower()}. Use their name ONCE, naturally, placed somewhere mid-paragraph — not as a greeting. Do not repeat it."
+
         response = client.complete(
             model=os.getenv("FOUNDRY_MODEL_DEPLOYMENT_NAME"),
             messages=[
                 SystemMessage(
-                    content="""You are the quiet voice of GratitudeChain's monthly ceremony.
-A month has just ended. The user is watching a slow reveal of the month's woven rose-curve knot.
+                    content="""You are the quiet voice of Arrive's monthly ceremony.
+A month has just ended. The user is watching a slow reveal of the month's woven rose-curve pendant — the geometric shape of their emotions for that month.
 
-Write ONE sentence — 12 to 22 words — that witnesses the month. Not a summary. Not a statistic. A quiet observation that holds what the month actually felt like.
+Write a 3–5 sentence PARAGRAPH that witnesses the month. Sentence-case throughout, proper nouns capitalized, sentence starts capitalized. Flowing prose — no bullet points, no list structure.
+
+Move through these in order:
+  (a) name the shape of the month using the dominant emotion and its word
+  (b) honor how it actually felt — the weight or the lightness of it
+  (c) if contrasting emotions sat side by side (e.g. hopeful + heavy), acknowledge that honestly, without resolving it
+  (d) close with a quiet witness note — never a silver lining, never cheerleading
 
 Voice rules (non-negotiable):
-- Natural sentence case. Italic serif register.
-- No exclamation marks. No emoji. No cheerleading.
-- Never 'you did it', 'amazing', 'great job'.
+- Italic serif register — thoughtful, unhurried
+- No exclamation marks. No emoji. No "amazing" / "you did it" / "congrats"
+- No therapist-speak ("I hear you", "it sounds like")
 - Heavy months get tenderness, not pity. Light months get witness, not confetti.
-- Do not mention the app, the chain, or the number of days by figure.
+- Do not mention the app name or the chain by metaphor
 - Do not ask a question. Do not sign off.
+- Keep sentences varied in length — some short, some longer
 
-Output only the sentence. No quotes, no prefix."""
+Output only the paragraph. No quotes around it, no prefix, no markdown."""
                 ),
                 UserMessage(
                     content=(
@@ -100,7 +114,8 @@ Output only the sentence. No quotes, no prefix."""
                         f"Dominant feeling: {dominant} ({month_word}). "
                         f"Supporting emotions this month: {tops}. "
                         f"Mornings held: {mornings}. "
-                        f"Write the reflection."
+                        f"{name_piece} "
+                        f"Write the reflection paragraph."
                     )
                 )
             ]

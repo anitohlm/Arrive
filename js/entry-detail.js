@@ -122,12 +122,16 @@ try{ void function(){
     cv.style.width = W + 'px';
     cv.style.height = H + 'px';
     ctx.setTransform(dpr,0,0,dpr,0,0);
-    // necklace centered, slightly above vertical center to account for nav + status
     NECKLACE_CX = W * 0.5;
-    // Necklace sits higher now (0.36 instead of 0.42) so the clasp + pendant
-    // have room to breathe beneath it without crowding the bottom nav.
     NECKLACE_CY = H * 0.36;
-    NECKLACE_R  = Math.min(W, H) * 0.36;
+    // Chain radius was min(W,H) * 0.36 — on iPad (~834 wide) that becomes
+    // 300px, and on iPad Pro (~1024) it balloons to 369px. The chain stops
+    // reading as a necklace and starts reading as a cavernous ring with
+    // lonely text stranded inside + below it. Cap it to a phone-proportioned
+    // radius on wide viewports so the whole composition stays intentional.
+    var _idealR = Math.min(W, H) * 0.36;
+    var _maxR   = 240; // phone-proportioned cap
+    NECKLACE_R  = Math.min(_idealR, _maxR);
     placeAllKnotsOnCircle();
   }
 
@@ -931,7 +935,12 @@ try{ void function(){
 
         if(isToday){
           if(todayFillTime<0){
-            drawSmallKnot(pt.x, pt.y, dayNumber, displayDay);
+            // Today before the user has submitted — render as the pulsing
+            // TODAY knot so it's clearly distinguished from past morning
+            // knots. Previously this rendered with drawSmallKnot which
+            // made today look identical to a random past day, producing
+            // a stranded "dot" effect on the chain.
+            drawTodayKnot(pt.x, pt.y, time);
           } else {
             todayFillTime += 1/60;
             var fillProgress = Math.min(1, todayFillTime/1.2);

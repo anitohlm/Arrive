@@ -1320,7 +1320,10 @@ function _showAnnualCeremony(){
         year_word: d.word || 'stillness',
         fullest_month: d.fullestMonthName || '',
         top_emotions: (d.sortedEmos || []).slice(0,4),
-        longest_entry_excerpt: d.longestEntry ? (d.longestEntry.text || '').slice(0,500) : '',
+        // OFFLINE-FIRST: entry text never leaves device; send empty excerpt.
+        longest_entry_excerpt: window.GC_OFFLINE_FIRST
+          ? ''
+          : (d.longestEntry ? (d.longestEntry.text || '').slice(0,500) : ''),
         name: _userName
       };
       _promise = fetch(API_BASE + '/yearly-insights', {

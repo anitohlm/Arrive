@@ -110,6 +110,7 @@ class MonthlyReflectionRequest(BaseModel):
     dominant: constr(max_length=64)
     month_word: constr(max_length=64)
     top_emotions: List[constr(max_length=64)] = Field(default_factory=list, max_length=20)
+    name: Optional[constr(max_length=64)] = ""
 
 class UserRegisterRequest(BaseModel):
     user_id: constr(max_length=64)
@@ -204,6 +205,7 @@ def monthly_reflection(request: Request, req: MonthlyReflectionRequest):
             dominant=req.dominant,
             month_word=req.month_word,
             top_emotions=req.top_emotions or [],
+            name=req.name or "",
         )
         return {"success": bool(text), "reflection": text}
     except Exception:

@@ -105,6 +105,26 @@ localStorage.setItem('gc_theme', 'dark');
 function setTheme(){ /* dark-only; no-op */ }
 
 
+// ═══ CLOUD SYNC FLAG ═══════════════════════════════════
+// Cloud-backed by default (hackathon requirement — Azure Cosmos DB is
+// an active part of the stack). Entries, photos, voice, and AI
+// reflections are persisted to Cosmos so the user's chain survives
+// device loss and the Memory agent has semantic recall data.
+//
+// The privacy contract is still explicit:
+//   • Every record is scoped to gc_user_id (no cross-user reads)
+//   • Azure Cosmos encrypts at rest and in transit
+//   • Crisis disclosures (abuse / self-harm / suicide) are NEVER saved
+//     (enforced server-side by agents/safety.py short-circuit)
+//   • User can delete any time via the demo panel's nuclear reset
+//
+// Flip GC_OFFLINE_FIRST to true to disable all cloud writes and run the
+// app purely on localStorage (e.g. if judges want to see the offline
+// fallback story, or for future privacy-mode toggle in settings).
+var GC_OFFLINE_FIRST = false;
+window.GC_OFFLINE_FIRST = GC_OFFLINE_FIRST;
+
+
 // ═══ AI PREFETCH HELPERS ═════════════════════════════
 // Called from the submit handler (real users) or the demo panel when we
 // know a ceremony is about to fire. Fires the AI request now so by the
@@ -130,6 +150,9 @@ function prefetchMonthlyReflection(){
     var dominant = topEmos[0] || 'calm';
     var monthName = now.toLocaleDateString('en-US',{month:'long'}).toLowerCase();
     var monthWord = (typeof PORTRAIT_WORDS !== 'undefined' && PORTRAIT_WORDS[dominant]) || dominant;
+    // personalize the paragraph
+    var _userName = '';
+    try { _userName = (JSON.parse(localStorage.getItem('gc_user')||'{}').name || '').trim(); } catch(e){}
     window._monthlyReflectionPrefetch = fetch(API_BASE + '/monthly-reflection', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -138,7 +161,8 @@ function prefetchMonthlyReflection(){
         mornings: monthEntries.length,
         dominant: dominant,
         month_word: monthWord,
-        top_emotions: topEmos.slice(0,4)
+        top_emotions: topEmos.slice(0,4),
+        name: _userName
       })
     }).then(function(r){ return r.json(); })
       .then(function(data){ return (data && data.success && data.reflection) ? data.reflection : null; })
@@ -177,6 +201,10 @@ function prefetchYearlyInsights(){
     var yearWord = (typeof PORTRAIT_WORDS !== 'undefined' && PORTRAIT_WORDS[dominant]) || dominant;
     var _userName = '';
     try { _userName = (JSON.parse(localStorage.getItem('gc_user')||'{}').name || '').trim(); } catch(e){}
+    // OFFLINE-FIRST: never transmit entry text, even as an excerpt. The
+    // yearly-insights prompt can still produce a warm paragraph from just
+    // counts + dominant emotion + fullest month + name.
+    var _excerpt = window.GC_OFFLINE_FIRST ? '' : longest;
     window._yearlyInsightsPrefetch = fetch(API_BASE + '/yearly-insights', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -186,7 +214,7 @@ function prefetchYearlyInsights(){
         year_word: yearWord,
         fullest_month: fullestMonth,
         top_emotions: topEmos.slice(0,4),
-        longest_entry_excerpt: longest,
+        longest_entry_excerpt: _excerpt,
         name: _userName
       })
     }).then(function(r){ return r.json(); })

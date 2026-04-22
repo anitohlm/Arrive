@@ -897,14 +897,19 @@ function showMonthEndCeremony(){
     'opacity:0','transition:opacity 400ms ease'
   ].join(';');
 
-  var msgEl = document.createElement('p');
-  msgEl.textContent = monthMsg;
+  // Paragraph-style witness (3–5 sentences). Initial floor shows the
+  // hardcoded single-line PORTRAIT_MESSAGES; when the AI paragraph lands,
+  // it replaces the content with per-sentence blocks on a stagger (same
+  // treatment as the year-end Page 6 narrative).
+  var msgEl = document.createElement('div');
+  msgEl.setAttribute('data-month-reflection','1');
   msgEl.style.cssText = [
     'font-family:"Fraunces",serif','font-style:italic','font-weight:300',
-    'font-size:14px','color:rgba(245,237,224,0.5)',
-    'line-height:1.8','text-align:center','margin:0','max-width:260px',
+    'font-size:14px','color:rgba(245,237,224,0.65)',
+    'line-height:1.75','text-align:center','margin:0','max-width:360px',
     'opacity:0','transition:opacity 800ms ease'
   ].join(';');
+  msgEl.innerHTML = '<p style="margin:0">' + monthMsg + '</p>';
 
   // ── Live AI monthly reflection — prefers a prefetched promise if one
   // was kicked off 3.2s earlier (see prefetchMonthlyReflection). Otherwise
@@ -917,6 +922,8 @@ function showMonthEndCeremony(){
     var _promise = window._monthlyReflectionPrefetch;
     window._monthlyReflectionPrefetch = null;
     if(!_promise){
+      var _uName = '';
+      try { _uName = (JSON.parse(localStorage.getItem('gc_user')||'{}').name || '').trim(); } catch(e){}
       _promise = fetch(API_BASE + '/monthly-reflection', {
         method: 'POST',
         headers: {'Content-Type':'application/json'},
@@ -925,11 +932,40 @@ function showMonthEndCeremony(){
           mornings: monthEntries.length,
           dominant: dominant,
           month_word: monthWord,
-          top_emotions: _topEmos
+          top_emotions: _topEmos,
+          name: _uName
         })
       }).then(function(r){ return r.json(); })
         .then(function(data){ return (data && data.success && data.reflection) ? data.reflection : null; })
         .catch(function(){ return null; });
+    }
+    // Split paragraph into sentences, render each as its own <p> with
+    // a subtle stagger-in — matches the year-end Page 6 treatment.
+    function _renderMonthParagraph(text){
+      // sentence splitter — keeps trailing punctuation, drops empties
+      var parts = (text || '').match(/[^.!?]+[.!?]+(?:["\u201d]?)(?:\s|$)/g) || [text];
+      parts = parts.map(function(s){ return (s||'').trim(); }).filter(Boolean);
+      // inject keyframes once
+      if(!document.getElementById('_monthReflectionKeyframes')){
+        var style = document.createElement('style');
+        style.id = '_monthReflectionKeyframes';
+        style.textContent = '@keyframes _mrIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }';
+        document.head.appendChild(style);
+      }
+      var html = parts.map(function(s, i){
+        var sizeRem = i === 0 ? 15.5 : 14;
+        var opacity = i === 0 ? 0.9 : 0.75;
+        var delay = 80 + i * 200;
+        return '<p style="'
+          + 'font-family:Fraunces,serif;font-style:italic;font-weight:300;'
+          + 'font-size:' + sizeRem + 'px;line-height:1.75;letter-spacing:0.005em;'
+          + 'color:rgba(245,237,224,' + opacity + ');'
+          + 'text-align:center;margin:0 0 10px;'
+          + 'opacity:0;transform:translateY(5px);'
+          + 'animation:_mrIn 580ms ' + delay + 'ms cubic-bezier(.2,.7,.25,1) forwards;'
+          + '">' + s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>';
+      }).join('');
+      msgEl.innerHTML = html;
     }
     _promise.then(function(reflection){
         if(!reflection) return;
@@ -940,12 +976,11 @@ function showMonthEndCeremony(){
           msgEl.style.opacity = '0';
           setTimeout(function(){
             if(!msgEl.parentNode) return;
-            msgEl.textContent = reflection;
+            _renderMonthParagraph(reflection);
             msgEl.style.opacity = '1';
           }, 520);
         } else {
-          // not yet faded in — just replace, the scheduled fade will carry the new text
-          msgEl.textContent = reflection;
+          _renderMonthParagraph(reflection);
         }
       });
   })();
