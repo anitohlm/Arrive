@@ -8,29 +8,52 @@ A one-minute-a-day gratitude journal built on a keystone-habit design thesis: *t
 The product concept and business plan were developed prior to the hackathon. All code in this repository was written exclusively during the hackathon period (April 2 – May 3, 2026). No prior codebase was used.
 
 ## Tech Stack
-- **Azure AI Foundry** — model hosting
-- **Microsoft Agent Framework** — six specialized AI agents
+- **Azure AI Foundry** — model hosting for all seven AI agents
+- **Microsoft Agent Framework** — shared voice rulebook across agents
 - **Azure Cosmos DB** — user profiles, links, journal entries
 - **Azure AI Search** — semantic memory resurface
-- **Azure App Service** — API hosting
-- **FastAPI** — REST API
+- **Azure App Service** — FastAPI backend hosting
 - **Managed Identity + DefaultAzureCredential** — zero hardcoded keys
+- **FastAPI** — REST API with slowapi rate limiting + Pydantic validation
 
-## Six AI Agents
+## Seven AI Agents
 
-| Agent | Role |
-|-------|------|
-| Reflection | Daily prompt, emotion-insight paragraph, monthly & yearly witness reflections |
-| Insight | Quiet post-submit "friend voice" line after each entry |
-| Grace | Soft re-entry message after a missed day (never shame) |
-| Memory | Resurfaces a past entry semantically matched to today's mood |
-| Mindfulness | Breathing exercise for anxious / overwhelmed arrivals |
-| Yearly Insights | Personalized year-in-review paragraph at 365 mornings |
+All seven call **Azure AI Foundry** via `DefaultAzureCredential`. They share one voice rulebook: sentence case, never celebratory, never therapist-speak, no emojis.
 
-## Safety layer
+| # | Agent | Role |
+|---|-------|------|
+| 1 | **Reflection** | Daily prompt, emotion-insight paragraph, and monthly witness reflection (3–5 sentences) |
+| 2 | **Insight** | Quiet post-submit "friend voice" line after each entry lands on the chain |
+| 3 | **Grace** | Soft re-entry message after a missed day — no shame, just welcome |
+| 4 | **Memory** | Resurfaces a past entry semantically matched to today's mood via Azure AI Search |
+| 5 | **Mindfulness** | Guides a short breathing exercise when you arrive anxious or overwhelmed |
+| 6 | **Monthly Insights** | Generates the month-end Gratitude Portrait copy |
+| 7 | **Yearly Insights** | Composes a personalized year-in-review paragraph at 365 mornings — addressed by name, reflecting the emotional shape of the whole year |
 
-Disclosures of abuse, self-harm, or suicidal ideation are detected by a keyword classifier **before** the AI is called. The AI is skipped entirely and a high-contrast card surfaces real resources (988, RAINN, Childhelp, Philippines DSWD 1343, findahelpline.com). The entry is never saved to the chain. *A gratitude app should know when to stop being a gratitude app.*
+## Two Support Modules
+
+These aren't Foundry agents — they run entirely offline, before or alongside the AI layer.
+
+| Module | Role |
+|---|---|
+| **Safety Classifier** (`agents/safety.py`) | Regex-based detection for abuse / self-harm / suicidal-ideation disclosures. Runs **before** the AI is called; short-circuits to real resources (988, RAINN, Childhelp, Philippines DSWD 1343, findahelpline.com). The entry is never saved to the chain. *A gratitude app should know when to stop being a gratitude app.* |
+| **Streak Engine** (`agents/streak_agent.py`) | Pure math — streak computation, milestone detection (days 7 / 100 / 200 / 250 / 300), grace-day accounting (one per month). |
 
 ## Voice
 
-Every agent shares one rulebook: sentence case, never celebratory, never therapist-speak, no emojis, no exclamation marks. Tender, witnessing, unhurried — the voice of a close friend sitting next to you.
+One close-friend register across every piece of AI output in the app: tender, unhurried, lowercase-friendly sentence case. Never "amazing," never "you did it," never "I hear you that..." Just one true thing said back to the user, morning after morning.
+
+## Ceremonies
+
+- **Month-end ceremony** — the month's rose-curve pendant weaves itself into form, emerging in the dominant emotion's color
+- **Streak milestones** at days 7, 100, 200, 250, 300 — one quiet line, no confetti
+- **Birthday ceremony** — the knot that falls on your birthday is marked with your birthstone
+- **Year-end ceremony** — twelve monthly pendants arrayed for you to pick one to carry forward as a permanent necklace
+
+## Safety + Privacy
+
+- Crisis disclosures never reach the AI and never save to the chain
+- Every Cosmos record is scoped to `user_id` (no cross-user reads)
+- Azure Cosmos encrypts at rest and in transit
+- Prompt-injection defended via `<user_entry>` tag wrapping + explicit system-prompt guard
+- User can delete any time via the demo panel's nuclear reset
