@@ -636,6 +636,48 @@
     btn.addEventListener('mouseenter', function(){ btn.style.background='rgba(201,148,58,0.22)'; });
     btn.addEventListener('mouseleave', function(){ btn.style.background='rgba(201,148,58,0.12)'; });
 
+    // Auto-hide the DEMO pill whenever a ceremony / modal overlay is
+    // active, so video recordings and screenshots stay clean. Uses
+    // CSS :has() so it fires the moment any of these elements exist —
+    // no MutationObserver needed.
+    //
+    // Covers: year-end overlay, month-end overlay, birthday ceremony,
+    // milestone screen (active), grace-day overlay, necklace witness,
+    // parchment modal (philosophy), entry-detail modal, month-sheet,
+    // paged month replay, year-closing deprecated overlay.
+    var styleHider = document.createElement('style');
+    styleHider.id = '_demoBtnHider';
+    styleHider.textContent =
+      'body:has(#yearCeremonyOverlay) #_demoBtn,' +
+      'body:has(#yearCloseOverlay) #_demoBtn,' +
+      'body:has(#monthEndOverlay) #_demoBtn,' +
+      'body:has(#birthdayCeremonyOverlay) #_demoBtn,' +
+      'body:has(#necklaceWitnessLayer) #_demoBtn,' +
+      'body:has(.grace-overlay) #_demoBtn,' +
+      'body:has(#s-milestone.active) #_demoBtn,' +
+      'body:has(#monthReplayOverlay) #_demoBtn,' +
+      'body:has(.parchment-modal.open) #_demoBtn,' +
+      'body:has(.entry-detail.open) #_demoBtn,' +
+      'body:has(.month-sheet.open) #_demoBtn {' +
+      '  opacity: 0 !important;' +
+      '  pointer-events: none !important;' +
+      '  transform: translateY(-20px) !important;' +
+      '  transition: opacity 220ms ease, transform 220ms ease !important;' +
+      '}' +
+      // demo panel itself also hides when a ceremony fires (belt-and-suspenders
+      // with the existing auto-close; if the panel is somehow still open
+      // when a ceremony lands, disappear it for the recording).
+      'body:has(#yearCeremonyOverlay) #_demoPanel,' +
+      'body:has(#yearCloseOverlay) #_demoPanel,' +
+      'body:has(#monthEndOverlay) #_demoPanel,' +
+      'body:has(#birthdayCeremonyOverlay) #_demoPanel,' +
+      'body:has(#necklaceWitnessLayer) #_demoPanel,' +
+      'body:has(.grace-overlay) #_demoPanel,' +
+      'body:has(#s-milestone.active) #_demoPanel {' +
+      '  display: none !important;' +
+      '}';
+    document.head.appendChild(styleHider);
+
     // Panel
     var panel = document.createElement('div');
     panel.id = '_demoPanel';
