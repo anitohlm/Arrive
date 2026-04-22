@@ -97,7 +97,11 @@ function runMilestone(day, onDone){
   }
   resize();
 
-  const RING_R = Math.min(W,H) * 0.34;
+  // Cap the ring radius on wide viewports so the ring stays phone-proportioned.
+  // On iPad Air the default (min(W,H)*0.34 ≈ 280px) grows the ring large enough
+  // that the ms-bottom text block (anchored at top:58%) renders inside it,
+  // overlapping the circle outline. A ~220px max keeps the text below the ring.
+  const RING_R = Math.min(Math.min(W,H) * 0.34, 220);
   const STRANDS = 4;
   const TWIST_FREQ = 0.08;
   const TWIST_AMP = 4;

@@ -144,25 +144,51 @@
     var entries = [];
     var loggedDates = [];
     var upper = includeToday ? days : (days - 1);
+
+    // Each 30-day window gets its own emotional "season" — two anchor
+    // emotions dominating, two secondary, occasional variety. Mimics how
+    // real months feel (a stretch of hopeful + alive; a stretch of heavy
+    // + searching; etc.) instead of a flat uniform distribution that
+    // makes the year-end chart show 3% top emotions.
+    var currentSeason = null;
+    function _newSeason(){
+      var a = _rand(DEMO_EMOTIONS);
+      var b; do { b = _rand(DEMO_EMOTIONS); } while(b === a);
+      return {
+        anchorA: a, anchorB: b,
+        secondaryA: _rand(DEMO_EMOTIONS),
+        secondaryB: _rand(DEMO_EMOTIONS)
+      };
+    }
+    function _weightedEmo(season){
+      var r = Math.random();
+      if(r < 0.45) return season.anchorA;
+      if(r < 0.75) return season.anchorB;
+      if(r < 0.86) return season.secondaryA;
+      if(r < 0.92) return season.secondaryB;
+      return _rand(DEMO_EMOTIONS);
+    }
+
     for(var i = 0; i < upper; i++){
       var dISO = _addDays(startISO, i);
       if(realByDate[dISO]){
-        // already a real entry on this date — keep it, don't seed over it
         entries.push(realByDate[dISO]);
         loggedDates.push(dISO);
         continue;
       }
-      var emoPick = _rand(DEMO_EMOTIONS);
+      // rotate season every ~30 days so a year has ~12 distinct emotional
+      // textures instead of one flat mood
+      if(i % 30 === 0 || !currentSeason) currentSeason = _newSeason();
       entries.push({
         day: i + 1,
-        emo: emoPick,
+        emo: _weightedEmo(currentSeason),
         intent: _rand(DEMO_INTENTS),
         text: _rand(DEMO_ENTRIES),
         dateISO: dISO,
         date: dISO,
         timestamp: dISO + 'T09:30:00.000Z',
         ai: '',
-        demo: true   // tag so future seeds / resets know this is disposable
+        demo: true
       });
       loggedDates.push(dISO);
     }
@@ -223,17 +249,85 @@
   }
 
   function triggerMonthEndCeremony(){
-    // Fire the ceremony DIRECTLY, independent of any other trigger. Clear
-    // the "seen" guard so it plays, then invoke the function.
+    // Seed the CURRENT month with demo-tagged entries (every day of the
+    // month that doesn't already have one), then fire the ceremony. The
+    // ceremony's pendant needs real entries to weave from — an empty month
+    // produces a bare outline. Fake entries tag themselves demo:true so
+    // "clear demo data only" wipes them on exit.
     var ym = new Date().toISOString().slice(0,7);
     localStorage.removeItem('gc_ceremony_seen_' + ym);
     localStorage.removeItem('gc_portrait_seen_' + ym);
-    // Prefetch AI so the reflection text is ready the moment the ceremony
-    // opens (same behavior as real month-end submits).
+
+    var now = new Date();
+    var daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+    var existing = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+    var loggedDates = JSON.parse(localStorage.getItem('gc_logged_dates')||'[]');
+    var loggedSet = {};
+    loggedDates.forEach(function(d){ loggedSet[d] = true; });
+    var realInMonth = {};
+    existing.forEach(function(e){
+      var iso = (e.dateISO || e.date || e.timestamp || '').slice(0,10);
+      if(iso && iso.slice(0,7) === ym && !e.demo){
+        realInMonth[iso] = true;
+      }
+    });
+    // ── emotion distribution ──
+    // Real months have a SHAPE — two or three dominant emotions color most
+    // days, with the rest scattered across adjacent feelings. Uniform
+    // random from 18 emotions produces a flat ~5% chart that reads as
+    // "nothing happened." Instead: pick 2 anchor emotions (~45% & ~30%),
+    // a secondary pair (~15% combined), and spread the remaining ~10%
+    // across variety. Produces a believable top-4 chart.
+    var anchorA = _rand(DEMO_EMOTIONS);
+    var anchorB;
+    do { anchorB = _rand(DEMO_EMOTIONS); } while(anchorB === anchorA);
+    var secondaryA = _rand(DEMO_EMOTIONS);
+    var secondaryB = _rand(DEMO_EMOTIONS);
+    function _weightedEmo(){
+      var r = Math.random();
+      if(r < 0.45) return anchorA;
+      if(r < 0.75) return anchorB;
+      if(r < 0.86) return secondaryA;
+      if(r < 0.92) return secondaryB;
+      return _rand(DEMO_EMOTIONS); // ~8% variety
+    }
+
+    var added = 0;
+    for(var d = 1; d <= daysInMonth; d++){
+      var dISO = now.getFullYear() + '-' +
+                 String(now.getMonth()+1).padStart(2,'0') + '-' +
+                 String(d).padStart(2,'0');
+      if(loggedSet[dISO] || realInMonth[dISO]) continue;
+      existing.push({
+        day: d,
+        emo: _weightedEmo(),
+        intent: _rand(DEMO_INTENTS),
+        text: _rand(DEMO_ENTRIES),
+        dateISO: dISO,
+        date: dISO,
+        timestamp: dISO + 'T09:30:00.000Z',
+        ai: '',
+        demo: true
+      });
+      loggedDates.push(dISO);
+      added++;
+    }
+    if(added > 0){
+      localStorage.setItem('gc_entries', JSON.stringify(existing));
+      localStorage.setItem('gc_logged_dates', JSON.stringify(loggedDates));
+    }
+    // set start date if none
+    if(!localStorage.getItem('gc_start_date')){
+      var firstDay = now.getFullYear() + '-' +
+                     String(now.getMonth()+1).padStart(2,'0') + '-01';
+      localStorage.setItem('gc_start_date', firstDay);
+    }
+    // Prefetch AI so the reflection paragraph is ready the moment the
+    // ceremony opens (same behavior as real month-end submits).
     if(typeof prefetchMonthlyReflection === 'function') prefetchMonthlyReflection();
     if(typeof showMonthEndCeremony === 'function'){
       showMonthEndCeremony();
-      _toast('month-end ceremony firing');
+      _toast('seeded ' + added + ' demo ' + (added===1?'day':'days') + ' · month-end firing');
     } else {
       _toast('ceremony fn not loaded yet — try after portrait view');
     }
