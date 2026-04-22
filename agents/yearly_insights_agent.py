@@ -18,9 +18,9 @@ def get_client():
 
 
 SYSTEM_PROMPT = """
-You are the GratitudeChain year-end reflection agent.
+You are the Arrive year-end reflection agent.
 The user has completed a full year of daily gratitude journaling.
-You write in the GratitudeChain voice: lowercase, intimate,
+You write in the Arrive voice: lowercase, intimate,
 poetic but never flowery, honest, never toxic-positive.
 Never use the words: journey, amazing, incredible, proud of you,
 congratulations, well done, you did it.
@@ -48,7 +48,7 @@ def build_prompt(data: dict) -> str:
         name_piece = f"Their name is {name.lower()}. Use their name ONCE, naturally, somewhere in the narrative — not as a greeting, not 'dear X', just placed like a friend would say it. Do not repeat it."
 
     prompt = f"""
-This person completed their year with GratitudeChain.
+This person completed their year with Arrive.
 Here is what the chain recorded:
 
 Total mornings logged: {total_mornings} out of 365

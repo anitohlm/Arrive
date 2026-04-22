@@ -2155,7 +2155,7 @@ function showPhilosophyScreen(){
 // Email-based link invitation flow. Replaces the old shareable-code generator.
 // User types (1) a nickname they'll see for the person and (2) the target's
 // email address. Backend stores a pending invitation. If the target is a
-// GratitudeChain user, they'll see it on their Held > Alongside tab next time.
+// Arrive user, they'll see it on their Held > Alongside tab next time.
 function showLinkInviteFlow(){
   var overlay = document.createElement('div');
   overlay.id = 'linkInviteFlow';
@@ -2287,7 +2287,7 @@ function showSentConfirmation(overlay, nickname, email){
 
       '<p style="font-family:\'Fraunces\',serif;font-style:italic;font-weight:300;font-size:13.5px;',
         'color:rgba(245,237,224,0.55);margin:0 0 10px;max-width:320px;line-height:1.7">',
-        'if <span style="color:var(--gold)">'+email.replace(/</g,'&lt;')+'</span> is a GratitudeChain user,<br>',
+        'if <span style="color:var(--gold)">'+email.replace(/</g,'&lt;')+'</span> is on Arrive,<br>',
         'they\u2019ll see your invitation next time they open the app.</p>',
 
       '<p style="font-family:\'Fraunces\',serif;font-style:italic;font-weight:300;font-size:12.5px;',

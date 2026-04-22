@@ -194,13 +194,39 @@ try{ void function(){
 
   // ── SPARKLE RAIN — continuous downward fall across the whole canvas ──
   var rainParticles = [];
-  var RAIN_POOL = 30;
+  // Ambient sparkle shower — density scales with viewport so the rain
+  // reads as a continuous shower on any screen size (30 particles on
+  // phone ≈ 50 on iPad ≈ 70 on laptop). Keeping the effect on all
+  // viewports because it's part of the emotional texture of the chain.
+  var RAIN_POOL = window.innerWidth >= 1024 ? 70
+                : window.innerWidth >= 768  ? 50
+                : 30;
   var rainSparkColors = ['#e6b658','#fff8e0','#fffdf5',
     'rgba(255,255,255,0.75)','#c9943a','rgba(230,182,88,0.6)'];
 
   function spawnRainParticle(){
+    // Spawn OUTSIDE the chain's horizontal footprint so particles falling
+    // through never look like stray knots near the clasp. The chain's
+    // widest horizontal extent is ~NECKLACE_R on each side of center; we
+    // keep a small margin on top of that.
+    var chainHalfWidth = (NECKLACE_R || 240) + 20;
+    var leftBand  = NECKLACE_CX - chainHalfWidth;
+    var rightBand = NECKLACE_CX + chainHalfWidth;
+    var x;
+    if(leftBand > 20 && rightBand < W - 20){
+      // enough side real-estate to spawn in the bands outside the chain
+      if(Math.random() < 0.5){
+        x = Math.random() * Math.max(20, leftBand);
+      } else {
+        x = rightBand + Math.random() * Math.max(20, W - rightBand);
+      }
+    } else {
+      // narrow viewport (phone) — original full-width spawn is fine,
+      // rain reads as a shower across the whole screen, not stray dots
+      x = Math.random() * W;
+    }
     rainParticles.push({
-      x: Math.random() * W,
+      x: x,
       y: -8 - Math.random() * H * 0.4,
       vx: (Math.random()-0.5) * 0.28,
       vy: 0.3 + Math.random() * 0.55,
@@ -288,16 +314,32 @@ try{ void function(){
   function drawGhostCircle(){
     ctx.save();
     ctx.beginPath();
-    var steps = 180;
+    var steps = 220;
     for(var s = 0; s <= steps; s++){
       var a = (s / steps) * Math.PI * 2;
       var p = _deformedPoint(a, 0);
       if(s === 0) ctx.moveTo(p.x, p.y);
       else ctx.lineTo(p.x, p.y);
     }
-    ctx.strokeStyle = 'rgba(201,148,58,0.06)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([3, 7]);
+    // Three-layer chain outline so the thread reads clearly against any
+    // viewport size. Past knots sit directly on top of these layers so
+    // they never look stranded — the chain is always visible between.
+    //   - outer bloom (warm radial halo) sits on top of the chain line
+    //   - solid warm underlayer gives continuity
+    //   - dashed gold overlay gives the chain texture
+    ctx.strokeStyle = 'rgba(201,148,58,0.22)';
+    ctx.lineWidth = 1.4;
+    ctx.shadowColor = 'rgba(201,148,58,0.35)';
+    ctx.shadowBlur = 6;
+    ctx.setLineDash([]);
+    ctx.stroke();
+    ctx.shadowColor = 'transparent';
+    ctx.shadowBlur = 0;
+
+    // dashed overlay for the beaded-chain feel
+    ctx.strokeStyle = 'rgba(230,182,88,0.45)';
+    ctx.lineWidth = 0.9;
+    ctx.setLineDash([4, 5]);
     ctx.stroke();
     ctx.setLineDash([]);
     ctx.restore();
@@ -976,7 +1018,12 @@ try{ void function(){
       }
     }
 
-    // 7. capsule glow indicators
+    // 7. capsule glow indicators — unfold = surprise.
+    // We deliberately hide ALL pre-ready capsules. No hint on the chain
+    // that a capsule is scheduled. The unfold tab is where the user will
+    // discover the capsule naturally once it matures. A gold spec on the
+    // chain telegraphs the surprise; removing it lets the capsule open
+    // as the gift it was meant to be.
     if(typeof getCapsules === 'function' && allKnotPositions.length){
       var _caps = getCapsules();
       var _todayStr = (typeof _todayISO === 'function') ? _todayISO() : '';
@@ -989,25 +1036,16 @@ try{ void function(){
         var dateReady = c.unlock_date <= _todayStr;
         var moodReady = !c.mood_trigger || c.mood_trigger === _todayEmo;
         var isReady = dateReady && moodReady;
+        if(!isReady) return; // ← hidden until unlock day
         ctx.save();
-        if(isReady){
-          var pulse = 0.7 + 0.3 * Math.sin(time * Math.PI * 2 / 1.8);
-          var gr = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, 28 * pulse);
-          gr.addColorStop(0, 'rgba(201,148,58,0.65)');
-          gr.addColorStop(1, 'rgba(201,148,58,0)');
-          ctx.fillStyle = gr;
-          ctx.beginPath(); ctx.arc(pos.x, pos.y, 28 * pulse, 0, Math.PI * 2); ctx.fill();
-          ctx.fillStyle = 'rgba(201,148,58,0.9)';
-          ctx.beginPath(); ctx.arc(pos.x, pos.y, 4, 0, Math.PI * 2); ctx.fill();
-        } else {
-          var gr2 = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, 18);
-          gr2.addColorStop(0, 'rgba(201,148,58,0.18)');
-          gr2.addColorStop(1, 'rgba(201,148,58,0)');
-          ctx.fillStyle = gr2;
-          ctx.beginPath(); ctx.arc(pos.x, pos.y, 18, 0, Math.PI * 2); ctx.fill();
-          ctx.fillStyle = 'rgba(201,148,58,0.4)';
-          ctx.beginPath(); ctx.arc(pos.x, pos.y, 2.5, 0, Math.PI * 2); ctx.fill();
-        }
+        var pulse = 0.7 + 0.3 * Math.sin(time * Math.PI * 2 / 1.8);
+        var gr = ctx.createRadialGradient(pos.x, pos.y, 0, pos.x, pos.y, 28 * pulse);
+        gr.addColorStop(0, 'rgba(201,148,58,0.65)');
+        gr.addColorStop(1, 'rgba(201,148,58,0)');
+        ctx.fillStyle = gr;
+        ctx.beginPath(); ctx.arc(pos.x, pos.y, 28 * pulse, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(201,148,58,0.9)';
+        ctx.beginPath(); ctx.arc(pos.x, pos.y, 4, 0, Math.PI * 2); ctx.fill();
         ctx.restore();
       });
     }

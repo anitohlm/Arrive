@@ -395,18 +395,44 @@
     'gc_api_base',            // dev override
   ];
 
-  // Remove only the demo-tagged entries, keep the real ones.
+  // Remove only the demo-tagged entries, keep the real ones. Also clears
+  // all demo-associated state (pendant choice, ceremony-seen flags,
+  // year-complete flags) regardless of whether any entries were tagged —
+  // so users whose entries predate the demo:true flag still get the UI
+  // reset they expect.
   function clearDemoDataOnly(){
     var existing = JSON.parse(localStorage.getItem('gc_entries')||'[]');
     var realEntries = existing.filter(function(e){ return !e.demo; });
     var wiped = existing.length - realEntries.length;
-    if(wiped === 0){
-      _toast('no demo entries to clear');
+
+    // check if there's any demo-associated state to clear (pendant, ceremony flags)
+    var hasPendant = false;
+    var hasCeremonyFlags = false;
+    for(var i0 = 0; i0 < localStorage.length; i0++){
+      var k0 = localStorage.key(i0);
+      if(!k0) continue;
+      if(k0.indexOf('gc_pendant_year_') === 0) hasPendant = true;
+      if(k0.indexOf('gc_ceremony_seen_') === 0
+         || k0.indexOf('gc_portrait_seen_') === 0
+         || k0.indexOf('gc_year_complete_') === 0
+         || k0 === 'gc_annual_pending') hasCeremonyFlags = true;
+    }
+
+    if(wiped === 0 && !hasPendant && !hasCeremonyFlags){
+      _toast('already clean — nothing demo to clear');
       return;
     }
-    if(!confirm('clear ' + wiped + ' demo ' + (wiped===1?'entry':'entries') +
-                '? (' + realEntries.length + ' real ' +
-                (realEntries.length===1?'entry':'entries') + ' will be kept)')) return;
+
+    var pieces = [];
+    if(wiped > 0) pieces.push(wiped + ' demo ' + (wiped===1?'entry':'entries'));
+    if(hasPendant) pieces.push('pendant choice');
+    if(hasCeremonyFlags) pieces.push('ceremony flags');
+    var msg = 'clear ' + pieces.join(' + ') + '?';
+    if(realEntries.length > 0){
+      msg += '\n\nyour ' + realEntries.length + ' real ' +
+             (realEntries.length===1?'entry':'entries') + ' will be kept.';
+    }
+    if(!confirm(msg)) return;
 
     // rebuild loggedDates from real entries only
     var realIsos = {};
@@ -416,7 +442,14 @@
     });
     localStorage.setItem('gc_entries', JSON.stringify(realEntries));
     localStorage.setItem('gc_logged_dates', JSON.stringify(Object.keys(realIsos)));
-    // also drop ceremony / portrait seen flags for months that no longer have entries
+    // Drop ceremony / portrait seen flags for:
+    //   (a) months that no longer have entries (legit — the ceremony is
+    //       meaningless without data)
+    //   (b) the CURRENT calendar month (even if it has real entries) —
+    //       a month cannot legitimately be "already seen complete" before
+    //       it's over; this flag is always demo residue when the month
+    //       isn't yet past.
+    var _nowYm = new Date().toISOString().slice(0,7);
     var keysToCheck = [];
     for(var i = 0; i < localStorage.length; i++){
       var k = localStorage.key(i);
@@ -426,6 +459,11 @@
     }
     keysToCheck.forEach(function(k){
       var ym = k.split('_').pop();
+      if(ym === _nowYm){
+        // Current month can never legitimately hold this flag — always clear.
+        localStorage.removeItem(k);
+        return;
+      }
       var hasRealForMonth = realEntries.some(function(e){
         return ((e.dateISO || e.date || e.timestamp || '')+'').slice(0,7) === ym;
       });
@@ -440,7 +478,60 @@
     } else {
       localStorage.removeItem('gc_start_date');
     }
+    // also clear any pendant choices — those were picked FROM the demo
+    // chain, and with demo entries gone their reference data is meaningless.
+    // The splash pendant cache in entry-detail.js reads from these keys
+    // on every frame, so if we don't clear them the chain keeps a stale
+    // pendant dangling. Use the shared helper.
+    _clearPendantChoices();
+    // also drop year-complete flags so ceremonies can re-fire later
+    var yearCompleteKeys = [];
+    for(var yi = 0; yi < localStorage.length; yi++){
+      var yk = localStorage.key(yi);
+      if(yk && (yk.indexOf('gc_year_complete_') === 0 || yk.indexOf('gc_annual_pending') === 0)){
+        yearCompleteKeys.push(yk);
+      }
+    }
+    yearCompleteKeys.forEach(function(k){ localStorage.removeItem(k); });
     _toast('demo cleared. reloading…');
+    setTimeout(function(){ location.reload(); }, 500);
+  }
+
+  // Wipes every entry, regardless of whether it's tagged demo:true. For
+  // users whose entries predate the demo-tag feature (old seed runs).
+  // Preserves user profile, time capsules, preferences.
+  function clearAllChainEntries(){
+    var existing = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+    if(existing.length === 0){
+      _toast('chain is already empty');
+      return;
+    }
+    if(!confirm('wipe ALL ' + existing.length + ' chain ' +
+                (existing.length===1?'entry':'entries') + '?\n\n' +
+                'regardless of whether they\'re tagged demo or real. ' +
+                'your name, email, birthday, time capsules stay.')) return;
+    localStorage.setItem('gc_entries', '[]');
+    localStorage.setItem('gc_logged_dates', '[]');
+    localStorage.removeItem('gc_logged_today');
+    localStorage.removeItem('gc_start_date');
+    localStorage.removeItem('gc_day');
+    _clearPendantChoices();
+    // ceremony flags
+    var keysToWipe = [];
+    for(var i = 0; i < localStorage.length; i++){
+      var k = localStorage.key(i);
+      if(k && (k.indexOf('gc_ceremony_seen_') === 0
+            || k.indexOf('gc_portrait_seen_') === 0
+            || k.indexOf('gc_year_complete_') === 0
+            || k === 'gc_annual_pending'
+            || k === 'gc_grace'
+            || k === 'gc_grace_declined'
+            || k === 'gc_birthday_knots')){
+        keysToWipe.push(k);
+      }
+    }
+    keysToWipe.forEach(function(k){ localStorage.removeItem(k); });
+    _toast('chain cleared. reloading…');
     setTimeout(function(){ location.reload(); }, 500);
   }
 
@@ -635,7 +726,11 @@
       +   '<div class="_demoRow">'
       +     '<button class="_demoAct" data-act="clear-demo">clear demo data only</button>'
       +   '</div>'
-      +   '<p style="font-family:\'DM Mono\',monospace;font-size:9px;color:rgba(245,237,224,0.4);margin:6px 0 10px;line-height:1.5">removes seeded demo entries. keeps everything you wrote.</p>'
+      +   '<p style="font-family:\'DM Mono\',monospace;font-size:9px;color:rgba(245,237,224,0.4);margin:6px 0 10px;line-height:1.5">removes seeded demo entries (tagged). keeps everything you wrote.</p>'
+      +   '<div class="_demoRow">'
+      +     '<button class="_demoAct" data-act="clear-chain">clear all chain entries</button>'
+      +   '</div>'
+      +   '<p style="font-family:\'DM Mono\',monospace;font-size:9px;color:rgba(245,237,224,0.4);margin:6px 0 10px;line-height:1.5">wipes every entry regardless of tag (for old untagged seeds). keeps profile + time capsules.</p>'
       +   '<div class="_demoRow">'
       +     '<button class="_demoAct" data-act="reset-journey">reset journey (demo + real)</button>'
       +   '</div>'
@@ -708,6 +803,7 @@
       if(a === 'ms-300')   return triggerMilestone(300);
       if(a === 'grace')    return triggerGraceDay();
       if(a === 'clear-demo')    return clearDemoDataOnly();
+      if(a === 'clear-chain')   return clearAllChainEntries();
       if(a === 'reset-journey') return resetJourney();
       if(a === 'reset-all')     return resetEverything();
       if(a === 'reset')    return resetAll(); // legacy fallback

@@ -35,7 +35,7 @@ def generate_portrait(user_id: str) -> str:
         model=os.getenv("FOUNDRY_MODEL_DEPLOYMENT_NAME"),
         messages=[
             SystemMessage(
-                content="""You are a thoughtful insights analyst for GratitudeChain.
+                content="""You are a thoughtful insights analyst for Arrive.
 Analyze the user's gratitude entries from the past month.
 Identify patterns and generate a warm Gratitude Portrait.
 Format your response exactly like this:

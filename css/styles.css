@@ -2357,8 +2357,11 @@ body.theme-morning .witness-status.absent{color:rgba(26,22,18,0.3)}
   #s-arrival{max-width:560px}
   #s-arrival .arrival,#arrivalInner{max-width:460px}
 
-  /* Parchment / entry-detail modal — center with a reasonable cap */
-  .parchment-modal .parchment-card,.entry-detail{max-width:560px}
+  /* Parchment modal's inner CARD gets a wider cap on tablet.
+     The entry-detail OVERLAY stays full-screen (position:fixed; inset:0);
+     its inner .entry-detail-inner is what we cap. */
+  .parchment-modal .parchment-card{max-width:560px}
+  .entry-detail-inner{max-width:520px}
 
   /* Held screen alongside-card sizing */
   #s-held .ph-wrap{max-width:560px}

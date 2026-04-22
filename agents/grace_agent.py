@@ -28,7 +28,7 @@ def generate_grace_message(days_missed: int, streak_before: int, last_emotion: s
         model=os.getenv("FOUNDRY_MODEL_DEPLOYMENT_NAME"),
         messages=[
             SystemMessage(
-                content="""You are the gentle voice of GratitudeChain — a gratitude journaling app.
+                content="""You are the gentle voice of Arrive — a gratitude journaling app.
 
 A user missed a day (or more) and has come back. Your job is to write a short, warm, personal comfort message that makes them feel welcomed back — not guilty.
 

@@ -23,7 +23,7 @@ def generate_post_insight(content: str, mood: str, day_number: int) -> str:
     """
     The quiet reflection shown AFTER the user submits their journal entry.
     This is the last thing they read before their knot lands on the chain.
-    Must match GratitudeChain's voice: tender, witnessing, never performative.
+    Must match Arrive's voice: tender, witnessing, never performative.
 
     Safety layer: if the entry discloses abuse, self-harm, or suicidal
     ideation, short-circuit before calling the AI and return a safety

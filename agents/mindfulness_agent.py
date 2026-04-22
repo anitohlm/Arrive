@@ -22,7 +22,7 @@ def get_exercise(mood: str) -> str:
         model=os.getenv("FOUNDRY_MODEL_DEPLOYMENT_NAME"),
         messages=[
             SystemMessage(
-                content="""You are a calm, supportive mindfulness guide for GratitudeChain.
+                content="""You are a calm, supportive mindfulness guide for Arrive.
 When given a user's mood, guide them through a short breathing
 or grounding exercise.
 Give clear numbered steps. Maximum 5 steps.

@@ -105,6 +105,31 @@ localStorage.setItem('gc_theme', 'dark');
 function setTheme(){ /* dark-only; no-op */ }
 
 
+// ═══ HEAL: stale current-month "ceremony seen" flag ═══
+// If a user fired the month-end ceremony via the demo panel (or an earlier
+// buggy code path) while the month is still in progress, the
+// gc_ceremony_seen_YYYY-MM flag gets set. That flag then tricks the Portrait
+// into rendering the month as a FULLY-FORMED pendant even though the month
+// hasn't ended yet — April showing "becoming" + "you kept leaning..." on
+// April 22 is the bug this heal removes.
+//
+// Rule: if the flag is for the CURRENT calendar month AND today is not the
+// last day of that month, clear the flag. The ceremony will re-fire when
+// the real month-end arrives.
+(function healCurrentMonthCeremonyFlag(){
+  try{
+    var now = new Date();
+    var pad = function(n){ return String(n).padStart(2,'0'); };
+    var ym  = now.getFullYear() + '-' + pad(now.getMonth()+1);
+    var lastDayOfMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+    var isLastDay = now.getDate() === lastDayOfMonth;
+    if(isLastDay) return; // flag could be legitimate today
+    localStorage.removeItem('gc_ceremony_seen_' + ym);
+    localStorage.removeItem('gc_portrait_seen_' + ym);
+  }catch(e){}
+})();
+
+
 // ═══ CLOUD SYNC FLAG ═══════════════════════════════════
 // Cloud-backed by default (hackathon requirement — Azure Cosmos DB is
 // an active part of the stack). Entries, photos, voice, and AI

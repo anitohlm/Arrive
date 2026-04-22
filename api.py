@@ -17,10 +17,10 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 load_dotenv()
-log = logging.getLogger("gratitudechain")
+log = logging.getLogger("arrive")
 limiter = Limiter(key_func=get_remote_address, default_limits=[])
 
-app = FastAPI(title="GratitudeChain API", version="1.0.0")
+app = FastAPI(title="Arrive API", version="1.0.0")
 
 # Allow the static preview (port 8765) + local dev origins to talk to the API.
 # In production, replace with the actual domain.
@@ -135,7 +135,7 @@ class LinkDeclineBody(BaseModel):
 # ── Routes ──
 @app.get("/health")
 def health():
-    return {"status": "ok", "app": "GratitudeChain"}
+    return {"status": "ok", "app": "Arrive"}
 
 @app.post("/open-app")
 def open_app(request: OpenAppRequest):

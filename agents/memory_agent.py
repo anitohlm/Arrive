@@ -38,7 +38,7 @@ def resurface_memories(user_id: str, mood: str) -> dict:
         model=os.getenv("FOUNDRY_MODEL_DEPLOYMENT_NAME"),
         messages=[
             SystemMessage(
-                content="""You are a gentle memory guide for GratitudeChain.
+                content="""You are a gentle memory guide for Arrive.
 You will receive past gratitude entries from the user.
 Craft a warm, connecting message that resurfaces these memories.
 Start with: 'Here is what you were grateful for before...'

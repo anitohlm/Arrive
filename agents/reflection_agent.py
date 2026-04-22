@@ -132,7 +132,7 @@ def get_emotion_insight(mood: str, intention: str = "", name: str = "") -> str:
     """
     Produces the paragraph shown on the insight screen — a validating, tender
     frame for the user's current emotion. 3–4 short sentences. Must match
-    GratitudeChain's voice: quiet, tender, never performative, never guilty.
+    Arrive's voice: quiet, tender, never performative, never guilty.
     Fails to empty string on error — the frontend will fall back to hardcoded.
     """
     try:

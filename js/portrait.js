@@ -4238,7 +4238,7 @@ function renderMonthShareCanvas(){
   // wordmark
   ctx.fillStyle = 'rgba(201,148,58,0.35)';
   ctx.font = '16px "Fraunces", serif';
-  ctx.fillText('GratitudeChain', 540, 980);
+  ctx.fillText('Arrive', 540, 980);
 
   return cv;
 }
@@ -4305,7 +4305,7 @@ function renderYearShareCanvas(){
   // wordmark
   ctx.fillStyle = 'rgba(201,148,58,0.25)';
   ctx.font = '16px "DM Mono", monospace';
-  ctx.fillText('GratitudeChain  ·  your year in knots', 540, 1860);
+  ctx.fillText('Arrive  ·  your year in knots', 540, 1860);
 
   return cv;
 }
@@ -4316,7 +4316,7 @@ function shareCanvasBlob(canvas, filename, caption){
     var file;
     try{ file = new File([blob], filename, {type:'image/png'}); }catch(e){ file = null; }
     if(file && navigator.canShare && navigator.canShare({files:[file]})){
-      navigator.share({files:[file], title:'GratitudeChain', text: caption}).catch(function(){});
+      navigator.share({files:[file], title:'Arrive', text: caption}).catch(function(){});
       return;
     }
     // fallback: download
@@ -4349,8 +4349,8 @@ $('shareMonthBtn').addEventListener('click', function(){
     var now = new Date();
     var month = now.toLocaleDateString('en-US',{month:'long'}).toLowerCase();
     var stats = computeMonthStats(now.toISOString().slice(0,7));
-    var caption = month + ' was ' + (stats.word || 'held') + '. #GratitudeChain';
-    shareCanvasBlob(cv, 'gratitudechain-'+month+'.png', caption);
+    var caption = month + ' was ' + (stats.word || 'held') + '. #Arrive';
+    shareCanvasBlob(cv, 'arrive-'+month+'.png', caption);
   });
 });
 
@@ -4359,8 +4359,8 @@ $('shareYearBtn').addEventListener('click', function(){
   withShareLoading(btn, 300, function(){
     var cv = renderYearShareCanvas();
     var shareYear = gcStartDate ? new Date(gcStartDate).getFullYear() : new Date().getFullYear();
-    var caption = shareYear + ' in knots. #GratitudeChain';
-    shareCanvasBlob(cv, 'gratitudechain-'+shareYear+'.png', caption);
+    var caption = shareYear + ' in knots. #Arrive';
+    shareCanvasBlob(cv, 'arrive-'+shareYear+'.png', caption);
   });
 });
 
