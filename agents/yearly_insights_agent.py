@@ -127,7 +127,14 @@ FALLBACKS = {
 def get_yearly_insights(data: dict) -> dict:
     try:
         client = get_client()
-        model = os.getenv("CHAT_MODEL", "claude-haiku-4-5-2")
+        # Prefer FOUNDRY_MODEL_DEPLOYMENT_NAME (used by every other agent).
+        # CHAT_MODEL kept for backwards compat; falls back to the hardcoded
+        # claude-haiku only if neither is set.
+        model = (
+            os.getenv("FOUNDRY_MODEL_DEPLOYMENT_NAME")
+            or os.getenv("CHAT_MODEL")
+            or "claude-haiku-4-5-2"
+        )
 
         response = client.complete(
             model=model,

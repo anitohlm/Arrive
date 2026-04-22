@@ -852,8 +852,26 @@ try{ void function(){
       updateParticles(cx,cy);
     } else {
       // ── LOGGED: necklace formation ──
+      // `calendarDay` is where today falls relative to the start date.
+      // `displayDay` is how far around the necklace we draw knots — up to
+      // today, normally. But if the user has logged FUTURE-dated entries
+      // (demo year-end seed fills Jan→Dec of the current year including
+      // dates past today), extend the drawing range so the chain appears
+      // visually WHOLE. Without this, a fully-seeded year only draws knots
+      // up to today (~111 knots in April) and the chain reads as partial.
       var calendarDay = gcStartDate ? getDayNumber(todayISO()) : 1;
       var displayDay = Math.max(1, calendarDay);
+      try {
+        var _furthestLoggedDay = 0;
+        (gcLoggedDates || []).forEach(function(iso){
+          if(!iso) return;
+          var dn = getDayNumber(iso);
+          if(dn > _furthestLoggedDay) _furthestLoggedDay = dn;
+        });
+        if(_furthestLoggedDay > displayDay){
+          displayDay = Math.min(TOTAL_DAYS, _furthestLoggedDay);
+        }
+      } catch(e){}
 
       // 0. sparkle rain — behind everything
       updateRainParticles();
@@ -906,7 +924,10 @@ try{ void function(){
         // Chain symmetry rule: no visual emphasis on specific days — every past
         // morning looks the same. Birthdays are the only exception.
         var isBdayDay = gcBirthdayKnotsSet.has(dayNumber);
-        var isToday = dayNumber === displayDay;
+        // "today" is the REAL calendar day, not the last-displayed day.
+        // Needed when displayDay was extended past today to show future
+        // logged entries (e.g. year-end demo seed).
+        var isToday = dayNumber === calendarDay;
 
         if(isToday){
           if(todayFillTime<0){
