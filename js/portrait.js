@@ -903,16 +903,16 @@ function showMonthEndCeremony(){
   var dpr = Math.min(window.devicePixelRatio||1, 2);
   var _vwShort = Math.min(window.innerWidth, window.innerHeight);
   var _cvsSize = Math.round(Math.max(180, Math.min(380, _vwShort * 0.44)));
+  // Canvas sized 40% LARGER than the rose drawing radius — rose uses R
+  // equal to half of _cvsSize at roughly 0.7, so petals end at ~35% of
+  // canvas width, leaving ~30% empty margin around the drawing. That
+  // empty margin is transparent-to-dark and has no alpha, so the canvas
+  // rectangle edges naturally dissolve into the overlay without any
+  // CSS mask (which was clipping the outer petals).
   var knotCanvas = document.createElement('canvas');
   knotCanvas.style.cssText = [
     'width:'+_cvsSize+'px','height:'+_cvsSize+'px',
-    'opacity:0','transition:opacity 600ms ease',
-    // Radial mask: canvas is fully visible at center, fades to fully
-    // transparent at the edges. Kills the visible rectangular frame
-    // caused by the canvas's internal glow gradient reaching the
-    // square bounds. No blend mode needed — mask does the softening.
-    '-webkit-mask-image:radial-gradient(circle at center, #000 40%, rgba(0,0,0,0) 85%)',
-    'mask-image:radial-gradient(circle at center, #000 40%, rgba(0,0,0,0) 85%)'
+    'opacity:0','transition:opacity 600ms ease'
   ].join(';');
   knotCanvas.width = _cvsSize * dpr;
   knotCanvas.height = _cvsSize * dpr;
@@ -1213,7 +1213,10 @@ function showMonthEndCeremony(){
   function clearCanvas(){
     weaveCtx.clearRect(0,0,W_CVS,H_CVS);
   }
-  var W_CVS = 220, H_CVS = 220;
+  // Match the canvas's actual CSS pixel size so the rose fills the
+  // canvas regardless of responsive sizing. Was hardcoded 220 which
+  // clipped on small phones and left dead-space on tablets.
+  var W_CVS = _cvsSize, H_CVS = _cvsSize;
   var cx = W_CVS/2, cy = H_CVS/2;
   var R = Math.min(W_CVS, H_CVS) * 0.38;
   var seed = monthIndex * 137.5;
