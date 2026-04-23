@@ -825,11 +825,14 @@ function showMonthEndCeremony(){
     'opacity:1','pointer-events:none'
   ].join(';');
 
-  // announcement block — absolute, upper area (clear of the centered rose)
+  // announcement block — flows inline as the first item in knotWrap so
+  // the full stack (text + rose + word + rule + message) is centered
+  // together as one group, rather than text pinned to top with dead
+  // space between it and the rose.
   var announceWrap = document.createElement('div');
   announceWrap.style.cssText = [
-    'position:absolute','top:10%','left:0','right:0',
     'display:flex','flex-direction:column','align-items:center','gap:10px',
+    'margin-bottom:8px',
     'pointer-events:none','transition:transform 3000ms ease, opacity 3000ms ease'
   ].join(';');
 
@@ -863,13 +866,13 @@ function showMonthEndCeremony(){
   announceWrap.appendChild(monthNameEl);
   announceWrap.appendChild(morningsEl);
 
-  // knot block — flex column centered, padding reserves space for the
-  // announcement block above (which is position:absolute at top:10%)
+  // whole stack — announcement + rose + word + rule + message — centered
+  // as one group. No absolute-positioned announcement anymore.
   var knotWrap = document.createElement('div');
   knotWrap.style.cssText = [
     'position:absolute','inset:0',
     'display:flex','flex-direction:column','align-items:center','justify-content:center',
-    'gap:14px','padding:28vh 32px 120px','pointer-events:none'
+    'gap:14px','padding:32px','pointer-events:none'
   ].join(';');
 
   // rose sized fluidly to viewport — scales continuously across every
@@ -991,6 +994,7 @@ function showMonthEndCeremony(){
       });
   })();
 
+  knotWrap.appendChild(announceWrap);   // 'the chain has woven / april / thirty mornings'
   knotWrap.appendChild(knotCanvas);
   knotWrap.appendChild(wordEl);
   knotWrap.appendChild(rule);
@@ -1027,8 +1031,9 @@ function showMonthEndCeremony(){
     return pg;
   }
   var pages = [mkPage(), mkPage(), mkPage(), mkPage(), mkPage(), mkPage()];
-  // page 0 holds the existing beats 2-5 elements
-  pages[0].appendChild(announceWrap);
+  // page 0 holds the existing beats 2-5 elements.
+  // announceWrap is now injected as the first child of knotWrap in the
+  // child-insertion block below (so the full stack centers as one group).
   pages[0].appendChild(knotWrap);
   pages.forEach(function(pg){ pagesContainer.appendChild(pg); });
 
