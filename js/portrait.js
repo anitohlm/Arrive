@@ -1028,9 +1028,13 @@ function showMonthEndCeremony(){
   knotWrap.appendChild(knotCanvas);
   knotWrap.appendChild(wordEl);
   knotWrap.appendChild(rule);
-  // msgEl moved to its own dedicated page (pages[1] / reflectionPage)
-  // so the ceremony page stays centered on the rose.
-  reflectionPage.appendChild(msgEl);
+  // msgEl is kept in memory as the AI-reflection destination for the
+  // resolver, but mounted hidden on page 0 (opacity stays 0 throughout
+  // page-0 beat). The VISIBLE reflection paragraph lives on page 5
+  // (closing beat) via _monthReflectionClosingEl. Keeping msgEl mounted
+  // satisfies the resolver's `if(!msgEl.parentNode) return` guard.
+  msgEl.style.display = 'none';
+  knotWrap.appendChild(msgEl);
 
   // in-page swipe hint — sits below msgEl inside page 1, fades in at t=14500
   var swipeHintInPage = document.createElement('p');
