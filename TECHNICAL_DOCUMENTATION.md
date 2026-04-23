@@ -83,7 +83,7 @@ Arrive/
 │    gc_time_capsules    future-self letters               │
 │    gc_grace            {month, remaining}                │
 └────────────┬─────────────────────────────────────────────┘
-             │ HTTPS/JSON  (API_BASE: :8766 dev, same-origin prod)
+             │ HTTPS/JSON  (API_BASE: arrive.azurewebsites.net in prod, :8766 dev)
 ┌────────────▼─────────────────────────────────────────────┐
 │  FASTAPI (api.py)                                        │
 │    - CORS (dev origins 8765 / 8000 / 8800)               │
@@ -104,84 +104,91 @@ Arrive/
 
 ---
 
-## 4. Running the project locally (full working app)
+## 4. Running the project (live deployment)
 
-### 4.1 Prerequisites
+Arrive is **already deployed** to Azure. No local setup is required to use or demo the app.
 
-- **Python 3.10+**
-- **Azure subscription** with:
-  - Cosmos DB account (SQL API) — database `gratitudechain`
-  - AI Foundry project with a model deployment
-  - AI Search service with an index
-- **`az login`** once — so `DefaultAzureCredential` can mint tokens for Foundry
+### 4.1 Live URLs
 
-### 4.2 Environment variables
+| Tier | URL | Azure service |
+|---|---|---|
+| Frontend | **https://mango-wave-04adc570f.7.azurestaticapps.net** | Azure Static Web Apps (Free) |
+| Backend API | **https://arrive.azurewebsites.net** | Azure App Service (Linux, Python 3.14, Free F1) |
+| Database | (internal) | Azure Cosmos DB — database `gratitudechain` |
+| AI | (internal) | Azure AI Foundry project + model deployment |
+| Search | (internal) | Azure AI Search — index `gratitude-entries` |
 
-Copy `.env.example.txt` → `.env` at the project root and fill in:
+Open the frontend URL in any modern browser — sign in, write a morning entry, and the full agent pipeline runs against live Azure services.
+
+### 4.2 Deployment pipeline (auto on `git push`)
+
+Both tiers redeploy automatically when `main` is updated:
+
+| Change | Workflow | Redeploy target |
+|---|---|---|
+| `index.html`, `js/`, `css/`, `assets/` | `.github/workflows/azure-static-web-apps-mango-wave-04adc570f.yml` | Static Web App |
+| `api.py`, `agents/`, `requirements.txt`, any `.py` | `.github/workflows/main_arrive.yml` | App Service |
+
+Watch runs live at [GitHub Actions](https://github.com/anitohlm/GratitudeChain/actions). A push typically redeploys in 90 s (frontend) to 3 min (backend).
+
+### 4.3 Environment variables (App Service)
+
+Set under **arrive → Settings → Environment variables** in the Azure Portal:
 
 ```
-FOUNDRY_PROJECT_ENDPOINT=https://<resource>.services.ai.azure.com/api/projects/<project>
-FOUNDRY_AGENT_ID=<agent-guid>
-FOUNDRY_MODEL_DEPLOYMENT_NAME=<deployment-name>
-COSMOS_CONNECTION_STRING=AccountEndpoint=https://<acct>.documents.azure.com:443/;AccountKey=...;
-COSMOS_DATABASE=gratitudechain
-SEARCH_ENDPOINT=https://<search>.search.windows.net
-SEARCH_KEY=<admin-key>
-SEARCH_INDEX=gratitude-entries
+FOUNDRY_PROJECT_ENDPOINT        https://<resource>.services.ai.azure.com/api/projects/<project>
+FOUNDRY_MODEL_DEPLOYMENT_NAME   <deployment-name>
+COSMOS_CONNECTION_STRING        AccountEndpoint=...;AccountKey=...;
+COSMOS_DATABASE                 gratitudechain
+SEARCH_ENDPOINT                 https://<search>.search.windows.net
+SEARCH_KEY                      <admin-key>
+SEARCH_INDEX                    gratitude-entries
+SCM_DO_BUILD_DURING_DEPLOYMENT  true
+WEBSITES_PORT                   8000
+GC_DEBUG                        1           # optional — unlocks /debug/* routes
 ```
 
-### 4.3 Three-terminal startup
+**Auth to Foundry:** system-assigned managed identity on the `arrive` web app, granted `Cognitive Services User` (and `Azure AI Developer` where listed) on the Foundry resource. No client secrets in env vars.
 
-**Terminal 1 — backend (FastAPI + AI agents)**
-```powershell
-cd C:\Users\hmanito\GratitudeChain\GratitudeChain
-python -m venv .venv
-.\.venv\Scripts\activate
-pip install -r requirements.txt
-python -m uvicorn api:app --port 8766 --reload
+**Startup command:** (set under *Stack settings*)
 ```
-Expect: `Uvicorn running on http://0.0.0.0:8766`. Leave open.
-
-**Terminal 2 — Azure auth refresh (one-time per session)**
-```powershell
-az login
+python -m uvicorn api:app --host 0.0.0.0 --port 8000
 ```
-Sign in via the browser. Close the terminal when done.
 
-**Terminal 3 — static file server**
-```powershell
-cd C:\Users\hmanito\GratitudeChain
-python -m http.server 8765
-```
-Expect: `Serving HTTP on :: port 8765`. Leave open.
-
-**Browser:** `http://localhost:8765/GratitudeChain/index.html` → hard-refresh (`Ctrl+Shift+R`) to bypass any stale cache.
-
-> **Port 8766 (not 8000).** Windows Hyper-V reserves port 8000 (`WinError 10013`). The frontend's `API_BASE` in `js/state.js` hardcodes `http://localhost:8766` when on `localhost` / `127.0.0.1`.
-
-### 4.4 Sanity checks
+### 4.4 Sanity checks (against production)
 
 ```powershell
 # Backend alive?
-Invoke-RestMethod http://localhost:8766/health
+Invoke-RestMethod https://arrive.azurewebsites.net/health
 # → { status: "ok", app: "Arrive" }
 
-# Azure Foundry auth working?
-Invoke-RestMethod "http://localhost:8766/debug/reflection?mood=calm"
-# → returns prose if credentials are valid
+# Cosmos reachable?  (requires GC_DEBUG=1)
+Invoke-RestMethod https://arrive.azurewebsites.net/debug/cosmos
+# → { ok: true, entries_count: N, users_count: N, ... }
+
+# Foundry auth + round-trip?
+Invoke-RestMethod "https://arrive.azurewebsites.net/debug/reflection?mood=calm"
+# → { ok: true, text: "..." }
 ```
 
 ### 4.5 Cache-busting
 
-Every JS / CSS import in `index.html` carries a `?v=N` query string. After editing a frontend file, bump the version:
+Every JS / CSS import in `index.html` carries a `?v=N` query string. After editing a frontend file, bump the version (otherwise the SWA CDN + user browsers will serve stale copies):
 
 ```powershell
-(Get-Content index.html) -replace '\?v=117', '?v=118' | Set-Content index.html
+(Get-Content index.html) -replace '\?v=118', '?v=119' | Set-Content index.html
 ```
 
-### 4.6 Shutting down
+### 4.6 Optional — running locally for development
 
-Close terminal windows or `Ctrl+C` in each. localStorage persists across restarts; Cosmos data persists across everything.
+For rapid iteration without waiting on the deploy pipeline:
+
+1. **Backend** (`python -m uvicorn api:app --port 8766 --reload`) — the code auto-detects `localhost` and `API_BASE` becomes `http://localhost:8766`. Windows Hyper-V reserves port 8000 (`WinError 10013`) so we use 8766.
+2. **Env vars** — copy `.env.example.txt` → `.env` with the same values from §4.3.
+3. **Azure auth** — `az login` once per session so `DefaultAzureCredential` can mint tokens for Foundry.
+4. **Static server** — from the parent folder: `python -m http.server 8765` → open `http://localhost:8765/GratitudeChain/index.html`.
+
+localStorage persists across restarts; Cosmos data persists across everything.
 
 ---
 
@@ -374,22 +381,32 @@ Rain particles scale by viewport (30 on phone, 50 on tablet, 70 on laptop) and s
 
 ## 11. Deployment
 
-### 11.1 Azure App Service (backend)
+Arrive is deployed on a fully-free Azure footprint. See §4 for the live URLs and redeploy pipeline; this section covers the topology details.
 
-`startup.sh`:
-```bash
-python -m uvicorn api:app --host 0.0.0.0 --port 8000
-```
+### 11.1 Backend — Azure App Service (Linux, Free F1)
 
-Set env vars from §4.2 in App Service → Configuration. For `DefaultAzureCredential`:
-- Assign managed identity + grant Cognitive Services User on Foundry, **or**
-- Use client-credential env vars (`AZURE_TENANT_ID`, `AZURE_CLIENT_ID`, `AZURE_CLIENT_SECRET`)
+- **Name:** `arrive`
+- **URL:** https://arrive.azurewebsites.net
+- **Runtime:** Python 3.14, managed by Oryx
+- **Startup command:** `python -m uvicorn api:app --host 0.0.0.0 --port 8000` (Stack settings)
+- **Identity:** system-assigned managed identity → Foundry (Cognitive Services User, Azure AI Developer)
+- **Deploy source:** GitHub Actions (`main_arrive.yml`), triggered on any push to `main`
+- **Free F1 limits:** 60 CPU min/day, 1 GB RAM, 20-min idle sleep — first request after idle cold-starts in 5–15 s
 
-### 11.2 Static frontend
+### 11.2 Frontend — Azure Static Web Apps (Free)
 
-Serve `index.html` + siblings from Azure Static Web Apps, App Service static mount, or any CDN. When same-origin in production, `API_BASE` auto-resolves to `""`.
+- **URL:** https://mango-wave-04adc570f.7.azurestaticapps.net
+- **Deploy source:** GitHub Actions (`azure-static-web-apps-mango-wave-04adc570f.yml`)
+- **Upload bundle:** the workflow stages `index.html` + `js/` + `css/` + `assets/` into `_swa_dist/` to stay under the 250 MB Free tier limit (the rest of the repo — Python backend, docs, markdown — never ships to the CDN)
+- **`API_BASE`:** `js/state.js` resolves to `https://arrive.azurewebsites.net` for any host other than `localhost`
 
-### 11.3 Scheduled jobs (designed, not wired)
+### 11.3 CORS
+
+`api.py` allow-list:
+- `http://localhost:{8765,8000,8800}` + `127.0.0.1` — local dev
+- `allow_origin_regex: https://[a-z0-9-]+\.azurestaticapps\.net` — any preview slot or main SWA URL
+
+### 11.4 Scheduled jobs (designed, not wired)
 
 Monthly Portraits (1st of month) and Yearly insights → Azure Functions hitting `/monthly-insights` + `/yearly-insights` per user. Endpoints exist; timers do not.
 
@@ -433,7 +450,15 @@ Edit the `DEMO_EMOTIONS` / `DEMO_ENTRIES` arrays in `js/demo.js`. To adjust the 
 
 | Symptom | Fix |
 |---|---|
-| "Port 8000 in use" on Windows | Use `--port 8766` (Hyper-V reserves 8000) |
+| Live site shows `:( Application Error` | App Service crashed on import. Check **arrive → Log stream** for traceback. Usually a missing env var or missing role assignment. |
+| Live site shows Azure "Congratulations" placeholder | SWA build hasn't finished. Check GitHub Actions — wait for the green check. |
+| SWA build fails with "The size of the app content was too large" (250 MB) | `_swa_dist/` is over 250 MB. Trim `assets/` or exclude unused files in the workflow's staging step. |
+| `ClientAuthenticationError` from Foundry on Azure | Managed identity not enabled, or missing `Cognitive Services User` role on the Foundry resource. |
+| `/debug/cosmos` returns 404 on live site | `GC_DEBUG=1` not set in App Service env vars. Add it and restart. |
+| CORS error in browser console | Frontend origin not in allow-list. Confirm the SWA URL matches the `azurestaticapps\.net` regex in `api.py`. |
+| First request after idle takes 10 s+ | Free F1 tier cold-start. Expected. Upgrade to B1 Basic for always-on. |
+| Can't `git push` a workflow file change | PAT lacks `workflow` scope. Edit `.github/workflows/*.yml` via GitHub web UI instead. |
+| "Port 8000 in use" on Windows (local dev) | Use `--port 8766` — Hyper-V reserves 8000 |
 | Frontend shows stale copy after edit | Bump `?v=N`, hard-refresh |
 | "Already logged today" when it shouldn't be | Local ISO vs UTC mismatch. `todayISO()` uses local. Hard-refresh triggers heal. |
 | Azure AI call returns 401 | `az login` again or check managed identity role assignment |
