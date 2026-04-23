@@ -810,10 +810,12 @@ function showMonthEndCeremony(){
   var overlay = document.createElement('div');
   overlay.id = 'monthEndOverlay';
   overlay.style.cssText = [
-    'position:fixed','inset:0','z-index:200',
+    // z-index 180 — MUST stay below the DOM particle z-index of 185
+    // so the evaporating sparkles remain visible above the overlay.
+    'position:fixed','inset:0','z-index:180',
     // opaque dark-brown (matches app bg) so chain/splash doesn't bleed
     // through, but NOT pure #000 — pure black created visible rectangle
-    // edges around the mix-blend-mode:screen canvas and the text.
+    // edges around the canvas.
     'background:#0a0704',
     'overflow:hidden','cursor:default'
   ].join(';');
@@ -909,8 +911,8 @@ function showMonthEndCeremony(){
     // transparent at the edges. Kills the visible rectangular frame
     // caused by the canvas's internal glow gradient reaching the
     // square bounds. No blend mode needed — mask does the softening.
-    '-webkit-mask-image:radial-gradient(circle at center, #000 58%, rgba(0,0,0,0) 100%)',
-    'mask-image:radial-gradient(circle at center, #000 58%, rgba(0,0,0,0) 100%)'
+    '-webkit-mask-image:radial-gradient(circle at center, #000 40%, rgba(0,0,0,0) 85%)',
+    'mask-image:radial-gradient(circle at center, #000 40%, rgba(0,0,0,0) 85%)'
   ].join(';');
   knotCanvas.width = _cvsSize * dpr;
   knotCanvas.height = _cvsSize * dpr;
