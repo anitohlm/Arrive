@@ -1196,6 +1196,22 @@ body.theme-morning .settings-signout{color:#9a4a5a}
   transition:opacity 600ms var(--ease),transform 600ms var(--ease);
 }
 .bottom-nav.show{opacity:1;pointer-events:auto;transform:translateY(0)}
+/* Hide bottom nav while any ceremony/overlay is on screen — otherwise
+   the nav icons bleed through the transparent overlay and break the
+   ceremonial frame. Same pattern as the DEMO pill auto-hide in js/demo.js */
+body:has(#monthEndOverlay) .bottom-nav,
+body:has(#yearCeremonyOverlay) .bottom-nav,
+body:has(#yearCloseOverlay) .bottom-nav,
+body:has(#birthdayCeremonyOverlay) .bottom-nav,
+body:has(#necklaceWitnessLayer) .bottom-nav,
+body:has(.grace-overlay) .bottom-nav,
+body:has(#s-milestone.active) .bottom-nav,
+body:has(#monthReplayOverlay) .bottom-nav{
+  opacity:0 !important;
+  pointer-events:none !important;
+  transform:translateY(20px) !important;
+  transition:opacity 400ms ease, transform 400ms ease !important;
+}
 /* nav adapts to body theme */
 .bottom-nav{background:rgba(14,11,7,.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(201,148,58,.1)}
 body.theme-morning .bottom-nav{background:rgba(245,237,224,.9);border-top:1px solid rgba(26,22,18,.06)}

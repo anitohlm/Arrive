@@ -878,17 +878,17 @@ function showMonthEndCeremony(){
   announceWrap.appendChild(monthNameEl);
   announceWrap.appendChild(morningsEl);
 
-  // whole stack — centered within a safe-area-aware frame. Reserves
-  // padding for status bar (top), bottom nav (~80px), and gesture
-  // indicator via env(safe-area-inset-*), so the composition never
-  // bleeds into system chrome on any device.
+  // whole stack — truly centered. Bottom nav is auto-hidden during
+  // the ceremony (CSS :has() rule in styles.css), so we only need
+  // symmetric padding that respects device safe areas without biasing
+  // the composition up or down.
   var knotWrap = document.createElement('div');
   knotWrap.style.cssText = [
     'position:absolute','inset:0',
     'display:flex','flex-direction:column','align-items:center','justify-content:center',
     'gap:18px',
-    'padding-top:calc(env(safe-area-inset-top, 0px) + 24px)',
-    'padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 96px)',
+    'padding-top:calc(env(safe-area-inset-top, 0px) + 28px)',
+    'padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 28px)',
     'padding-left:28px','padding-right:28px',
     'pointer-events:none'
   ].join(';');
