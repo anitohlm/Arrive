@@ -872,10 +872,16 @@ function showMonthEndCeremony(){
     'gap:14px','padding:28vh 32px 120px','pointer-events:none'
   ].join(';');
 
-  // rose sized responsively to viewport — shrinks on short phones so the
-  // announcement text never collides with it
+  // rose sized responsively to viewport — shrinks on short phones to
+  // clear the announcement, scales up on tablets/desktops so it fills
+  // the frame instead of getting lost in a huge empty canvas
   var dpr = Math.min(window.devicePixelRatio||1, 2);
-  var _cvsSize = Math.max(160, Math.min(220, Math.min(window.innerWidth, window.innerHeight) * 0.42));
+  var _vwShort = Math.min(window.innerWidth, window.innerHeight);
+  var _cvsSize;
+  if(_vwShort >= 900)      _cvsSize = 340;   // desktop / iPad Pro landscape
+  else if(_vwShort >= 768) _cvsSize = 300;   // iPad portrait / laptop
+  else if(_vwShort >= 600) _cvsSize = 260;   // small tablets
+  else                     _cvsSize = Math.max(160, Math.min(220, _vwShort * 0.48));
   _cvsSize = Math.round(_cvsSize);
   var knotCanvas = document.createElement('canvas');
   knotCanvas.style.cssText = [
