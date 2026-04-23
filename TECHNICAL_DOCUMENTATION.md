@@ -441,23 +441,29 @@ Arrive is deployed on a fully-free Azure footprint. See §4 for the live URLs an
 
 ### 11.4 Scheduled jobs — **DEPLOYED** (Azure Functions)
 
-Two Timer Triggers live on the `arrive-scheduler` Function App (Consumption plan, free tier):
+Two Timer Triggers live on the `arrive-scheduler` Function App (Consumption plan, free tier). Both run **daily**, with per-user filtering on the backend so insights fire on each user's *personal* milestone (counted from their first-entry date), not on the calendar month/year:
 
-| Function | Schedule (UTC) | Calls |
+| Function | Runs | Fires insight when |
 |---|---|---|
-| `monthly_portraits` | 1st of every month @ 09:00 | `POST /cron/monthly-portraits` |
-| `yearly_insights` | January 1st @ 10:00 | `POST /cron/yearly-insights` |
+| `monthly_portraits` | daily @ 09:00 UTC | `(today − user.startDate)` is a positive multiple of 30 |
+| `yearly_insights` | daily @ 10:00 UTC | `(today − user.startDate)` is a positive multiple of 365 |
 
-Each batch endpoint iterates all users in Cosmos, generates their paragraph reflection via Foundry, and persists back.
+**Why per-user:** A user who first logged on April 15 shouldn't get their "monthly portrait" on May 1 after only 15 days. They get it on May 15 (day 30), June 14 (day 60), ... The Function runs daily to cover all possible anniversary dates; the `/cron/*` endpoint filters down to the tiny subset of users whose today = startDate + 30k (or +365k).
 
-**Auth:** `X-Cron-Secret` header, checked against the `CRON_SECRET` env var shared between the Function App and the main App Service. Prevents anyone other than the Function from triggering batch work.
+**Auth:** `X-Cron-Secret` header, checked against the `CRON_SECRET` env var shared between the Function App and the main App Service.
 
 **Source code:** `functions/function_app.py` + `functions/host.json` + `functions/requirements.txt`. Deploy doc: `functions/README.md`.
 
+**Endpoint response shape:**
+```json
+{ "processed": 9, "ok": 1, "fail": 0, "skipped": 8 }
+```
+`skipped` = users whose today isn't a milestone day. On most days, `ok` will be 0 or 1 — only users AT their milestone trigger work.
+
 **Verification:**
-- Azure Portal → `arrive-scheduler` → Functions → Monitor shows invocation history
-- Manual test: Function → `monthly_portraits` → Code + Test → Run fires it on demand (shows real-time logs)
-- Pipeline smoke test result (9 users): `{"processed":9,"ok":9,"fail":0}`
+- Azure Portal → `arrive-scheduler` → Functions → Monitor shows daily invocation history
+- Manual test: `arrive-scheduler` → `monthly_portraits` → Code + Test → Run fires on demand
+- Pipeline smoke test (9 users on one day): `{"processed":9,"ok":9,"fail":0}` (all users were at their milestone because of demo seed uniformity)
 
 ---
 

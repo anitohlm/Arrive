@@ -1,12 +1,15 @@
 """
 Arrive scheduled jobs — Azure Functions (Timer Triggers).
 
-Two triggers:
-  - monthly_portraits  → 1st of each month @ 09:00 UTC
-  - yearly_insights    → January 1st @ 10:00 UTC
+Two triggers — both run DAILY. The backend's /cron/* endpoints filter per
+user so the insight only fires on that user's personal milestone day
+(day 30/60/90/... from their first entry for monthly; day 365/730/...
+for yearly). A user who started April 15 gets their monthly portrait on
+May 15, June 15, ...; a user who started October 3 gets theirs on the
+3rd of each subsequent month.
 
-Both call batch endpoints on the main App Service which iterate all users
-and generate their paragraph reflections.
+  - monthly_portraits  → daily @ 09:00 UTC
+  - yearly_insights    → daily @ 10:00 UTC
 
 Protected by CRON_SECRET — the Function sends an X-Cron-Secret header;
 the backend rejects the request if it doesn't match the env var.
@@ -37,10 +40,11 @@ def _call(path: str):
 
 
 # cron: "seconds minutes hours day-of-month month day-of-week"
-# "0 0 9 1 * *" = at 09:00:00 UTC on day 1 of every month
-@app.timer_trigger(schedule="0 0 9 1 * *", arg_name="timer", run_on_startup=False)
+# "0 0 9 * * *" = daily at 09:00:00 UTC — backend filters per-user by
+# days-since-startDate % 30 so only users at their 30/60/90/... mark fire.
+@app.timer_trigger(schedule="0 0 9 * * *", arg_name="timer", run_on_startup=False)
 def monthly_portraits(timer: func.TimerRequest) -> None:
-    logging.info("[arrive-cron] monthly_portraits firing")
+    logging.info("[arrive-cron] monthly_portraits firing (daily check)")
     try:
         result = _call("/cron/monthly-portraits")
         logging.info("[arrive-cron] monthly_portraits result: %s", result)
@@ -48,10 +52,11 @@ def monthly_portraits(timer: func.TimerRequest) -> None:
         logging.exception("[arrive-cron] monthly_portraits FAILED")
 
 
-# "0 0 10 1 1 *" = at 10:00:00 UTC on January 1st
-@app.timer_trigger(schedule="0 0 10 1 1 *", arg_name="timer", run_on_startup=False)
+# "0 0 10 * * *" = daily at 10:00 UTC — backend filters per-user by
+# days-since-startDate % 365 so only users at their 365/730/... mark fire.
+@app.timer_trigger(schedule="0 0 10 * * *", arg_name="timer", run_on_startup=False)
 def yearly_insights(timer: func.TimerRequest) -> None:
-    logging.info("[arrive-cron] yearly_insights firing")
+    logging.info("[arrive-cron] yearly_insights firing (daily check)")
     try:
         result = _call("/cron/yearly-insights")
         logging.info("[arrive-cron] yearly_insights result: %s", result)

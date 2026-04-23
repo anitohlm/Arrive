@@ -428,8 +428,19 @@ def monthly_insights(request: InsightsRequest):
         raise
 
 # ── CRON / batch endpoints ──
-# Hit by the Azure Function (Timer Trigger) on a schedule. Protected by
-# CRON_SECRET header so a random caller can't trigger batch work.
+# Hit by the Azure Function (Timer Trigger) DAILY. Protected by CRON_SECRET
+# header. Each endpoint iterates all users and only generates an insight
+# when TODAY is the user's personal milestone day — counted from the date
+# of their very first entry (their startDate), NOT the calendar month/year.
+#
+# So a user who first logged on April 15 gets:
+#   - monthly portrait on May 15, June 15, July 15, ...  (day 30, 60, 90, ...)
+#   - yearly insight  on April 15 next year              (day 365)
+#
+# A user who first logged on October 3 gets theirs on different dates.
+# The Function runs daily; the filter per-user is what makes this personal.
+from datetime import date, datetime
+
 def _check_cron_auth(request: Request):
     expected = os.getenv("CRON_SECRET", "")
     got = request.headers.get("X-Cron-Secret", "")
@@ -437,40 +448,63 @@ def _check_cron_auth(request: Request):
         from fastapi import HTTPException
         raise HTTPException(status_code=403, detail="forbidden")
 
+def _days_since_start(start_iso: str) -> int | None:
+    """How many calendar days between startDate and today (UTC).
+    Returns None if start_iso is missing or unparseable."""
+    if not start_iso:
+        return None
+    try:
+        start = datetime.fromisoformat(start_iso.replace("Z", "+00:00")).date() \
+                if "T" in start_iso else date.fromisoformat(start_iso[:10])
+        return (date.today() - start).days
+    except Exception:
+        return None
+
 @app.post("/cron/monthly-portraits")
 def cron_monthly_portraits(request: Request):
-    """Iterate all users, generate monthly insight for each. Called by
-    the Azure Function's Timer Trigger on the 1st of each month."""
+    """Daily batch: fires monthly portrait for any user whose days-since-
+    startDate is a positive multiple of 30. Called by the Azure Function's
+    Timer Trigger every day at 09:00 UTC."""
     _check_cron_auth(request)
     from db import users_container
     users = list(users_container.query_items(
-        query="SELECT c.id FROM c",
+        query="SELECT c.id, c.startDate FROM c",
         enable_cross_partition_query=True
     ))
-    ok, fail = 0, 0
+    ok, fail, skipped = 0, 0, 0
     for u in users:
+        days = _days_since_start(u.get("startDate"))
+        # fire on day 30, 60, 90, 120, ... — their personal "month-end"
+        if days is None or days <= 0 or days % 30 != 0:
+            skipped += 1
+            continue
         try:
             handle_monthly_insights(u["id"])
             ok += 1
+            log.info("monthly portrait fired for user %s (day %s)", u["id"], days)
         except Exception:
             log.exception("monthly-portraits batch failed for user %s", u.get("id"))
             fail += 1
-    return {"processed": len(users), "ok": ok, "fail": fail}
+    return {"processed": len(users), "ok": ok, "fail": fail, "skipped": skipped}
 
 @app.post("/cron/yearly-insights")
 def cron_yearly_insights(request: Request):
-    """Iterate all users, generate yearly insight for each. Called by
-    the Azure Function's Timer Trigger on January 1st."""
+    """Daily batch: fires yearly insight for any user whose days-since-
+    startDate is exactly a multiple of 365 (day 365, 730, ...). Called
+    by the Azure Function's Timer Trigger every day at 10:00 UTC."""
     _check_cron_auth(request)
     from db import users_container, get_recent_entries
     users = list(users_container.query_items(
-        query="SELECT c.id, c.name FROM c",
+        query="SELECT c.id, c.name, c.startDate FROM c",
         enable_cross_partition_query=True
     ))
-    ok, fail = 0, 0
+    ok, fail, skipped = 0, 0, 0
     for u in users:
+        days = _days_since_start(u.get("startDate"))
+        if days is None or days <= 0 or days % 365 != 0:
+            skipped += 1
+            continue
         try:
-            # Reuse the same shape the /yearly-insights endpoint expects
             entries = get_recent_entries(u["id"], limit=400)
             payload = {
                 "user_id": u["id"],
@@ -479,7 +513,8 @@ def cron_yearly_insights(request: Request):
             }
             get_yearly_insights(payload)
             ok += 1
+            log.info("yearly insight fired for user %s (day %s)", u["id"], days)
         except Exception:
             log.exception("yearly-insights batch failed for user %s", u.get("id"))
             fail += 1
-    return {"processed": len(users), "ok": ok, "fail": fail}
+    return {"processed": len(users), "ok": ok, "fail": fail, "skipped": skipped}

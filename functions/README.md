@@ -1,13 +1,20 @@
 # Arrive scheduled jobs
 
-Two Azure Function Timer Triggers:
+Two Azure Function Timer Triggers. Both run **daily**; the backend filters
+per-user so insights only fire on each user's personal milestone day
+(counted from the date of their first entry, *not* the calendar month/year).
 
-| Function | Schedule (UTC) | Calls |
+| Function | Runs | Fires insight when |
 |---|---|---|
-| `monthly_portraits` | 1st of every month @ 09:00 | `POST /cron/monthly-portraits` |
-| `yearly_insights` | January 1st @ 10:00 | `POST /cron/yearly-insights` |
+| `monthly_portraits` | daily @ 09:00 UTC | `days-since-startDate` is a positive multiple of 30 |
+| `yearly_insights` | daily @ 10:00 UTC | `days-since-startDate` is a positive multiple of 365 |
 
-Both iterate all users in Cosmos and generate their paragraph reflections.
+So a user who first logged on **April 15** gets monthly portraits on
+May 15, June 14, July 14, ... and a yearly insight on April 15 next year.
+A user who first logged on **October 3** gets theirs on a different cadence.
+
+Both iterate all users in Cosmos, filter by the milestone rule, and
+generate their paragraph reflections.
 
 ## One-time setup
 
