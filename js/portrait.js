@@ -825,19 +825,16 @@ function showMonthEndCeremony(){
     'opacity:1','pointer-events:none'
   ].join(';');
 
-  // ── COMPOSITION PRINCIPLE ──
-  // The rose is the hero, dead-centered on screen. Announcement (eyebrow
-  // + month name + mornings) is pinned to the TOP with absolute
-  // positioning so it doesn't affect the rose's vertical centering. Word
-  // + rule are pinned to the BOTTOM same way. This is the only way to
-  // make the rose land at exactly viewport center; flex-centering a
-  // multi-element column puts the STACK at center, not the rose.
+  // ── COMPOSITION ──
+  // announceWrap (eyebrow + month + mornings) flows inline with the rose
+  // inside knotWrap's flex-center. They read as ONE composed group — the
+  // "invocation" of the ceremony. Word + rule are the closing beat, pinned
+  // to the bottom as a separate frame. No absolute positioning on the
+  // invocation group; it centers naturally as a unit.
   var announceWrap = document.createElement('div');
   announceWrap.style.cssText = [
-    'position:absolute',
-    'top:calc(env(safe-area-inset-top, 0px) + 40px)',
-    'left:0','right:0',
     'display:flex','flex-direction:column','align-items:center','gap:6px',
+    'margin-bottom:24px',
     'pointer-events:none','transition:transform 3000ms ease, opacity 3000ms ease'
   ].join(';');
 
@@ -878,17 +875,19 @@ function showMonthEndCeremony(){
   announceWrap.appendChild(monthNameEl);
   announceWrap.appendChild(morningsEl);
 
-  // whole stack — truly centered. Bottom nav auto-hides during ceremony.
-  // Page 1 (this one): rose + eyebrow + word + SHORT 2-sentence witness.
-  // Page 2 (pages[1]): the full AI reflection paragraph gets its own
-  // dedicated page so it never crowds the rose or clips the viewport.
+  // Invocation group container — holds announcement + rose, flex-centered.
+  // Bottom-padding reserves space for the wordGroup (closing frame) +
+  // pager dots, so the invocation group is centered in the REMAINING
+  // space above the bottom frame. This makes the rose visually centered
+  // in the main viewing area rather than being pushed down by the bottom
+  // frame weight.
   var knotWrap = document.createElement('div');
   knotWrap.style.cssText = [
     'position:absolute','inset:0',
     'display:flex','flex-direction:column','align-items:center','justify-content:center',
-    'gap:18px',
-    'padding-top:calc(env(safe-area-inset-top, 0px) + 28px)',
-    'padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 28px)',
+    'gap:16px',
+    'padding-top:calc(env(safe-area-inset-top, 0px) + 24px)',
+    'padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 220px)',
     'padding-left:28px','padding-right:28px',
     'pointer-events:none'
   ].join(';');
@@ -909,13 +908,13 @@ function showMonthEndCeremony(){
   knotCanvas.width = _cvsSize * dpr;
   knotCanvas.height = _cvsSize * dpr;
 
-  // word + rule are absolute-positioned at the bottom so they don't
-  // push the rose off-center. They sit as a bottom "frame" matching
-  // the top announcement frame.
+  // word + rule — absolute-positioned above the pager dots so they
+  // form the closing "bottom frame" without colliding. Pager dots
+  // live at bottom ~96px; word group sits above that at ~150px.
   var wordGroup = document.createElement('div');
   wordGroup.style.cssText = [
     'position:absolute',
-    'bottom:calc(env(safe-area-inset-bottom, 0px) + 48px)',
+    'bottom:calc(env(safe-area-inset-bottom, 0px) + 140px)',
     'left:0','right:0',
     'display:flex','flex-direction:column','align-items:center','gap:10px',
     'pointer-events:none'
@@ -1036,17 +1035,13 @@ function showMonthEndCeremony(){
       });
   })();
 
-  // knotWrap is now flex-center but with ONLY the canvas as its child,
-  // so the rose lands at exact screen center. Announcement pinned top,
-  // word/rule pinned bottom — no other children to shift the rose.
+  // knotWrap holds the INVOCATION group: announcement + rose. They center
+  // together as one unit. The word + rule is a separate bottom frame.
+  knotWrap.appendChild(announceWrap);
   knotWrap.appendChild(knotCanvas);
 
-  // Top frame (eyebrow + month + mornings) — absolute top
-  // NOTE: announceWrap and wordGroup are siblings of knotWrap on page 0
-  // so their absolute positioning references the page, not knotWrap.
-  // They get appended to pages[0] below.
-
-  // Bottom frame (word + rule) — absolute bottom
+  // Bottom closing frame (word + rule), pinned to the bottom of page 0
+  // so the pager dots have their own space and don't collide.
   wordGroup.appendChild(wordEl);
   wordGroup.appendChild(rule);
 
