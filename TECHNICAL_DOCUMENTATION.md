@@ -406,9 +406,25 @@ Arrive is deployed on a fully-free Azure footprint. See §4 for the live URLs an
 - `http://localhost:{8765,8000,8800}` + `127.0.0.1` — local dev
 - `allow_origin_regex: https://[a-z0-9-]+\.azurestaticapps\.net` — any preview slot or main SWA URL
 
-### 11.4 Scheduled jobs (designed, not wired)
+### 11.4 Scheduled jobs — **DEPLOYED** (Azure Functions)
 
-Monthly Portraits (1st of month) and Yearly insights → Azure Functions hitting `/monthly-insights` + `/yearly-insights` per user. Endpoints exist; timers do not.
+Two Timer Triggers live on the `arrive-scheduler` Function App (Consumption plan, free tier):
+
+| Function | Schedule (UTC) | Calls |
+|---|---|---|
+| `monthly_portraits` | 1st of every month @ 09:00 | `POST /cron/monthly-portraits` |
+| `yearly_insights` | January 1st @ 10:00 | `POST /cron/yearly-insights` |
+
+Each batch endpoint iterates all users in Cosmos, generates their paragraph reflection via Foundry, and persists back.
+
+**Auth:** `X-Cron-Secret` header, checked against the `CRON_SECRET` env var shared between the Function App and the main App Service. Prevents anyone other than the Function from triggering batch work.
+
+**Source code:** `functions/function_app.py` + `functions/host.json` + `functions/requirements.txt`. Deploy doc: `functions/README.md`.
+
+**Verification:**
+- Azure Portal → `arrive-scheduler` → Functions → Monitor shows invocation history
+- Manual test: Function → `monthly_portraits` → Code + Test → Run fires it on demand (shows real-time logs)
+- Pipeline smoke test result (9 users): `{"processed":9,"ok":9,"fail":0}`
 
 ---
 
