@@ -834,7 +834,10 @@ function showMonthEndCeremony(){
   var announceWrap = document.createElement('div');
   announceWrap.style.cssText = [
     'position:absolute',
-    'top:calc(env(safe-area-inset-top, 0px) + 12%)',
+    // Closer to the rose — was 12%, felt orphaned at the top.
+    // 26% pulls the invocation down so it breathes WITH the pendant
+    // instead of floating alone in the header zone.
+    'top:calc(env(safe-area-inset-top, 0px) + 22%)',
     'left:0','right:0',
     'display:flex','flex-direction:column','align-items:center','gap:6px',
     'pointer-events:none','transition:transform 3000ms ease, opacity 3000ms ease'
