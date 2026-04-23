@@ -225,6 +225,103 @@
     seedJourney(n);
   }
 
+  // Preview the adaptation chip without requiring an entry submit.
+  // Takes the current localStorage entries, hits /post-insight with a
+  // throwaway dummy content, and shows the returned 'noticed' line as
+  // a centered overlay card. Fast, no navigation, no state side-effects.
+  function previewNoticingChip(){
+    var all = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+    if(all.length === 0){
+      _toast('no entries yet — seed 7 anxious/calm days first');
+      return;
+    }
+    var recent = all.slice(-7).reverse().map(function(e){
+      return {
+        mood: e.mood || e.emo || null,
+        emo:  e.emo  || e.mood || null,
+        content: (e.content || e.text || '').slice(0, 300),
+        text:    (e.text || e.content || '').slice(0, 300),
+        timestamp: e.timestamp || null,
+        dateISO:   e.dateISO   || null,
+        date:      e.date      || null,
+      };
+    });
+    _toast('asking the backend what it notices\u2026');
+    var API = (typeof API_BASE!=='undefined' ? API_BASE : '');
+    fetch(API + '/post-insight', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        content: 'preview',
+        mood: (recent[0] && (recent[0].mood || recent[0].emo)) || 'calm',
+        day_number: 1,
+        user_id: localStorage.getItem('gc_user_id') || '',
+        recent_entries: recent
+      })
+    }).then(function(r){ return r.json(); }).then(function(data){
+      var noticed = (data && data.noticed) || '';
+      var insight = (data && data.insight) || '';
+      if(!noticed){ _toast('no pattern detected yet. seed more days.'); return; }
+      _showNoticingPreview(noticed, insight);
+    }).catch(function(err){
+      _toast('preview failed: ' + err);
+    });
+  }
+
+  function _showNoticingPreview(noticed, insight){
+    // Remove any previous preview
+    var prev = document.getElementById('_noticingPreview');
+    if(prev) prev.remove();
+
+    var overlay = document.createElement('div');
+    overlay.id = '_noticingPreview';
+    overlay.style.cssText = [
+      'position:fixed','inset:0','z-index:9999',
+      'background:rgba(7,5,3,0.88)',
+      'display:flex','align-items:center','justify-content:center',
+      'padding:24px','opacity:0','transition:opacity 300ms ease',
+      'cursor:pointer'
+    ].join(';');
+
+    overlay.innerHTML = ''
+      + '<div style="max-width:420px;text-align:center">'
+      +   '<p style="font-family:\'DM Mono\',monospace;font-size:9px;'
+      +     'letter-spacing:0.24em;text-transform:uppercase;'
+      +     'color:rgba(201,148,58,0.5);margin:0 0 16px">'
+      +     'adaptive strategy · live preview'
+      +   '</p>'
+      +   '<p style="font-family:\'DM Mono\',monospace;font-size:11px;'
+      +     'letter-spacing:0.22em;text-transform:uppercase;'
+      +     'color:rgba(230,182,88,0.9);margin:0 0 24px;line-height:1.5;'
+      +     'padding:10px 16px;border:1px solid rgba(201,148,58,0.35);'
+      +     'border-radius:999px;display:inline-block">'
+      +     'noticing  ·  ' + _escForHtml(noticed)
+      +   '</p>'
+      +   '<p style="font-family:Fraunces,serif;font-style:italic;'
+      +     'font-weight:300;font-size:17px;color:rgba(245,237,224,0.82);'
+      +     'line-height:1.6;margin:0 0 32px;max-width:360px">'
+      +     _escForHtml(insight || '(insight omitted in preview)')
+      +   '</p>'
+      +   '<p style="font-family:\'DM Mono\',monospace;font-size:9px;'
+      +     'letter-spacing:0.2em;text-transform:uppercase;'
+      +     'color:rgba(245,237,224,0.3);margin:0">tap anywhere to close</p>'
+      + '</div>';
+
+    overlay.addEventListener('click', function(){
+      overlay.style.opacity = '0';
+      setTimeout(function(){ overlay.remove(); }, 320);
+    });
+
+    document.body.appendChild(overlay);
+    requestAnimationFrame(function(){ overlay.style.opacity = '1'; });
+  }
+
+  function _escForHtml(s){
+    return String(s||'')
+      .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+      .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+  }
+
   // Seed N days of a SINGLE emotion into localStorage, backdated so
   // today is still free to log. Does NOT reload — we toast the user
   // and keep them on whatever screen they're already on. The next
@@ -907,6 +1004,9 @@
       +     '<button class="_demoAct" data-act="seed-anxious-7">7 anxious days</button>'
       +     '<button class="_demoAct" data-act="seed-calm-7">7 calm days</button>'
       +   '</div>'
+      +   '<div class="_demoRow">'
+      +     '<button class="_demoAct" data-act="preview-noticing">preview noticing chip →</button>'
+      +   '</div>'
       + '</div>'
 
       + '<div class="_demoSection">'
@@ -1013,6 +1113,7 @@
       if(a === 'seed-100') return seedJourney(100);
       if(a === 'seed-anxious-7') return seedUniformEmotion(7, 'anxious');
       if(a === 'seed-calm-7')    return seedUniformEmotion(7, 'calm');
+      if(a === 'preview-noticing') return previewNoticingChip();
       if(a === 'jump')     return jumpToDay(document.getElementById('_demoDayInput').value);
       if(a === 'ff-1')     return fastForwardOneDay();
       if(a === 'month-end')return triggerMonthEndCeremony();
