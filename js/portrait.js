@@ -831,15 +831,11 @@ function showMonthEndCeremony(){
   //   center (50%):    rose (transform: translate(-50%,-50%))
   //   bottom zone (22%): becoming · rule
   //   + pager dots below at their own offset
+  // Announcement flows inline with the rose as a single stack —
+  // kept small and tight so the rose dominates the composition.
   var announceWrap = document.createElement('div');
   announceWrap.style.cssText = [
-    'position:absolute',
-    // Closer to the rose — was 12%, felt orphaned at the top.
-    // 26% pulls the invocation down so it breathes WITH the pendant
-    // instead of floating alone in the header zone.
-    'top:calc(env(safe-area-inset-top, 0px) + 22%)',
-    'left:0','right:0',
-    'display:flex','flex-direction:column','align-items:center','gap:6px',
+    'display:flex','flex-direction:column','align-items:center','gap:4px',
     'pointer-events:none','transition:transform 3000ms ease, opacity 3000ms ease'
   ].join(';');
 
@@ -880,14 +876,19 @@ function showMonthEndCeremony(){
   announceWrap.appendChild(monthNameEl);
   announceWrap.appendChild(morningsEl);
 
-  // knotWrap holds ONLY the rose, absolutely positioned at exact 50% center
-  // via top:50%; left:50%; transform:translate(-50%,-50%). Mathematically
-  // perfect center, regardless of announcement or word copy length.
+  // knotWrap: full page flex-center with announcement + rose + word
+  // stacked together. The rose is intentionally the visually dominant
+  // element (2-3× the total height of surrounding text) so the stack
+  // reads as rose-centered even if mathematically the flex center is
+  // slightly offset.
   var knotWrap = document.createElement('div');
   knotWrap.style.cssText = [
-    'position:absolute',
-    'top:50%','left:50%','transform:translate(-50%, -50%)',
-    'display:flex','flex-direction:column','align-items:center',
+    'position:absolute','inset:0',
+    'display:flex','flex-direction:column','align-items:center','justify-content:center',
+    'gap:22px',
+    'padding-top:calc(env(safe-area-inset-top, 0px) + 24px)',
+    'padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 160px)',
+    'padding-left:28px','padding-right:28px',
     'pointer-events:none'
   ].join(';');
 
@@ -907,13 +908,9 @@ function showMonthEndCeremony(){
   knotCanvas.width = _cvsSize * dpr;
   knotCanvas.height = _cvsSize * dpr;
 
-  // word + rule — bottom zone at 22% from bottom. Sits well above pager
-  // dots (which are at bottom ~96px).
+  // word + rule — flows inline inside the stack, right below the rose
   var wordGroup = document.createElement('div');
   wordGroup.style.cssText = [
-    'position:absolute',
-    'bottom:22%',
-    'left:0','right:0',
     'display:flex','flex-direction:column','align-items:center','gap:10px',
     'pointer-events:none'
   ].join(';');
@@ -1033,16 +1030,17 @@ function showMonthEndCeremony(){
       });
   })();
 
-  // knotWrap: ONLY the rose canvas (+ hidden msgEl for resolver).
-  // Everything else is positioned absolutely outside knotWrap.
-  knotWrap.appendChild(knotCanvas);
-
-  // Bottom closing frame
+  // Build the stack: announcement → rose → word+rule, all inside knotWrap
+  // as flex children. The rose's visual weight dominates naturally.
   wordGroup.appendChild(wordEl);
   wordGroup.appendChild(rule);
 
-  // msgEl hidden destination for the AI reflection resolver. Visible
-  // paragraph is on page 5 via _monthReflectionClosingEl.
+  knotWrap.appendChild(announceWrap);
+  knotWrap.appendChild(knotCanvas);
+  knotWrap.appendChild(wordGroup);
+
+  // msgEl hidden — AI reflection resolver writes into _monthReflectionClosingEl
+  // on page 5 for the visible paragraph
   msgEl.style.display = 'none';
   knotWrap.appendChild(msgEl);
 
@@ -1088,12 +1086,9 @@ function showMonthEndCeremony(){
   //   4 = the thread held
   //   5 = closing beat (AI reflection paragraph + pendant + carry it forward)
   var pages = [mkPage(), mkPage(), mkPage(), mkPage(), mkPage(), mkPage()];
-  // Page 0: four absolute layers, none fighting for space:
-  //   announceWrap (top), knotWrap/rose (50% center via transform),
-  //   wordGroup (bottom 22%), swipeHintInPage (above pager dots).
-  pages[0].appendChild(announceWrap);
+  // Page 0: knotWrap contains the whole stack (announcement + rose + word).
+  // swipeHintInPage is a separate absolute layer above the pager dots.
   pages[0].appendChild(knotWrap);
-  pages[0].appendChild(wordGroup);
   pages[0].appendChild(swipeHintInPage);
   pages.forEach(function(pg){ pagesContainer.appendChild(pg); });
 
