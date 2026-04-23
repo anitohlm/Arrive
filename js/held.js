@@ -1222,12 +1222,13 @@ function _showNecklaceWitness(opts){
     + '">woven ' + _escForHtml(monthName) + '</p>'
     // sentences
     + '<div style="width:100%;max-width:420px">' + sentencesHtml + '</div>'
-    // dismiss prompt
+    // dismiss prompt — flows inline after the paragraph with generous top
+    // margin, sitting in the middle of the empty lower space rather than
+    // pinned to the viewport bottom. Feels like part of the composition.
     + '<p id="_necklaceDismiss" style="'
-    +   'position:fixed;bottom:calc(36px + env(safe-area-inset-bottom));'
-    +   'left:50%;transform:translateX(-50%);'
     +   'font-family:Fraunces,serif;font-style:italic;font-weight:300;'
-    +   'font-size:13px;color:rgba(201,148,58,0.55);margin:0;'
+    +   'font-size:13px;color:rgba(201,148,58,0.55);'
+    +   'margin:48px 0 0;text-align:center;'
     +   'cursor:pointer;opacity:0;'
     +   'animation:_nwIn 600ms ' + (1100 + lines.length * 420 + 500) + 'ms cubic-bezier(.2,.7,.25,1) forwards;'
     + '">tap to carry it with you</p>';
