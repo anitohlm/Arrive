@@ -83,6 +83,7 @@ class PostInsightRequest(BaseModel):
     content: constr(max_length=2000)
     mood: constr(max_length=64)
     day_number: int = 1
+    user_id: Optional[constr(max_length=128)] = None  # optional; unlocks recent-pattern adaptation
 
 class GraceRequest(BaseModel):
     days_missed: int = 1
@@ -169,15 +170,34 @@ def submit_entry(request: Request, body: SubmitEntryRequest):
 @limiter.limit("20/minute")
 def post_insight(request: Request, body: PostInsightRequest):
     try:
+        # Fetch recent-pattern context if the frontend sent user_id.
+        # This is the "adapt strategies based on what's working" plumbing:
+        # the insight agent sees emotion streak / length / missed-rate and
+        # adjusts its tone, and we return a human-readable 'noticed' chip.
+        ctx = {}
+        if body.user_id:
+            try:
+                from db import get_recent_entries
+                from agents.user_context import build_user_context
+                ctx = build_user_context(get_recent_entries(body.user_id, limit=7))
+            except Exception:
+                log.exception("user_context fetch failed for /post-insight")
+                ctx = {}
+
         insight = generate_post_insight(
             content=body.content,
             mood=body.mood,
-            day_number=body.day_number
+            day_number=body.day_number,
+            user_context=ctx,
         )
-        return {"success": True, "insight": insight}
+        return {
+            "success": True,
+            "insight": insight,
+            "noticed": ctx.get("noticed", ""),
+        }
     except Exception:
         log.exception("/post-insight failed")
-        return {"success": False, "insight": ""}
+        return {"success": False, "insight": "", "noticed": ""}
 
 @app.post("/grace-message")
 @limiter.limit("10/minute")

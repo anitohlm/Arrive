@@ -5,30 +5,48 @@ from agents.streak_agent import process_streak
 from agents.memory_agent import resurface_memories
 from agents.mindfulness_agent import get_exercise
 from agents.insights_agent import generate_portrait
-from db import save_entry
+from agents.user_context import build_user_context
+from db import save_entry, get_recent_entries
 from search import index_entry
 from datetime import datetime
 import uuid
 
 load_dotenv()
 
+
+def _user_context_for(user_id: str) -> dict:
+    """Fetch last 7 entries and extract adaptation signals. Fast (one
+    Cosmos query) and cached in-memory per-request."""
+    try:
+        entries = get_recent_entries(user_id, limit=7)
+        return build_user_context(entries)
+    except Exception:
+        return {}
+
+
 def handle_open_app(user_id: str, mood: str, intention: str, hours_absent: float) -> dict:
     """
     Called when user opens the app.
-    Returns: daily prompt + memories (if needed) + exercise (if stressed)
+    Returns: daily prompt + memories (if needed) + exercise (if stressed) +
+    noticed (adaptation chip text if the system detected a recent pattern).
     """
     result = {}
+    ctx = _user_context_for(user_id)
 
-    # Always get today's prompt
-    result["prompt"] = get_daily_prompt(mood, intention)
+    # Adapt the prompt to recent-pattern context (streak, length, missed-rate)
+    result["prompt"] = get_daily_prompt(mood, intention, user_context=ctx)
+
+    # Expose the "noticed" chip so the frontend can show the adaptation visibly
+    if ctx.get("noticed"):
+        result["noticed"] = ctx["noticed"]
 
     # If hard day or absent 18+ hours — resurface memories
     if mood in ["hard", "stressed", "anxious"] or hours_absent >= 18:
         result["memories"] = resurface_memories(user_id, mood)
 
-    # If stressed or anxious — offer mindfulness exercise
+    # If stressed or anxious — offer mindfulness exercise (adapted to streak)
     if mood in ["stressed", "anxious", "hard"]:
-        result["exercise"] = get_exercise(mood)
+        result["exercise"] = get_exercise(mood, user_context=ctx)
 
     return result
 

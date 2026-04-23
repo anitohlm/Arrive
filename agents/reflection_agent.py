@@ -3,6 +3,9 @@ from azure.ai.inference import ChatCompletionsClient
 from azure.ai.inference.models import SystemMessage, UserMessage
 from azure.identity import DefaultAzureCredential
 
+from .user_context import context_preamble
+
+
 def get_client():
     credential = DefaultAzureCredential()
     base_endpoint = os.getenv("FOUNDRY_PROJECT_ENDPOINT")
@@ -15,24 +18,17 @@ def get_client():
         credential_scopes=["https://cognitiveservices.azure.com/.default"]
     )
 
-def get_daily_prompt(mood: str, intention: str) -> str:
-    # Wrap in try/except so content-filter 400s or Foundry hiccups don't
-    # crash the endpoint. Empty string tells the frontend to keep its
-    # hardcoded fallback prompt.
+def get_daily_prompt(mood: str, intention: str, user_context: dict | None = None) -> str:
     try:
-        return _get_daily_prompt_impl(mood, intention)
+        return _get_daily_prompt_impl(mood, intention, user_context)
     except Exception:
         return ""
 
 
-def _get_daily_prompt_impl(mood: str, intention: str) -> str:
+def _get_daily_prompt_impl(mood: str, intention: str, user_context: dict | None = None) -> str:
     client = get_client()
 
-    response = client.complete(
-        model=os.getenv("FOUNDRY_MODEL_DEPLOYMENT_NAME"),
-        messages=[
-            SystemMessage(
-                content="""You write one short journal prompt for a gratitude app. A close friend's voice, not a therapist's or coach's.
+    base_system = """You write one short journal prompt for a gratitude app. A close friend's voice, not a therapist's or coach's.
 
 Shape: a short acknowledgment of the mood, then a gentle invitation to name one small thing. Lowercase sentence case. Natural speech.
 
@@ -45,7 +41,13 @@ For light moods (grateful, calm, alive, hopeful, etc.), offer quiet witness. Exa
 Length: 1-2 short sentences, under 30 words. No emojis. No exclamation marks. No worksheet language ("reflect on", "identify", "consider").
 
 Output only the prompt itself."""
-            ),
+
+    system_content = base_system + context_preamble(user_context or {})
+
+    response = client.complete(
+        model=os.getenv("FOUNDRY_MODEL_DEPLOYMENT_NAME"),
+        messages=[
+            SystemMessage(content=system_content),
             UserMessage(
                 content=f"User mood: {mood}. Intention: {intention}. Write today's prompt."
             )

@@ -225,6 +225,73 @@
     seedJourney(n);
   }
 
+  // Seed N days of a SINGLE emotion — proves the adaptive-strategy
+  // layer: after this, the next entry the user writes triggers a
+  // "noticing: you've carried X for three mornings" chip + a
+  // tone-shifted reply. Pushes entries to Cosmos so backend sees them.
+  function seedUniformEmotion(days, emo){
+    var userId = localStorage.getItem('gc_user_id') || '';
+    if(!userId){ _toast('no user id — sign in first'); return; }
+    var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+    var loggedDates = JSON.parse(localStorage.getItem('gc_logged_dates')||'[]');
+    var today = _localISO();
+    if(!localStorage.getItem('gc_start_date')){
+      localStorage.setItem('gc_start_date', _addDays(today, -(days - 1)));
+    }
+    var toPush = [];
+    for(var i = days; i >= 1; i--){
+      var dISO = _addDays(today, -i);
+      // Clear any demo entries already on this date to avoid duplicates
+      entries = entries.filter(function(e){
+        var iso = (e.dateISO || e.date || e.timestamp || '').slice(0,10);
+        return !(e.demo && iso === dISO);
+      });
+      loggedDates = loggedDates.filter(function(d){ return d !== dISO; });
+      var entry = {
+        day: days - i + 1,
+        emo: emo,
+        intent: _rand(DEMO_INTENTS),
+        text: _rand(DEMO_ENTRIES),
+        dateISO: dISO,
+        date: dISO,
+        timestamp: dISO + 'T09:30:00.000Z',
+        ai: '',
+        demo: true
+      };
+      entries.push(entry);
+      loggedDates.push(dISO);
+      toPush.push(entry);
+    }
+    localStorage.setItem('gc_entries', JSON.stringify(entries));
+    localStorage.setItem('gc_logged_dates', JSON.stringify(loggedDates));
+    localStorage.removeItem('gc_logged_today');  // free up today to log
+
+    // Push to Cosmos so backend /post-insight sees the streak
+    _toast('seeding ' + days + ' ' + emo + ' days → cosmos…');
+    var pushed = 0;
+    toPush.forEach(function(e){
+      fetch((typeof API_BASE!=='undefined'?API_BASE:'') + '/submit-entry', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({
+          user_id: userId,
+          content: e.text,
+          mood: e.emo,
+          intention: e.intent,
+          day_number: e.day,
+          timestamp: e.timestamp,
+          demo: true
+        })
+      }).finally(function(){
+        pushed++;
+        if(pushed === toPush.length){
+          _toast('done. now write today\u2019s entry to see the chip.');
+          setTimeout(function(){ location.reload(); }, 1200);
+        }
+      });
+    });
+  }
+
   function fastForwardOneDay(){
     // Shift everything back by 1 day so "today" becomes a fresh unlogged day.
     // Start date moves back by 1, logged dates all shift back by 1, entries
@@ -858,6 +925,18 @@
       +   '</div>'
       + '</div>'
 
+      // Adaptive-strategy demo: seed 7 anxious days, then when the user
+      // writes their next entry the system detects the streak and shifts
+      // tone (softer reply + mindfulness switches to grounding). The
+      // "noticing" chip on the insight screen makes this visible.
+      + '<div class="_demoSection">'
+      +   '<div class="_demoLbl">adapt strategies demo</div>'
+      +   '<div class="_demoRow">'
+      +     '<button class="_demoAct" data-act="seed-anxious-7">7 anxious days</button>'
+      +     '<button class="_demoAct" data-act="seed-calm-7">7 calm days</button>'
+      +   '</div>'
+      + '</div>'
+
       + '<div class="_demoSection">'
       +   '<div class="_demoLbl">ceremonies</div>'
       +   '<div class="_demoRow">'
@@ -960,6 +1039,8 @@
       if(a === 'seed-14')  return seedJourney(14);
       if(a === 'seed-30')  return seedJourney(30);
       if(a === 'seed-100') return seedJourney(100);
+      if(a === 'seed-anxious-7') return seedUniformEmotion(7, 'anxious');
+      if(a === 'seed-calm-7')    return seedUniformEmotion(7, 'calm');
       if(a === 'jump')     return jumpToDay(document.getElementById('_demoDayInput').value);
       if(a === 'ff-1')     return fastForwardOneDay();
       if(a === 'month-end')return triggerMonthEndCeremony();
