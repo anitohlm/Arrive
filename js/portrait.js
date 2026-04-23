@@ -3630,12 +3630,19 @@ function renderPortraitYear(){
     var nowMonthStart = new Date(currentYear, currentMonth, 1);
     var isFuture = cellDate > nowMonthStart;
     var isCurrent = (m === currentMonth && gridYear === currentYear);
-    var isPastComplete = !isFuture && !isCurrent && stats.count > 0;
-    // tappable ONLY for past completed months — the in-progress month lives
-    // in the hero canvas above (with its sparkle + present-tense copy), so
-    // there's nothing to "open" yet for it. Future months obviously stay
-    // locked. This keeps the replay overlay a past-tense ritual only.
-    var tappable = isPastComplete;
+    // A month is "filled" if it has entries AND is not the current in-progress
+    // month. Past months with entries = normal case. Future months with entries
+    // = only happens when the DEMO year-end seed populated the whole calendar
+    // year (jan 1 → dec 31), in which case we want to show the rose, not the
+    // placeholder ring — otherwise the year-end demo looks half-empty.
+    var hasEntries = stats.count > 0;
+    var isFilled = !isCurrent && hasEntries;
+    var isFutureEmpty = isFuture && !hasEntries;
+    // kept for backward-compat with reads further down
+    var isPastComplete = isFilled && !isFuture;
+    // Tappable when filled — past OR future-with-entries both open into the
+    // month replay overlay. In-progress month stays locked (hero canvas above).
+    var tappable = isFilled;
 
     var cell = document.createElement('div');
     cell.className = 'portrait-year-cell'
@@ -3677,8 +3684,9 @@ function renderPortraitYear(){
         lctx.setTransform(dpr,0,0,dpr,0,0);
         drawCurrentMonthForming(lctx, 38, 38, 28, 0, stats, stats.topEmo || 'calm');
       }
-    } else if(isPastComplete){
-      // emotion-matched shadow per cell
+    } else if(isFilled){
+      // past month with entries OR (demo-only) future month the year-end
+      // seed populated. Both render as a full rose pendant.
       var morning2 = document.body.classList.contains('theme-morning');
       c.style.filter = knotShadowFilter(stats.topEmo, 14, morning2 ? 0.5 : 0.25);
       // ── render offscreen at portrait size (220px) and downscale to 76px for natural antialiasing
@@ -3703,7 +3711,7 @@ function renderPortraitYear(){
           dctx.drawImage(off, 0, 0, 76, 76);
         });
       })(c, stats.entries, m);
-    } else if(isFuture){
+    } else if(isFutureEmpty){
       // future month — dashed ring at higher opacity so it reads as intentional, not a bug
       c.width = 76 * dpr;
       c.height = 76 * dpr;
@@ -3735,7 +3743,7 @@ function renderPortraitYear(){
 
     var word = document.createElement('p');
     word.className = 'portrait-year-word';
-    if(isPastComplete && stats.word){
+    if(isFilled && stats.word){
       word.textContent = stats.word;
     } else if(isCurrent){
       var dayOfMonth = now.getDate();
@@ -3754,7 +3762,7 @@ function renderPortraitYear(){
         })[currentState] || 'almost';
       }
       word.textContent = wordText;
-    } else if(isFuture){
+    } else if(isFutureEmpty){
       word.textContent = '···';
     } else {
       word.textContent = '—';
