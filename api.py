@@ -426,3 +426,60 @@ def monthly_insights(request: InsightsRequest):
     except Exception:
         log.exception("/monthly-insights failed")
         raise
+
+# ── CRON / batch endpoints ──
+# Hit by the Azure Function (Timer Trigger) on a schedule. Protected by
+# CRON_SECRET header so a random caller can't trigger batch work.
+def _check_cron_auth(request: Request):
+    expected = os.getenv("CRON_SECRET", "")
+    got = request.headers.get("X-Cron-Secret", "")
+    if not expected or got != expected:
+        from fastapi import HTTPException
+        raise HTTPException(status_code=403, detail="forbidden")
+
+@app.post("/cron/monthly-portraits")
+def cron_monthly_portraits(request: Request):
+    """Iterate all users, generate monthly insight for each. Called by
+    the Azure Function's Timer Trigger on the 1st of each month."""
+    _check_cron_auth(request)
+    from db import users_container
+    users = list(users_container.query_items(
+        query="SELECT c.id FROM c",
+        enable_cross_partition_query=True
+    ))
+    ok, fail = 0, 0
+    for u in users:
+        try:
+            handle_monthly_insights(u["id"])
+            ok += 1
+        except Exception:
+            log.exception("monthly-portraits batch failed for user %s", u.get("id"))
+            fail += 1
+    return {"processed": len(users), "ok": ok, "fail": fail}
+
+@app.post("/cron/yearly-insights")
+def cron_yearly_insights(request: Request):
+    """Iterate all users, generate yearly insight for each. Called by
+    the Azure Function's Timer Trigger on January 1st."""
+    _check_cron_auth(request)
+    from db import users_container, get_recent_entries
+    users = list(users_container.query_items(
+        query="SELECT c.id, c.name FROM c",
+        enable_cross_partition_query=True
+    ))
+    ok, fail = 0, 0
+    for u in users:
+        try:
+            # Reuse the same shape the /yearly-insights endpoint expects
+            entries = get_recent_entries(u["id"], limit=400)
+            payload = {
+                "user_id": u["id"],
+                "name": u.get("name", ""),
+                "entries": entries,
+            }
+            get_yearly_insights(payload)
+            ok += 1
+        except Exception:
+            log.exception("yearly-insights batch failed for user %s", u.get("id"))
+            fail += 1
+    return {"processed": len(users), "ok": ok, "fail": fail}
