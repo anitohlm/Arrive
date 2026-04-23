@@ -2,7 +2,7 @@
 let emo = null, intent = null;
 const $ = id => document.getElementById(id);
 
-// Backend API base. Localhost dev → http://localhost:8766 (uvicorn). Production → same-origin.
+// Backend API base. Localhost dev → http://localhost:8766 (uvicorn). Production → Azure.
 // localStorage override removed — it was a phishing-sink waiting to happen.
 // To swap dev ports, edit the hardcoded port here.
 const API_BASE = (function(){
@@ -11,7 +11,7 @@ const API_BASE = (function(){
       return 'http://localhost:8766';
     }
   }catch(e){}
-  return '';
+  return 'https://arrive.azurewebsites.net';
 })();
 
 // First-boot identity. Every browser gets its own random ID so backend state

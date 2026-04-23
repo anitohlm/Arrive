@@ -35,6 +35,8 @@ app.add_middleware(
         "http://localhost:8800",  # claude preview port
         "http://127.0.0.1:8800",
     ],
+    # Any *.azurestaticapps.net subdomain (covers arrive-web + preview slots)
+    allow_origin_regex=r"https://[a-z0-9-]+\.azurestaticapps\.net",
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
