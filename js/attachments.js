@@ -259,12 +259,33 @@ $('journalSubmit').addEventListener('click',()=>{
       if(!_resolved) _revealPostInsight(POST_AI[emo] || 'the chain grew.');
     }, MAX_WAIT_MS);
 
+    // Pull last 7 entries from localStorage so the backend can detect
+    // recent patterns (emotion streak, brevity trend, missed-rate) and
+    // return a 'noticed' adaptation chip. Sending from the client lets
+    // this work with demo-seeded data too.
+    var _recent = [];
+    try {
+      var _all = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+      _recent = _all.slice(-7).reverse().map(function(e){
+        return {
+          mood: e.mood || e.emo || null,
+          emo:  e.emo  || e.mood || null,
+          content: (e.content || e.text || '').slice(0, 300),
+          text:    (e.text || e.content || '').slice(0, 300),
+          timestamp: e.timestamp || null,
+          dateISO:   e.dateISO   || null,
+          date:      e.date      || null,
+        };
+      });
+    } catch(e) {}
+
     fetch(API_BASE + '/post-insight', {
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({
         content:entry, mood:emo, day_number:dayNum-1,
-        user_id: localStorage.getItem('gc_user_id') || ''  // unlocks adaptive tone
+        user_id: localStorage.getItem('gc_user_id') || '',
+        recent_entries: _recent
       })
     }).then(function(r){return r.json()}).then(function(data){
       clearTimeout(aiTimeout);

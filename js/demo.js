@@ -225,29 +225,26 @@
     seedJourney(n);
   }
 
-  // Seed N days of a SINGLE emotion — proves the adaptive-strategy
-  // layer: after this, the next entry the user writes triggers a
-  // "noticing: you've carried X for three mornings" chip + a
-  // tone-shifted reply. Pushes entries to Cosmos so backend sees them.
+  // Seed N days of a SINGLE emotion into localStorage. The frontend
+  // sends recent_entries with every /post-insight call, so the backend
+  // detects the streak without needing Cosmos round-trips. Tomorrow's
+  // submit will trigger "noticing · you've carried {emo} for three
+  // mornings" chip + tone-shifted AI reply.
   function seedUniformEmotion(days, emo){
-    var userId = localStorage.getItem('gc_user_id') || '';
-    if(!userId){ _toast('no user id — sign in first'); return; }
     var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
     var loggedDates = JSON.parse(localStorage.getItem('gc_logged_dates')||'[]');
     var today = _localISO();
     if(!localStorage.getItem('gc_start_date')){
       localStorage.setItem('gc_start_date', _addDays(today, -(days - 1)));
     }
-    var toPush = [];
     for(var i = days; i >= 1; i--){
       var dISO = _addDays(today, -i);
-      // Clear any demo entries already on this date to avoid duplicates
       entries = entries.filter(function(e){
         var iso = (e.dateISO || e.date || e.timestamp || '').slice(0,10);
         return !(e.demo && iso === dISO);
       });
       loggedDates = loggedDates.filter(function(d){ return d !== dISO; });
-      var entry = {
+      entries.push({
         day: days - i + 1,
         emo: emo,
         intent: _rand(DEMO_INTENTS),
@@ -257,39 +254,14 @@
         timestamp: dISO + 'T09:30:00.000Z',
         ai: '',
         demo: true
-      };
-      entries.push(entry);
+      });
       loggedDates.push(dISO);
-      toPush.push(entry);
     }
     localStorage.setItem('gc_entries', JSON.stringify(entries));
     localStorage.setItem('gc_logged_dates', JSON.stringify(loggedDates));
     localStorage.removeItem('gc_logged_today');  // free up today to log
-
-    // Push to Cosmos so backend /post-insight sees the streak
-    _toast('seeding ' + days + ' ' + emo + ' days → cosmos…');
-    var pushed = 0;
-    toPush.forEach(function(e){
-      fetch((typeof API_BASE!=='undefined'?API_BASE:'') + '/submit-entry', {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          user_id: userId,
-          content: e.text,
-          mood: e.emo,
-          intention: e.intent,
-          day_number: e.day,
-          timestamp: e.timestamp,
-          demo: true
-        })
-      }).finally(function(){
-        pushed++;
-        if(pushed === toPush.length){
-          _toast('done. now write today\u2019s entry to see the chip.');
-          setTimeout(function(){ location.reload(); }, 1200);
-        }
-      });
-    });
+    _toast('seeded ' + days + ' ' + emo + ' days. reloading\u2026');
+    setTimeout(function(){ location.reload(); }, 700);
   }
 
   function fastForwardOneDay(){

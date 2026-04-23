@@ -79,11 +79,24 @@ class SubmitEntryRequest(BaseModel):
     photos: Optional[List[PhotoAttachment]] = Field(None, max_length=3)
     voice: Optional[VoiceAttachment] = None
 
+class RecentEntry(BaseModel):
+    mood: Optional[str] = None
+    emo: Optional[str] = None
+    content: Optional[str] = None
+    text: Optional[str] = None
+    timestamp: Optional[str] = None
+    dateISO: Optional[str] = None
+    date: Optional[str] = None
+
 class PostInsightRequest(BaseModel):
     content: constr(max_length=2000)
     mood: constr(max_length=64)
     day_number: int = 1
-    user_id: Optional[constr(max_length=128)] = None  # optional; unlocks recent-pattern adaptation
+    user_id: Optional[constr(max_length=128)] = None  # optional
+    # NEW: client sends last 7 entries directly from localStorage for context.
+    # Saves a Cosmos round-trip AND works for demo-seeded entries that never
+    # got persisted to Cosmos. Backend falls back to Cosmos if this is empty.
+    recent_entries: Optional[List[RecentEntry]] = Field(None, max_length=50)
 
 class GraceRequest(BaseModel):
     days_missed: int = 1
@@ -170,19 +183,21 @@ def submit_entry(request: Request, body: SubmitEntryRequest):
 @limiter.limit("20/minute")
 def post_insight(request: Request, body: PostInsightRequest):
     try:
-        # Fetch recent-pattern context if the frontend sent user_id.
-        # This is the "adapt strategies based on what's working" plumbing:
-        # the insight agent sees emotion streak / length / missed-rate and
-        # adjusts its tone, and we return a human-readable 'noticed' chip.
+        # Build recent-pattern context. Prefer client-sent recent_entries
+        # (fast, works with demo-seeded localStorage data). Fall back to
+        # Cosmos if no client entries but we have a user_id. Final fallback:
+        # empty context, agent runs without adaptation.
         ctx = {}
-        if body.user_id:
-            try:
+        try:
+            from agents.user_context import build_user_context
+            if body.recent_entries:
+                ctx = build_user_context([e.dict() for e in body.recent_entries])
+            elif body.user_id:
                 from db import get_recent_entries
-                from agents.user_context import build_user_context
                 ctx = build_user_context(get_recent_entries(body.user_id, limit=7))
-            except Exception:
-                log.exception("user_context fetch failed for /post-insight")
-                ctx = {}
+        except Exception:
+            log.exception("user_context build failed for /post-insight")
+            ctx = {}
 
         insight = generate_post_insight(
             content=body.content,
