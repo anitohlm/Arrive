@@ -222,28 +222,41 @@ $('journalSubmit').addEventListener('click',()=>{
 
   // ── Adaptive-strategy "noticing" chip ──
   // Rendered above the post-insight text when the backend detected a
-  // recent pattern (emotion streak, brevity trend, missed-day rate)
-  // and adapted the reply accordingly. Gentle, never interrogative.
+  // recent pattern and adapted the reply accordingly. Visible proof of
+  // the adaptive layer for hackathon judges.
   function _renderNoticedChip(noticedText){
     if(!noticedText) return;
     var host = document.getElementById('postInsightAi');
-    if(!host || !host.parentNode) return;
-    // Reuse or create the chip sibling just above the insight text
+    if(!host || !host.parentNode){
+      console.warn('[arrive] noticing chip: postInsightAi element missing');
+      return;
+    }
     var chip = document.getElementById('_noticedChip');
     if(!chip){
       chip = document.createElement('p');
       chip.id = '_noticedChip';
-      chip.style.cssText = [
-        'font-family:"DM Mono",monospace','font-size:9px','letter-spacing:0.2em',
-        'text-transform:uppercase','color:rgba(201,148,58,0.55)',
-        'margin:0 0 14px','text-align:center',
-        'opacity:0','transition:opacity 600ms ease'
-      ].join(';');
       host.parentNode.insertBefore(chip, host);
     }
+    // Rebuild styles every time — covers re-render + makes chip instantly
+    // visible (no transition race with _revealPostInsight's opacity fade).
+    chip.style.cssText = [
+      'font-family:"DM Mono",monospace',
+      'font-size:10px','letter-spacing:0.22em',
+      'text-transform:uppercase',
+      'color:rgba(230,182,88,0.85)',           // brighter gold, higher contrast
+      'margin:0 auto 16px','text-align:center',
+      'max-width:320px','line-height:1.5',
+      'opacity:1','display:block',
+      'padding:6px 10px',
+      'border:1px solid rgba(201,148,58,0.25)',
+      'border-radius:999px',
+      'background:rgba(201,148,58,0.04)'
+    ].join(';');
     chip.textContent = 'noticing  ·  ' + noticedText;
-    requestAnimationFrame(function(){ chip.style.opacity = '1'; });
+    try { console.log('[arrive] noticing chip rendered:', noticedText); } catch(e){}
   }
+  // Expose for debugging — handy for DevTools smoke tests.
+  window._arriveRenderChip = _renderNoticedChip;
   // OFFLINE-FIRST: the post-insight agent is the ONLY agent that would see
   // the user's entry text. In offline-first mode we skip the network call
   // entirely and use the curated hardcoded line per emotion. The entry
