@@ -27,3 +27,9 @@ _archive/
 # Build artifacts
 dist/
 build/
+
+# docx generator (the .docx output is committed; node_modules are not)
+node_modules/
+package.json
+package-lock.json
+_build_docx.js
