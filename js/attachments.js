@@ -221,36 +221,37 @@ $('journalSubmit').addEventListener('click',()=>{
   }
 
   // ── Adaptive-strategy "noticing" chip ──
-  // Rendered above the post-insight text when the backend detected a
-  // recent pattern and adapted the reply accordingly. Visible proof of
-  // the adaptive layer for hackathon judges.
+  // Rendered ABOVE the .post-insight-ai-wrap (the container holding the
+  // AI reply + loading dot) so it stacks vertically, not beside them.
   function _renderNoticedChip(noticedText){
     if(!noticedText) return;
-    var host = document.getElementById('postInsightAi');
-    if(!host || !host.parentNode){
-      console.warn('[arrive] noticing chip: postInsightAi element missing');
+    // Insert point: the wrap one level up, not postInsightAi itself
+    var wrap = document.querySelector('#s-post-insight .post-insight-ai-wrap');
+    if(!wrap || !wrap.parentNode){
+      console.warn('[arrive] noticing chip: .post-insight-ai-wrap missing');
       return;
     }
     var chip = document.getElementById('_noticedChip');
     if(!chip){
       chip = document.createElement('p');
       chip.id = '_noticedChip';
-      host.parentNode.insertBefore(chip, host);
+      wrap.parentNode.insertBefore(chip, wrap);
+    } else if (chip.parentNode !== wrap.parentNode){
+      // If it exists but was placed incorrectly before, move it
+      wrap.parentNode.insertBefore(chip, wrap);
     }
-    // Rebuild styles every time — covers re-render + makes chip instantly
-    // visible (no transition race with _revealPostInsight's opacity fade).
     chip.style.cssText = [
       'font-family:"DM Mono",monospace',
       'font-size:10px','letter-spacing:0.22em',
       'text-transform:uppercase',
-      'color:rgba(230,182,88,0.85)',           // brighter gold, higher contrast
-      'margin:0 auto 16px','text-align:center',
+      'color:rgba(230,182,88,0.85)',
+      'margin:0 auto 18px','text-align:center',
       'max-width:320px','line-height:1.5',
-      'opacity:1','display:block',
-      'padding:6px 10px',
-      'border:1px solid rgba(201,148,58,0.25)',
+      'opacity:1','display:block','width:fit-content',
+      'padding:7px 14px',
+      'border:1px solid rgba(201,148,58,0.3)',
       'border-radius:999px',
-      'background:rgba(201,148,58,0.04)'
+      'background:rgba(201,148,58,0.05)'
     ].join(';');
     chip.textContent = 'noticing  ·  ' + noticedText;
     try { console.log('[arrive] noticing chip rendered:', noticedText); } catch(e){}
