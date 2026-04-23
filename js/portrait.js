@@ -825,40 +825,52 @@ function showMonthEndCeremony(){
     'opacity:1','pointer-events:none'
   ].join(';');
 
-  // announcement block — flows inline as the first item in knotWrap so
-  // the full stack (text + rose + word + rule + message) is centered
-  // together as one group, rather than text pinned to top with dead
-  // space between it and the rose.
+  // ── COMPOSITION PRINCIPLE ──
+  // The rose is the hero. Everything else is supporting metadata.
+  // Top strip: compressed "the chain has woven · april · thirty mornings"
+  // as ONE quiet uppercase eyebrow. No competing 42px title.
+  //
+  // Bottom strip: the emotional word ("becoming") stays italic gold —
+  // that's the payoff the user came for. The paragraph witnesses it.
+  //
+  // Result: one hero (rose), two orbiting frames (eyebrow, word+paragraph).
   var announceWrap = document.createElement('div');
   announceWrap.style.cssText = [
-    'display:flex','flex-direction:column','align-items:center','gap:10px',
-    'margin-bottom:8px',
+    'display:flex','flex-direction:column','align-items:center','gap:6px',
+    'margin-bottom:18px',
     'pointer-events:none','transition:transform 3000ms ease, opacity 3000ms ease'
   ].join(';');
 
+  // quiet eyebrow — "the chain has woven" — sets the frame
   var announce1 = document.createElement('p');
   announce1.textContent = 'the chain has woven';
   announce1.style.cssText = [
-    'font-family:"Fraunces",serif','font-style:italic','font-weight:300',
-    'font-size:13px','color:rgba(201,148,58,0.55)',
+    'font-family:"DM Mono",monospace','font-weight:400',
+    'font-size:9px','letter-spacing:0.24em','text-transform:uppercase',
+    'color:rgba(201,148,58,0.42)',
     'text-align:center','margin:0',
     'opacity:0','transition:opacity 800ms ease'
   ].join(';');
 
+  // month name — restrained italic, sized to SUPPORT the rose not compete
+  // with it. Was 42px (hero-scale). Now 22px (caption-scale) so the eye
+  // flows past it toward the rose.
   var monthNameEl = document.createElement('p');
   monthNameEl.textContent = monthName;
   monthNameEl.style.cssText = [
     'font-family:"Fraunces",serif','font-style:italic','font-weight:300',
-    'font-size:42px','color:rgba(230,182,88,0.9)',
-    'letter-spacing:-0.02em','text-align:center','margin:0',
+    'font-size:22px','color:rgba(230,182,88,0.78)',
+    'letter-spacing:-0.005em','text-align:center','margin:0',
     'opacity:0','transition:opacity 1000ms ease'
   ].join(';');
 
+  // mornings count — whispered
   var morningsEl = document.createElement('p');
   morningsEl.textContent = morningsWord;
   morningsEl.style.cssText = [
-    'font-family:"Fraunces",serif','font-style:italic','font-weight:300',
-    'font-size:14px','color:rgba(245,237,224,0.35)',
+    'font-family:"DM Mono",monospace','font-weight:400',
+    'font-size:9px','letter-spacing:0.22em','text-transform:uppercase',
+    'color:rgba(245,237,224,0.28)',
     'text-align:center','margin:0',
     'opacity:0','transition:opacity 600ms ease'
   ].join(';');
@@ -867,20 +879,22 @@ function showMonthEndCeremony(){
   announceWrap.appendChild(morningsEl);
 
   // whole stack — announcement + rose + word + rule + message — centered
-  // as one group. No absolute-positioned announcement anymore.
+  // as one composed group. Tighter gaps between stack items so the rose
+  // feels connected to both its eyebrow (above) and word+paragraph (below),
+  // rather than orphaned in the middle.
   var knotWrap = document.createElement('div');
   knotWrap.style.cssText = [
     'position:absolute','inset:0',
     'display:flex','flex-direction:column','align-items:center','justify-content:center',
-    'gap:14px','padding:32px','pointer-events:none'
+    'gap:20px','padding:32px 28px','pointer-events:none'
   ].join(';');
 
-  // rose sized fluidly to viewport — scales continuously across every
-  // device from tiny phones (360px) through iPad Pro (1366px) and desktop.
-  // 42% of the shortest viewport dimension, clamped 160-360px.
+  // ── Rose is the HERO — size it up. 52% of shortest viewport side,
+  // clamped 200-420px. The previous 42% cap made it feel tentative.
+  // A ceremonial artifact should fill its frame confidently.
   var dpr = Math.min(window.devicePixelRatio||1, 2);
   var _vwShort = Math.min(window.innerWidth, window.innerHeight);
-  var _cvsSize = Math.round(Math.max(160, Math.min(360, _vwShort * 0.42)));
+  var _cvsSize = Math.round(Math.max(200, Math.min(420, _vwShort * 0.52)));
   var knotCanvas = document.createElement('canvas');
   knotCanvas.style.cssText = [
     'width:'+_cvsSize+'px','height:'+_cvsSize+'px',
