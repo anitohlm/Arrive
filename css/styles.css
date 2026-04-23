@@ -93,25 +93,29 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
 .gc-datefield-icon{width:16px;height:16px;color:rgba(201,148,58,0.55);flex-shrink:0;transition:color 200ms var(--ease)}
 .gc-datefield-display.open .gc-datefield-icon{color:var(--gold)}
 
+/* Calendar is a centered modal — sits above everything, fully in viewport. */
 .gc-cal{
-  position:absolute;left:0;right:0;top:calc(100% + 8px);z-index:120;
+  position:fixed;
+  left:50%;top:50%;
+  transform:translate(-50%, -50%) scale(0.96);
+  width:min(340px, calc(100vw - 32px));
+  max-height:calc(100dvh - 80px);
+  z-index:200;
   padding:16px 14px 12px;
   background:linear-gradient(180deg, #1a140e 0%, #120e09 100%);
   border:1px solid rgba(201,148,58,0.22);
   border-radius:18px;
-  box-shadow:0 16px 48px rgba(0,0,0,0.55);
-  opacity:0;transform:translateY(-4px);pointer-events:none;
+  box-shadow:0 16px 48px rgba(0,0,0,0.55), 0 0 0 100vmax rgba(6,4,2,0.78);
+  opacity:0;pointer-events:none;
   transition:opacity 220ms var(--ease), transform 220ms var(--ease);
-  /* keep picker inside the viewport — header stays, inner grid scrolls */
-  max-height:min(420px, calc(100vh - 160px));
   display:flex;flex-direction:column;
 }
+.gc-cal:not([hidden]){opacity:1;transform:translate(-50%, -50%) scale(1);pointer-events:auto}
 .gc-cal > .gc-cal-header,
 .gc-cal > .gc-cal-dow,
 .gc-cal > .gc-cal-footer{flex-shrink:0}
 .gc-cal > .gc-cal-grid,
 .gc-cal > .gc-cal-year-grid{flex:1;min-height:0;overflow-y:auto}
-.gc-cal:not([hidden]){opacity:1;transform:translateY(0);pointer-events:auto}
 .gc-cal[hidden]{display:none}
 
 .gc-cal-header{
