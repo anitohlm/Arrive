@@ -102,7 +102,15 @@ html,body{height:100%;width:100%;overflow:hidden;background:var(--bg);font-famil
   box-shadow:0 16px 48px rgba(0,0,0,0.55);
   opacity:0;transform:translateY(-4px);pointer-events:none;
   transition:opacity 220ms var(--ease), transform 220ms var(--ease);
+  /* keep picker inside the viewport — header stays, inner grid scrolls */
+  max-height:min(420px, calc(100vh - 160px));
+  display:flex;flex-direction:column;
 }
+.gc-cal > .gc-cal-header,
+.gc-cal > .gc-cal-dow,
+.gc-cal > .gc-cal-footer{flex-shrink:0}
+.gc-cal > .gc-cal-grid,
+.gc-cal > .gc-cal-year-grid{flex:1;min-height:0;overflow-y:auto}
 .gc-cal:not([hidden]){opacity:1;transform:translateY(0);pointer-events:auto}
 .gc-cal[hidden]{display:none}
 
