@@ -225,15 +225,16 @@
     seedJourney(n);
   }
 
-  // Seed N days of a SINGLE emotion into localStorage. The frontend
-  // sends recent_entries with every /post-insight call, so the backend
-  // detects the streak without needing Cosmos round-trips. Tomorrow's
-  // submit will trigger "noticing · you've carried {emo} for three
-  // mornings" chip + tone-shifted AI reply.
+  // Seed N days of a SINGLE emotion into localStorage, backdated so
+  // today is still free to log. Does NOT reload — we toast the user
+  // and keep them on whatever screen they're already on. The next
+  // /post-insight submit will pick up the streak via recent_entries
+  // and render the 'noticing' chip.
   function seedUniformEmotion(days, emo){
     var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
     var loggedDates = JSON.parse(localStorage.getItem('gc_logged_dates')||'[]');
     var today = _localISO();
+    // Respect an existing start date; only seed one if none exists.
     if(!localStorage.getItem('gc_start_date')){
       localStorage.setItem('gc_start_date', _addDays(today, -(days - 1)));
     }
@@ -260,8 +261,7 @@
     localStorage.setItem('gc_entries', JSON.stringify(entries));
     localStorage.setItem('gc_logged_dates', JSON.stringify(loggedDates));
     localStorage.removeItem('gc_logged_today');  // free up today to log
-    _toast('seeded ' + days + ' ' + emo + ' days. reloading\u2026');
-    setTimeout(function(){ location.reload(); }, 700);
+    _toast('seeded ' + days + ' ' + emo + ' days. now tap the app\u2019s heart logo (splash) \u2192 arrive.');
   }
 
   function fastForwardOneDay(){
