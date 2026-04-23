@@ -825,10 +825,10 @@ function showMonthEndCeremony(){
     'opacity:1','pointer-events:none'
   ].join(';');
 
-  // announcement block — absolute, upper third
+  // announcement block — absolute, upper area (clear of the centered rose)
   var announceWrap = document.createElement('div');
   announceWrap.style.cssText = [
-    'position:absolute','top:22%','left:0','right:0',
+    'position:absolute','top:10%','left:0','right:0',
     'display:flex','flex-direction:column','align-items:center','gap:10px',
     'pointer-events:none','transition:transform 3000ms ease, opacity 3000ms ease'
   ].join(';');
