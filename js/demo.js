@@ -263,6 +263,22 @@
     localStorage.removeItem('gc_ceremony_seen_' + ym);
     localStorage.removeItem('gc_portrait_seen_' + ym);
 
+    // Force-dismiss any lingering ceremony overlays from a prior run
+    // (year-end, birthday, necklace witness, etc.) — otherwise the
+    // showMonthEndCeremony() guard 'if(document.getElementById("monthEndOverlay")) return'
+    // won't trigger but OTHER overlays may still block the screen, and
+    // the month-end visually never arrives.
+    ['monthEndOverlay','yearCeremonyOverlay','yearCloseOverlay',
+     'birthdayCeremonyOverlay','necklaceWitnessLayer','monthReplayOverlay']
+      .forEach(function(id){
+        var el = document.getElementById(id);
+        if(el && el.parentNode) el.parentNode.removeChild(el);
+      });
+    // stale window references from prior ceremony runs
+    window._monthlyReflectionPrefetch = null;
+    window._monthReflectionText = null;
+    window._monthReflectionClosingEl = null;
+
     var now = new Date();
     var daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
     var existing = JSON.parse(localStorage.getItem('gc_entries')||'[]');
