@@ -250,10 +250,15 @@
 
   function triggerMonthEndCeremony(){
     // Seed the CURRENT month with demo-tagged entries (every day of the
-    // month that doesn't already have one), then fire the ceremony. The
-    // ceremony's pendant needs real entries to weave from — an empty month
-    // produces a bare outline. Fake entries tag themselves demo:true so
-    // "clear demo data only" wipes them on exit.
+    // month), then fire the ceremony. The ceremony's pendant needs real
+    // entries to weave from — an empty month produces a bare outline.
+    // Fake entries tag themselves demo:true so "clear demo data only"
+    // wipes them on exit.
+    //
+    // Always wipe any EXISTING demo entries for the current month before
+    // re-seeding, so clicking "month-end" repeatedly always produces a
+    // fresh full month (otherwise the skip-if-already-logged check makes
+    // subsequent clicks seed 0 days).
     var ym = new Date().toISOString().slice(0,7);
     localStorage.removeItem('gc_ceremony_seen_' + ym);
     localStorage.removeItem('gc_portrait_seen_' + ym);
@@ -262,8 +267,14 @@
     var daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
     var existing = JSON.parse(localStorage.getItem('gc_entries')||'[]');
     var loggedDates = JSON.parse(localStorage.getItem('gc_logged_dates')||'[]');
-    var loggedSet = {};
-    loggedDates.forEach(function(d){ loggedSet[d] = true; });
+
+    // ── Purge existing demo entries in the current month ──
+    existing = existing.filter(function(e){
+      var iso = (e.dateISO || e.date || e.timestamp || '').slice(0,10);
+      return !(e.demo && iso && iso.slice(0,7) === ym);
+    });
+    // Also drop their ISO dates from gc_logged_dates so the seeder fills
+    // them back in. (Real entries keep their logged-dates untouched.)
     var realInMonth = {};
     existing.forEach(function(e){
       var iso = (e.dateISO || e.date || e.timestamp || '').slice(0,10);
@@ -271,6 +282,12 @@
         realInMonth[iso] = true;
       }
     });
+    loggedDates = loggedDates.filter(function(d){
+      // keep dates that are either outside this month OR belong to a real entry
+      return d.slice(0,7) !== ym || realInMonth[d];
+    });
+    var loggedSet = {};
+    loggedDates.forEach(function(d){ loggedSet[d] = true; });
     // ── emotion distribution ──
     // Real months have a SHAPE — two or three dominant emotions color most
     // days, with the rest scattered across adjacent feelings. Uniform
