@@ -1064,4 +1064,83 @@
     buildPanel();
     _maybeFireQueuedCeremonies();
   }
+
+  // ── Console diagnostic — paste `arriveDebug.why()` into DevTools to see
+  //    exactly why the month-end ceremony won't fire, and `arriveDebug.fire()`
+  //    to force it past every guard.
+  window.arriveDebug = {
+    why: function(){
+      var ym = new Date().toISOString().slice(0,7);
+      var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+      var monthEntries = entries.filter(function(e){
+        var k = (e.dateISO || e.date || e.timestamp || '').slice(0,7);
+        return k === ym;
+      });
+      var ceremonySeen = localStorage.getItem('gc_ceremony_seen_'+ym);
+      var existingOverlay = document.getElementById('monthEndOverlay');
+      var otherOverlays = ['yearCeremonyOverlay','yearCloseOverlay',
+        'birthdayCeremonyOverlay','necklaceWitnessLayer','monthReplayOverlay']
+        .filter(function(id){ return !!document.getElementById(id); });
+      var showFn = typeof showMonthEndCeremony === 'function';
+      var blocker = null;
+      if(!showFn) blocker = 'showMonthEndCeremony is not defined on window (portrait.js not loaded yet)';
+      else if(existingOverlay) blocker = 'monthEndOverlay already in DOM — need to dismiss';
+      else if(ceremonySeen) blocker = 'gc_ceremony_seen_'+ym+' is set — would silently return';
+      else if(monthEntries.length === 0) blocker = 'no entries in '+ym+' — ceremony aborts with empty month';
+      else if(otherOverlays.length) blocker = 'other overlay(s) still in DOM: '+otherOverlays.join(', ');
+      else blocker = 'no blocker found — firing should work';
+      var report = {
+        month: ym,
+        entriesThisMonth: monthEntries.length,
+        ceremonySeenFlag: !!ceremonySeen,
+        monthEndOverlayInDom: !!existingOverlay,
+        otherOverlaysInDom: otherOverlays,
+        showMonthEndCeremonyDefined: showFn,
+        diagnosis: blocker
+      };
+      console.table(report);
+      console.log('Full entries for '+ym+':', monthEntries);
+      return report;
+    },
+    fire: function(){
+      var ym = new Date().toISOString().slice(0,7);
+      console.log('[arriveDebug] forcing month-end ceremony…');
+      // Nuke every known blocker
+      localStorage.removeItem('gc_ceremony_seen_'+ym);
+      localStorage.removeItem('gc_portrait_seen_'+ym);
+      ['monthEndOverlay','yearCeremonyOverlay','yearCloseOverlay',
+       'birthdayCeremonyOverlay','necklaceWitnessLayer','monthReplayOverlay']
+        .forEach(function(id){
+          var el = document.getElementById(id);
+          if(el && el.parentNode){ el.parentNode.removeChild(el); console.log('[arriveDebug] removed',id); }
+        });
+      window._monthlyReflectionPrefetch = null;
+      window._monthReflectionText = null;
+      window._monthReflectionClosingEl = null;
+      // Ensure there's content to reveal
+      var entries = JSON.parse(localStorage.getItem('gc_entries')||'[]');
+      var monthEntries = entries.filter(function(e){
+        var k = (e.dateISO || e.date || e.timestamp || '').slice(0,7);
+        return k === ym;
+      });
+      if(monthEntries.length === 0){
+        console.warn('[arriveDebug] zero entries for '+ym+' — seeding 30 days before firing');
+        triggerMonthEndCeremony();
+        return 'seeded + firing';
+      }
+      if(typeof prefetchMonthlyReflection === 'function') prefetchMonthlyReflection();
+      if(typeof showMonthEndCeremony === 'function'){
+        showMonthEndCeremony();
+        console.log('[arriveDebug] showMonthEndCeremony called');
+        return 'fired';
+      }
+      console.error('[arriveDebug] showMonthEndCeremony not defined');
+      return 'failed — function missing';
+    },
+    reseed: function(){
+      console.log('[arriveDebug] purging current month and reseeding 30 demo days…');
+      triggerMonthEndCeremony();
+      return 'done';
+    }
+  };
 })();
