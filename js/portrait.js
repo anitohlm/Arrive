@@ -1964,8 +1964,11 @@ function showMonthEndCeremony(){
     if(!cv){ if(miniKnotRotationActive) requestAnimationFrame(miniKnotTick); return; }
     var mctx = cv.getContext('2d');
     mctx.setTransform(dpr,0,0,dpr,0,0);
-    mctx.clearRect(0,0,120,120);
-    var mcx = 60, mcy = 60, mR = 120*0.38;
+    // Match the canvas's actual CSS size (96px on the closing page
+    // — was hardcoded 120 which clipped the mini pendant).
+    var miniSize = cv.offsetWidth || (cv.width / dpr);
+    mctx.clearRect(0,0,miniSize,miniSize);
+    var mcx = miniSize/2, mcy = miniSize/2, mR = miniSize*0.38;
     var mSizeBoost = mR < 60 ? (60/mR) : 1;
     var mgrd = mctx.createRadialGradient(mcx,mcy,0,mcx,mcy,mR*1.6);
     mgrd.addColorStop(0,'rgba('+glowRgb+','+glowBaseA+')');
@@ -2115,9 +2118,11 @@ function showMonthEndCeremony(){
         'overflow-y:auto','-webkit-overflow-scrolling:touch'
       ].join(';');
 
-      // eyebrow — anchors the page like year-end's closing beat
+      // eyebrow — anchors the page like year-end's closing beat.
+      // morningsWord already includes ' mornings' (e.g. 'thirty mornings')
+      // so don't append another.
       var eyebrow = document.createElement('p');
-      eyebrow.textContent = 'a reflection on ' + (monthEntries.length === 1 ? 'your morning' : 'your ' + morningsWord + ' mornings');
+      eyebrow.textContent = 'a reflection on ' + (monthEntries.length === 1 ? 'your morning' : 'your ' + morningsWord);
       eyebrow.style.cssText = 'font-family:"DM Mono",monospace;font-size:9px;color:rgba(201,148,58,0.42);letter-spacing:0.24em;text-transform:uppercase;margin:0;text-align:center';
       wrap.appendChild(eyebrow);
 
@@ -2135,9 +2140,16 @@ function showMonthEndCeremony(){
       mLabel.style.cssText = 'font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:15px;color:rgba(230,182,88,0.72);letter-spacing:-0.005em;margin:0;text-align:center';
       wrap.appendChild(mLabel);
 
+      // month WORD — the emotional payoff of the month (e.g., "becoming"),
+      // mirroring how page 0 uses it as the hero word.
+      var mWord = document.createElement('p');
+      mWord.textContent = monthWord;
+      mWord.style.cssText = 'font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:22px;color:var(--gold);letter-spacing:-0.015em;margin:6px 0 0;text-align:center';
+      wrap.appendChild(mWord);
+
       // hair-rule separator
       var hr = document.createElement('div');
-      hr.style.cssText = 'width:32px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,148,58,0.5),transparent);margin:6px 0 2px';
+      hr.style.cssText = 'width:32px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,148,58,0.5),transparent);margin:8px 0 4px';
       wrap.appendChild(hr);
 
       // reflection paragraph — same element the AI populates via the
