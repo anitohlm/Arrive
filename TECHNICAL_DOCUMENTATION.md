@@ -3,7 +3,7 @@
 > *one morning at a time.*
 
 Last updated: 2026-04-23
-Current cache-bust version: `?v=117`
+Current cache-bust version: `?v=147`
 Target audience: engineers reading, running, extending, or deploying the codebase.
 
 ---
@@ -13,6 +13,22 @@ Target audience: engineers reading, running, extending, or deploying the codebas
 **Arrive** is a one-minute-a-day gratitude journal built on a keystone-habit thesis: *the gentler the accountability, the higher the return rate.* The client is a static vanilla-JS frontend served as `index.html`; the server is a FastAPI backend wrapping seven Azure AI agents and persisting state to Azure Cosmos DB with an Azure AI Search sidecar for semantic memory resurface.
 
 **Metaphor.** Each entry is a "knot" on a "chain." A month of knots weaves into a rose-curve "pendant." Twelve pendants make a "year necklace," from which the user picks one to carry forward.
+
+### Tech stack
+
+| Service | Role in Arrive |
+|---|---|
+| **Microsoft Foundry** | Model deployment (chat completions) for all seven AI agents |
+| **Microsoft Agent Framework** (`azure-ai-agents`) | Client SDK for agent calls and prompt assembly |
+| **Azure AI Search** | Semantic index over past entries for memory-resurface agent |
+| **Azure Cosmos DB** | Users, entries, links, agent_memory containers (SQL API) |
+| **Azure App Service** (Linux, Python 3.14, Free F1) | FastAPI backend at `arrive.azurewebsites.net` |
+| **Azure Static Web Apps** (Free) | Frontend at `mango-wave-04adc570f.7.azurestaticapps.net` |
+| **Azure Functions** (Consumption) | Timer-triggered scheduled Portraits + yearly insights (`arrive-scheduler`) |
+| **Azure Managed Identity** | System-assigned identity on App Service → Foundry (Cognitive Services User + Azure AI Developer roles); no client secrets in env vars |
+| **GitHub Actions CI/CD** | Two auto-generated workflows: `main_arrive.yml` (backend) + `azure-static-web-apps-*.yml` (frontend); both redeploy on `git push main` |
+
+All services run on the **free tier** where available, so the full app — including nine users' worth of Cosmos usage, Foundry calls, AI Search indexing, and Function invocations — is deployable for **$0/month** within free-tier limits.
 
 ---
 
@@ -65,6 +81,7 @@ Arrive/
 
 ```
 ┌──────────────────────────────────────────────────────────┐
+│  AZURE STATIC WEB APPS  (mango-wave-04adc570f...)        │
 │  BROWSER  (index.html + js/* + css/styles.css)           │
 │                                                          │
 │  localStorage keys (all prefixed gc_):                   │
@@ -84,22 +101,38 @@ Arrive/
 │    gc_grace            {month, remaining}                │
 └────────────┬─────────────────────────────────────────────┘
              │ HTTPS/JSON  (API_BASE: arrive.azurewebsites.net in prod, :8766 dev)
+             │ CORS allow-list: *.azurestaticapps.net
 ┌────────────▼─────────────────────────────────────────────┐
+│  AZURE APP SERVICE  (arrive.azurewebsites.net)           │
 │  FASTAPI (api.py)                                        │
-│    - CORS (dev origins 8765 / 8000 / 8800)               │
 │    - slowapi rate-limiter (per-IP)                       │
 │    - Pydantic validation (constr + EmailStr + patterns)  │
+│    - X-Cron-Secret auth on /cron/* batch endpoints       │
 │                                                          │
 │  orchestrator.py — cross-agent workflows                 │
 │                                                          │
 │  agents/ (7 AI + 2 support)                              │
-│    DefaultAzureCredential → ChatCompletionsClient        │
+│    Azure Managed Identity → DefaultAzureCredential       │
+│    → Microsoft Agent Framework (azure-ai-agents)         │
 │    safety.py short-circuits AI for crisis disclosures    │
 │    streak_agent.py runs pure math offline                │
 │                                                          │
-│  db.py        → Azure Cosmos (entries, users, links)     │
-│  search.py    → Azure AI Search (text-only projection)   │
+│  db.py        → AZURE COSMOS DB  (entries/users/links)   │
+│  search.py    → AZURE AI SEARCH  (text-only projection)  │
+│  agents/*     → MICROSOFT FOUNDRY (chat completions)     │
 └──────────────────────────────────────────────────────────┘
+             ▲
+             │ POST /cron/monthly-portraits  (X-Cron-Secret)
+             │ POST /cron/yearly-insights
+┌────────────┴─────────────────────────────────────────────┐
+│  AZURE FUNCTIONS  (arrive-scheduler — Consumption plan)  │
+│    monthly_portraits   Timer: 1st of month @ 09:00 UTC   │
+│    yearly_insights     Timer: Jan 1 @ 10:00 UTC          │
+└──────────────────────────────────────────────────────────┘
+
+         [CI/CD pipeline — GitHub Actions]
+  git push main ──► main_arrive.yml ──► App Service redeploys
+              └──► azure-static-web-apps-*.yml ──► SWA redeploys
 ```
 
 ---
