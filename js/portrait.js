@@ -1043,17 +1043,21 @@ function showMonthEndCeremony(){
   msgEl.style.display = 'none';
   knotWrap.appendChild(msgEl);
 
-  // in-page swipe hint — sits below msgEl inside page 1, fades in at t=14500
+  // in-page swipe hint — sits just ABOVE the pager dots, outside knotWrap
+  // so it doesn't offset the rose's centering. Fades in at t=14500.
   var swipeHintInPage = document.createElement('p');
   swipeHintInPage.textContent = 'swipe to see your month →';
   swipeHintInPage.style.cssText = [
+    'position:absolute',
+    'bottom:calc(env(safe-area-inset-bottom, 0px) + 120px)',
+    'left:0','right:0',
     'font-family:"DM Mono",monospace','font-size:9px',
     'color:rgba(201,148,58,0.2)','letter-spacing:0.1em',
-    'text-align:center','margin:14px 0 0',
+    'text-align:center','margin:0',
     'opacity:0','transition:opacity 1200ms ease',
     'pointer-events:none'
   ].join(';');
-  knotWrap.appendChild(swipeHintInPage);
+  // appended to page[0] directly below alongside announceWrap/knotWrap/wordGroup
 
   // pages container — 6 pages, each 100vw wide, slides horizontally
   var pagesContainer = document.createElement('div');
@@ -1081,12 +1085,13 @@ function showMonthEndCeremony(){
   //   4 = the thread held
   //   5 = closing beat (AI reflection paragraph + pendant + carry it forward)
   var pages = [mkPage(), mkPage(), mkPage(), mkPage(), mkPage(), mkPage()];
-  // Page 0: announcement pinned top, knotWrap fills middle with just the
-  // rose (truly centered), wordGroup pinned bottom. Three layers, all
-  // absolute, all inside the page's relative container.
+  // Page 0: four absolute layers, none fighting for space:
+  //   announceWrap (top), knotWrap/rose (50% center via transform),
+  //   wordGroup (bottom 22%), swipeHintInPage (above pager dots).
   pages[0].appendChild(announceWrap);
   pages[0].appendChild(knotWrap);
   pages[0].appendChild(wordGroup);
+  pages[0].appendChild(swipeHintInPage);
   pages.forEach(function(pg){ pagesContainer.appendChild(pg); });
 
   // dot indicators at bottom
