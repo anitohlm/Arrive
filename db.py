@@ -216,7 +216,6 @@ def get_user(user_id: str) -> dict:
             "streak": 0,
             "lastEntryDate": None,
             "startDate": None,
-            "intention": "joy",
             "graceUsed": 0,
             "graceMonth": None,
             "graceRemaining": 1,
