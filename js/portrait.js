@@ -904,8 +904,11 @@ function showMonthEndCeremony(){
   var knotCanvas = document.createElement('canvas');
   knotCanvas.style.cssText = [
     'width:'+_cvsSize+'px','height:'+_cvsSize+'px',
-    'opacity:0','transition:opacity 600ms ease',
-    'mix-blend-mode:screen'
+    'opacity:0','transition:opacity 600ms ease'
+    // mix-blend-mode:screen removed — created a visible rectangular
+    // frame around the rose against the opaque overlay background.
+    // The rose already has its own luminous glow from drawKnotGeometry
+    // so we don't need screen blending to achieve the ethereal look.
   ].join(';');
   knotCanvas.width = _cvsSize * dpr;
   knotCanvas.height = _cvsSize * dpr;
