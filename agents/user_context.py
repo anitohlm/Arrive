@@ -98,28 +98,48 @@ HEAVY = {"hard", "heavy", "overwhelmed", "sad", "anxious", "exhausted", "lonely"
 
 
 def _build_noticed_line(streak_emo: str | None, missed_rate: float,
-                        avg_len_bucket: str, dominant: str | None) -> str:
-    """Single human-readable line the frontend can show as a 'noticing' chip."""
+                        avg_len_bucket: str, dominant: str | None,
+                        today_mood: str | None = None) -> str:
+    """Single human-readable line the frontend can show as a 'noticing' chip.
+
+    Phrased as past-tense recognition of the last 7 days. When today's mood
+    differs from the streak, the line becomes a 'shift' acknowledgment so
+    users don't read it as describing their current state.
+    """
+    # Recent streak of a heavy emotion
     if streak_emo and streak_emo in HEAVY:
-        return f"you've carried {streak_emo} for three mornings."
+        if today_mood and today_mood != streak_emo:
+            return f"three mornings of {streak_emo} behind you. today feels different."
+        return f"three mornings of {streak_emo} in a row."
+    # Recent streak of a light emotion
     if streak_emo:
-        return f"you've been {streak_emo} for three mornings."
+        if today_mood and today_mood != streak_emo:
+            return f"three {streak_emo} mornings, then this shift."
+        return f"three mornings of {streak_emo}."
+    # Gap patterns
     if missed_rate >= 0.5:
-        return "welcome back. we've missed you."
+        return "it's been a while. welcome back."
     if missed_rate >= 0.25:
-        return "it's been a few days. no rush."
+        return "a few gaps this week. no rush."
+    # Length-based observations
     if avg_len_bucket == "long" and dominant:
-        return f"you've had a lot to say this week, and {dominant} keeps showing up."
+        return f"a lot to say this week, with {dominant} close by."
     if avg_len_bucket == "short":
         return "short and honest. that's enough."
+    # Dominant-emotion fallback
     if dominant:
+        if today_mood and today_mood != dominant:
+            return f"{dominant} has been close this week. today you chose differently."
         return f"{dominant} has been close this week."
     return ""
 
 
-def build_user_context(entries: list) -> dict:
+def build_user_context(entries: list, today_mood: str | None = None) -> dict:
     """
     entries: list of entry dicts, newest first. Typically last 7 days.
+    today_mood: optional — the mood the user just picked for today, used
+      so the 'noticed' line can acknowledge a shift when today differs
+      from the recent pattern.
     Returns a dict of adaptation signals safe to inject into any agent.
     """
     if not entries:
@@ -146,7 +166,8 @@ def build_user_context(entries: list) -> dict:
         "missed_rate": missed,
         "typical_hour": typical,
         "dominant_emotion": dominant,
-        "noticed": _build_noticed_line(streak_emo, missed, length_bucket, dominant),
+        "today_mood": today_mood,
+        "noticed": _build_noticed_line(streak_emo, missed, length_bucket, dominant, today_mood),
     }
 
 

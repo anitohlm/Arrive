@@ -191,10 +191,10 @@ def post_insight(request: Request, body: PostInsightRequest):
         try:
             from agents.user_context import build_user_context
             if body.recent_entries:
-                ctx = build_user_context([e.dict() for e in body.recent_entries])
+                ctx = build_user_context([e.dict() for e in body.recent_entries], today_mood=body.mood)
             elif body.user_id:
                 from db import get_recent_entries
-                ctx = build_user_context(get_recent_entries(body.user_id, limit=7))
+                ctx = build_user_context(get_recent_entries(body.user_id, limit=7), today_mood=body.mood)
         except Exception:
             log.exception("user_context build failed for /post-insight")
             ctx = {}
