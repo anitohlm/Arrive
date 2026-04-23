@@ -810,11 +810,14 @@ function showMonthEndCeremony(){
   var overlay = document.createElement('div');
   overlay.id = 'monthEndOverlay';
   overlay.style.cssText = [
-    'position:fixed','inset:0','z-index:180',
-    // opaque from t=0 so Portrait screen content never bleeds through
-    'background:#0a0704','transition:background 1200ms ease',
+    'position:fixed','inset:0','z-index:9999',
+    // fully opaque — nothing from chain/splash/portrait can bleed through
+    'background:#000',
     'overflow:hidden','cursor:default'
   ].join(';');
+  // belt-and-suspenders: enforce opacity + isolation
+  overlay.style.setProperty('background-color','#000','important');
+  overlay.style.setProperty('isolation','isolate','important');
 
   // threshold line — horizontal across vertical center
   var line = document.createElement('div');
