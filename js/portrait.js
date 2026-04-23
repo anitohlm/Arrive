@@ -826,18 +826,18 @@ function showMonthEndCeremony(){
   ].join(';');
 
   // ── COMPOSITION PRINCIPLE ──
-  // The rose is the hero. Everything else is supporting metadata.
-  // Top strip: compressed "the chain has woven · april · thirty mornings"
-  // as ONE quiet uppercase eyebrow. No competing 42px title.
-  //
-  // Bottom strip: the emotional word ("becoming") stays italic gold —
-  // that's the payoff the user came for. The paragraph witnesses it.
-  //
-  // Result: one hero (rose), two orbiting frames (eyebrow, word+paragraph).
+  // The rose is the hero, dead-centered on screen. Announcement (eyebrow
+  // + month name + mornings) is pinned to the TOP with absolute
+  // positioning so it doesn't affect the rose's vertical centering. Word
+  // + rule are pinned to the BOTTOM same way. This is the only way to
+  // make the rose land at exactly viewport center; flex-centering a
+  // multi-element column puts the STACK at center, not the rose.
   var announceWrap = document.createElement('div');
   announceWrap.style.cssText = [
+    'position:absolute',
+    'top:calc(env(safe-area-inset-top, 0px) + 40px)',
+    'left:0','right:0',
     'display:flex','flex-direction:column','align-items:center','gap:6px',
-    'margin-bottom:18px',
     'pointer-events:none','transition:transform 3000ms ease, opacity 3000ms ease'
   ].join(';');
 
@@ -908,6 +908,18 @@ function showMonthEndCeremony(){
   ].join(';');
   knotCanvas.width = _cvsSize * dpr;
   knotCanvas.height = _cvsSize * dpr;
+
+  // word + rule are absolute-positioned at the bottom so they don't
+  // push the rose off-center. They sit as a bottom "frame" matching
+  // the top announcement frame.
+  var wordGroup = document.createElement('div');
+  wordGroup.style.cssText = [
+    'position:absolute',
+    'bottom:calc(env(safe-area-inset-bottom, 0px) + 48px)',
+    'left:0','right:0',
+    'display:flex','flex-direction:column','align-items:center','gap:10px',
+    'pointer-events:none'
+  ].join(';');
 
   var wordEl = document.createElement('p');
   wordEl.textContent = monthWord;
@@ -1024,15 +1036,23 @@ function showMonthEndCeremony(){
       });
   })();
 
-  knotWrap.appendChild(announceWrap);   // 'the chain has woven / april / thirty mornings'
+  // knotWrap is now flex-center but with ONLY the canvas as its child,
+  // so the rose lands at exact screen center. Announcement pinned top,
+  // word/rule pinned bottom — no other children to shift the rose.
   knotWrap.appendChild(knotCanvas);
-  knotWrap.appendChild(wordEl);
-  knotWrap.appendChild(rule);
+
+  // Top frame (eyebrow + month + mornings) — absolute top
+  // NOTE: announceWrap and wordGroup are siblings of knotWrap on page 0
+  // so their absolute positioning references the page, not knotWrap.
+  // They get appended to pages[0] below.
+
+  // Bottom frame (word + rule) — absolute bottom
+  wordGroup.appendChild(wordEl);
+  wordGroup.appendChild(rule);
+
   // msgEl is kept in memory as the AI-reflection destination for the
-  // resolver, but mounted hidden on page 0 (opacity stays 0 throughout
-  // page-0 beat). The VISIBLE reflection paragraph lives on page 5
-  // (closing beat) via _monthReflectionClosingEl. Keeping msgEl mounted
-  // satisfies the resolver's `if(!msgEl.parentNode) return` guard.
+  // resolver, hidden on page 0. The VISIBLE reflection paragraph lives
+  // on page 5 (closing beat) via _monthReflectionClosingEl.
   msgEl.style.display = 'none';
   knotWrap.appendChild(msgEl);
 
@@ -1074,7 +1094,12 @@ function showMonthEndCeremony(){
   //   4 = the thread held
   //   5 = closing beat (AI reflection paragraph + pendant + carry it forward)
   var pages = [mkPage(), mkPage(), mkPage(), mkPage(), mkPage(), mkPage()];
+  // Page 0: announcement pinned top, knotWrap fills middle with just the
+  // rose (truly centered), wordGroup pinned bottom. Three layers, all
+  // absolute, all inside the page's relative container.
+  pages[0].appendChild(announceWrap);
   pages[0].appendChild(knotWrap);
+  pages[0].appendChild(wordGroup);
   pages.forEach(function(pg){ pagesContainer.appendChild(pg); });
 
   // dot indicators at bottom
