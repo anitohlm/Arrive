@@ -878,23 +878,28 @@ function showMonthEndCeremony(){
   announceWrap.appendChild(monthNameEl);
   announceWrap.appendChild(morningsEl);
 
-  // whole stack — announcement + rose + word + rule + message — centered
-  // as one composed group. Tighter gaps between stack items so the rose
-  // feels connected to both its eyebrow (above) and word+paragraph (below),
-  // rather than orphaned in the middle.
+  // whole stack — centered within a safe-area-aware frame. Reserves
+  // padding for status bar (top), bottom nav (~80px), and gesture
+  // indicator via env(safe-area-inset-*), so the composition never
+  // bleeds into system chrome on any device.
   var knotWrap = document.createElement('div');
   knotWrap.style.cssText = [
     'position:absolute','inset:0',
     'display:flex','flex-direction:column','align-items:center','justify-content:center',
-    'gap:20px','padding:32px 28px','pointer-events:none'
+    'gap:18px',
+    'padding-top:calc(env(safe-area-inset-top, 0px) + 24px)',
+    'padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 96px)',
+    'padding-left:28px','padding-right:28px',
+    'pointer-events:none'
   ].join(';');
 
-  // ── Rose is the HERO — size it up. 52% of shortest viewport side,
-  // clamped 200-420px. The previous 42% cap made it feel tentative.
-  // A ceremonial artifact should fill its frame confidently.
+  // ── Rose sized to the AVAILABLE frame (viewport minus nav + safe areas),
+  // not the raw viewport. Uses short dimension × 0.44, clamped 180-380px.
+  // This guarantees the full stack (eyebrow + rose + word + rule + paragraph)
+  // fits inside the safe frame without either edge bleeding.
   var dpr = Math.min(window.devicePixelRatio||1, 2);
   var _vwShort = Math.min(window.innerWidth, window.innerHeight);
-  var _cvsSize = Math.round(Math.max(200, Math.min(420, _vwShort * 0.52)));
+  var _cvsSize = Math.round(Math.max(180, Math.min(380, _vwShort * 0.44)));
   var knotCanvas = document.createElement('canvas');
   knotCanvas.style.cssText = [
     'width:'+_cvsSize+'px','height:'+_cvsSize+'px',
