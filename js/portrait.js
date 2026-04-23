@@ -904,11 +904,13 @@ function showMonthEndCeremony(){
   var knotCanvas = document.createElement('canvas');
   knotCanvas.style.cssText = [
     'width:'+_cvsSize+'px','height:'+_cvsSize+'px',
-    'opacity:0','transition:opacity 600ms ease'
-    // mix-blend-mode:screen removed — created a visible rectangular
-    // frame around the rose against the opaque overlay background.
-    // The rose already has its own luminous glow from drawKnotGeometry
-    // so we don't need screen blending to achieve the ethereal look.
+    'opacity:0','transition:opacity 600ms ease',
+    // Radial mask: canvas is fully visible at center, fades to fully
+    // transparent at the edges. Kills the visible rectangular frame
+    // caused by the canvas's internal glow gradient reaching the
+    // square bounds. No blend mode needed — mask does the softening.
+    '-webkit-mask-image:radial-gradient(circle at center, #000 58%, rgba(0,0,0,0) 100%)',
+    'mask-image:radial-gradient(circle at center, #000 58%, rgba(0,0,0,0) 100%)'
   ].join(';');
   knotCanvas.width = _cvsSize * dpr;
   knotCanvas.height = _cvsSize * dpr;
