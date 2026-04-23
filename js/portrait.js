@@ -878,10 +878,10 @@ function showMonthEndCeremony(){
   announceWrap.appendChild(monthNameEl);
   announceWrap.appendChild(morningsEl);
 
-  // whole stack — truly centered. Bottom nav is auto-hidden during
-  // the ceremony (CSS :has() rule in styles.css), so we only need
-  // symmetric padding that respects device safe areas without biasing
-  // the composition up or down.
+  // whole stack — truly centered. Bottom nav auto-hides during ceremony.
+  // Page 1 (this one): rose + eyebrow + word + SHORT 2-sentence witness.
+  // Page 2 (pages[1]): the full AI reflection paragraph gets its own
+  // dedicated page so it never crowds the rose or clips the viewport.
   var knotWrap = document.createElement('div');
   knotWrap.style.cssText = [
     'position:absolute','inset:0',
@@ -933,8 +933,8 @@ function showMonthEndCeremony(){
   msgEl.setAttribute('data-month-reflection','1');
   msgEl.style.cssText = [
     'font-family:"Fraunces",serif','font-style:italic','font-weight:300',
-    'font-size:14px','color:rgba(245,237,224,0.65)',
-    'line-height:1.75','text-align:center','margin:0','max-width:360px',
+    'font-size:13.5px','color:rgba(245,237,224,0.65)',
+    'line-height:1.6','text-align:center','margin:0','max-width:340px',
     'opacity:0','transition:opacity 800ms ease'
   ].join(';');
   msgEl.innerHTML = '<p style="margin:0">' + monthMsg + '</p>';
@@ -980,23 +980,34 @@ function showMonthEndCeremony(){
         style.textContent = '@keyframes _mrIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }';
         document.head.appendChild(style);
       }
-      var html = parts.map(function(s, i){
-        var sizeRem = i === 0 ? 15.5 : 14;
-        var opacity = i === 0 ? 0.9 : 0.75;
-        var delay = 80 + i * 200;
-        return '<p style="'
-          + 'font-family:Fraunces,serif;font-style:italic;font-weight:300;'
-          + 'font-size:' + sizeRem + 'px;line-height:1.75;letter-spacing:0.005em;'
-          + 'color:rgba(245,237,224,' + opacity + ');'
-          + 'text-align:center;margin:0 0 10px;'
-          + 'opacity:0;transform:translateY(5px);'
-          + 'animation:_mrIn 580ms ' + delay + 'ms cubic-bezier(.2,.7,.25,1) forwards;'
-          + '">' + s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>';
-      }).join('');
-      msgEl.innerHTML = html;
+      function buildHtml(opts){
+        return parts.map(function(s, i){
+          var sizeRem = opts && opts.compact
+            ? (i === 0 ? 14.5 : 13.5)
+            : (i === 0 ? 15.5 : 14);
+          var opacity = i === 0 ? 0.9 : 0.75;
+          var delay = 80 + i * 200;
+          return '<p style="'
+            + 'font-family:Fraunces,serif;font-style:italic;font-weight:300;'
+            + 'font-size:' + sizeRem + 'px;line-height:1.7;letter-spacing:0.005em;'
+            + 'color:rgba(245,237,224,' + opacity + ');'
+            + 'text-align:center;margin:0 0 10px;'
+            + 'opacity:0;transform:translateY(5px);'
+            + 'animation:_mrIn 580ms ' + delay + 'ms cubic-bezier(.2,.7,.25,1) forwards;'
+            + '">' + s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>';
+        }).join('');
+      }
+      msgEl.innerHTML = buildHtml();
+      // Also populate the closing page's reflection element if populateMidPages
+      // has run already (creates window._monthReflectionClosingEl)
+      if(window._monthReflectionClosingEl){
+        window._monthReflectionClosingEl.innerHTML = buildHtml({compact:true});
+      }
     }
     _promise.then(function(reflection){
         if(!reflection) return;
+        // cache the text so populateMidPages can pick it up if it runs LATER
+        window._monthReflectionText = reflection;
         if(!msgEl.parentNode) return;
         var wasVisible = getComputedStyle(msgEl).opacity !== '0';
         if(wasVisible){
@@ -1017,7 +1028,9 @@ function showMonthEndCeremony(){
   knotWrap.appendChild(knotCanvas);
   knotWrap.appendChild(wordEl);
   knotWrap.appendChild(rule);
-  knotWrap.appendChild(msgEl);
+  // msgEl moved to its own dedicated page (pages[1] / reflectionPage)
+  // so the ceremony page stays centered on the rose.
+  reflectionPage.appendChild(msgEl);
 
   // in-page swipe hint — sits below msgEl inside page 1, fades in at t=14500
   var swipeHintInPage = document.createElement('p');
@@ -1049,10 +1062,14 @@ function showMonthEndCeremony(){
     ].join(';');
     return pg;
   }
+  // 6 pages — unchanged from original:
+  //   0 = ceremony (rose + eyebrow + word), no paragraph here
+  //   1 = what you carried
+  //   2 = a moment that held
+  //   3 = days you arrived
+  //   4 = the thread held
+  //   5 = closing beat (AI reflection paragraph + pendant + carry it forward)
   var pages = [mkPage(), mkPage(), mkPage(), mkPage(), mkPage(), mkPage()];
-  // page 0 holds the existing beats 2-5 elements.
-  // announceWrap is now injected as the first child of knotWrap in the
-  // child-insertion block below (so the full stack centers as one group).
   pages[0].appendChild(knotWrap);
   pages.forEach(function(pg){ pagesContainer.appendChild(pg); });
 
@@ -2053,26 +2070,83 @@ function showMonthEndCeremony(){
         + '</div>';
     })();
 
-    // PAGE 6 — carry it forward
+    // PAGE 6 — closing beat: pendant + AI reflection paragraph + carry-forward
+    // Previously just pendant + button with huge dead space. Now the AI
+    // paragraph lives here as the emotional summation — same treatment as
+    // the year-end ceremony's closing reflection page.
     (function(){
       pages[5].innerHTML = '';
       var wrap = document.createElement('div');
-      wrap.style.cssText = 'padding:100px 32px calc(100px + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:24px;max-width:400px;margin:0 auto;box-sizing:border-box';
+      wrap.style.cssText = [
+        'padding:calc(env(safe-area-inset-top,0px) + 56px) 28px calc(env(safe-area-inset-bottom,0px) + 56px)',
+        'display:flex','flex-direction:column','align-items:center','justify-content:flex-start',
+        'height:100%','gap:20px','max-width:420px','margin:0 auto','box-sizing:border-box',
+        'overflow-y:auto','-webkit-overflow-scrolling:touch'
+      ].join(';');
 
+      // eyebrow — anchors the page like year-end's closing beat
+      var eyebrow = document.createElement('p');
+      eyebrow.textContent = 'a reflection on ' + (monthEntries.length === 1 ? 'your morning' : 'your ' + morningsWord + ' mornings');
+      eyebrow.style.cssText = 'font-family:"DM Mono",monospace;font-size:9px;color:rgba(201,148,58,0.42);letter-spacing:0.24em;text-transform:uppercase;margin:0;text-align:center';
+      wrap.appendChild(eyebrow);
+
+      // pendant mini — smaller this time, supportive not hero (hero was page 0)
       var mini = document.createElement('canvas');
       mini.id = 'meMiniKnot';
-      mini.style.cssText = 'width:120px;height:120px;filter:drop-shadow(0 0 18px rgba('+glowRgb+','+(glowBaseA*1.5)+'))';
-      mini.width = 120 * dpr;
-      mini.height = 120 * dpr;
+      mini.style.cssText = 'width:96px;height:96px;filter:drop-shadow(0 0 18px rgba('+glowRgb+','+(glowBaseA*1.5)+'));margin:4px 0';
+      mini.width = 96 * dpr;
+      mini.height = 96 * dpr;
       wrap.appendChild(mini);
 
+      // month · year timestamp
       var mLabel = document.createElement('p');
-      mLabel.textContent = monthName.toUpperCase()+'  '+now.getFullYear();
-      mLabel.style.cssText = 'font-family:"DM Mono",monospace;font-size:10px;color:var(--gold);opacity:0.55;letter-spacing:0.2em;margin:4px 0 0';
+      mLabel.textContent = monthName + '  ·  ' + now.getFullYear();
+      mLabel.style.cssText = 'font-family:"Fraunces",serif;font-style:italic;font-weight:300;font-size:15px;color:rgba(230,182,88,0.72);letter-spacing:-0.005em;margin:0;text-align:center';
       wrap.appendChild(mLabel);
 
+      // hair-rule separator
+      var hr = document.createElement('div');
+      hr.style.cssText = 'width:32px;height:1px;background:linear-gradient(90deg,transparent,rgba(201,148,58,0.5),transparent);margin:6px 0 2px';
+      wrap.appendChild(hr);
+
+      // reflection paragraph — same element the AI populates via the
+      // prefetch promise resolver at the top of showMonthEndCeremony
+      var reflectionEl = document.createElement('div');
+      reflectionEl.setAttribute('data-month-reflection-closing','1');
+      reflectionEl.style.cssText = [
+        'font-family:"Fraunces",serif','font-style:italic','font-weight:300',
+        'font-size:14.5px','color:rgba(245,237,224,0.72)',
+        'line-height:1.7','text-align:center','margin:0','max-width:340px',
+        'padding:2px 0'
+      ].join(';');
+      reflectionEl.innerHTML = '<p style="margin:0">' + monthMsg + '</p>';
+      // Register this element globally so the AI prefetch resolver
+      // (_renderMonthParagraph above) can also paint into it.
+      window._monthReflectionClosingEl = reflectionEl;
+      // If the AI paragraph already landed BEFORE this page was built,
+      // paint the cached text in immediately instead of leaving the
+      // hardcoded floor showing.
+      if(window._monthReflectionText){
+        (function(){
+          var text = window._monthReflectionText;
+          var parts = (text || '').match(/[^.!?]+[.!?]+(?:["\u201d]?)(?:\s|$)/g) || [text];
+          parts = parts.map(function(s){ return (s||'').trim(); }).filter(Boolean);
+          reflectionEl.innerHTML = parts.map(function(s, i){
+            var sz = i === 0 ? 14.5 : 13.5;
+            var op = i === 0 ? 0.9 : 0.75;
+            return '<p style="font-family:Fraunces,serif;font-style:italic;font-weight:300;'
+              + 'font-size:'+sz+'px;line-height:1.7;letter-spacing:0.005em;'
+              + 'color:rgba(245,237,224,'+op+');text-align:center;margin:0 0 10px;">'
+              + s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</p>';
+          }).join('');
+        })();
+      }
+      wrap.appendChild(reflectionEl);
+
+      // spacer — keeps button pinned visually near the bottom without
+      // absolute positioning
       var flex = document.createElement('div');
-      flex.style.cssText = 'flex:1';
+      flex.style.cssText = 'flex:1;min-height:20px';
       wrap.appendChild(flex);
 
       var carryBtn = document.createElement('button');
