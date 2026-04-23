@@ -35,8 +35,9 @@ app.add_middleware(
         "http://localhost:8800",  # claude preview port
         "http://127.0.0.1:8800",
     ],
-    # Any *.azurestaticapps.net subdomain (covers arrive-web + preview slots)
-    allow_origin_regex=r"https://[a-z0-9-]+\.azurestaticapps\.net",
+    # Any *.azurestaticapps.net subdomain (covers mango-wave-04adc570f.7.azurestaticapps.net,
+    # preview slots, and any renamed deployment). Allows multiple hostname segments via dots.
+    allow_origin_regex=r"https://[a-z0-9.-]+\.azurestaticapps\.net",
     allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
