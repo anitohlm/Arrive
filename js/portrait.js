@@ -811,7 +811,8 @@ function showMonthEndCeremony(){
   overlay.id = 'monthEndOverlay';
   overlay.style.cssText = [
     'position:fixed','inset:0','z-index:180',
-    'background:rgba(7,5,3,0)','transition:background 1200ms ease',
+    // opaque from t=0 so Portrait screen content never bleeds through
+    'background:#0a0704','transition:background 1200ms ease',
     'overflow:hidden','cursor:default'
   ].join(';');
 
@@ -825,16 +826,17 @@ function showMonthEndCeremony(){
     'opacity:1','pointer-events:none'
   ].join(';');
 
-  // ── COMPOSITION ──
-  // announceWrap (eyebrow + month + mornings) flows inline with the rose
-  // inside knotWrap's flex-center. They read as ONE composed group — the
-  // "invocation" of the ceremony. Word + rule are the closing beat, pinned
-  // to the bottom as a separate frame. No absolute positioning on the
-  // invocation group; it centers naturally as a unit.
+  // ── COMPOSITION ── three absolute zones, rose at exact 50% center
+  //   top zone (12%):  THE CHAIN HAS WOVEN · april · THIRTY MORNINGS
+  //   center (50%):    rose (transform: translate(-50%,-50%))
+  //   bottom zone (22%): becoming · rule
+  //   + pager dots below at their own offset
   var announceWrap = document.createElement('div');
   announceWrap.style.cssText = [
+    'position:absolute',
+    'top:calc(env(safe-area-inset-top, 0px) + 12%)',
+    'left:0','right:0',
     'display:flex','flex-direction:column','align-items:center','gap:6px',
-    'margin-bottom:24px',
     'pointer-events:none','transition:transform 3000ms ease, opacity 3000ms ease'
   ].join(';');
 
@@ -875,20 +877,14 @@ function showMonthEndCeremony(){
   announceWrap.appendChild(monthNameEl);
   announceWrap.appendChild(morningsEl);
 
-  // Invocation group container — holds announcement + rose, flex-centered.
-  // Bottom-padding reserves space for the wordGroup (closing frame) +
-  // pager dots, so the invocation group is centered in the REMAINING
-  // space above the bottom frame. This makes the rose visually centered
-  // in the main viewing area rather than being pushed down by the bottom
-  // frame weight.
+  // knotWrap holds ONLY the rose, absolutely positioned at exact 50% center
+  // via top:50%; left:50%; transform:translate(-50%,-50%). Mathematically
+  // perfect center, regardless of announcement or word copy length.
   var knotWrap = document.createElement('div');
   knotWrap.style.cssText = [
-    'position:absolute','inset:0',
-    'display:flex','flex-direction:column','align-items:center','justify-content:center',
-    'gap:16px',
-    'padding-top:calc(env(safe-area-inset-top, 0px) + 24px)',
-    'padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 220px)',
-    'padding-left:28px','padding-right:28px',
+    'position:absolute',
+    'top:50%','left:50%','transform:translate(-50%, -50%)',
+    'display:flex','flex-direction:column','align-items:center',
     'pointer-events:none'
   ].join(';');
 
@@ -908,13 +904,12 @@ function showMonthEndCeremony(){
   knotCanvas.width = _cvsSize * dpr;
   knotCanvas.height = _cvsSize * dpr;
 
-  // word + rule — absolute-positioned above the pager dots so they
-  // form the closing "bottom frame" without colliding. Pager dots
-  // live at bottom ~96px; word group sits above that at ~150px.
+  // word + rule — bottom zone at 22% from bottom. Sits well above pager
+  // dots (which are at bottom ~96px).
   var wordGroup = document.createElement('div');
   wordGroup.style.cssText = [
     'position:absolute',
-    'bottom:calc(env(safe-area-inset-bottom, 0px) + 140px)',
+    'bottom:22%',
     'left:0','right:0',
     'display:flex','flex-direction:column','align-items:center','gap:10px',
     'pointer-events:none'
@@ -1035,19 +1030,16 @@ function showMonthEndCeremony(){
       });
   })();
 
-  // knotWrap holds the INVOCATION group: announcement + rose. They center
-  // together as one unit. The word + rule is a separate bottom frame.
-  knotWrap.appendChild(announceWrap);
+  // knotWrap: ONLY the rose canvas (+ hidden msgEl for resolver).
+  // Everything else is positioned absolutely outside knotWrap.
   knotWrap.appendChild(knotCanvas);
 
-  // Bottom closing frame (word + rule), pinned to the bottom of page 0
-  // so the pager dots have their own space and don't collide.
+  // Bottom closing frame
   wordGroup.appendChild(wordEl);
   wordGroup.appendChild(rule);
 
-  // msgEl is kept in memory as the AI-reflection destination for the
-  // resolver, hidden on page 0. The VISIBLE reflection paragraph lives
-  // on page 5 (closing beat) via _monthReflectionClosingEl.
+  // msgEl hidden destination for the AI reflection resolver. Visible
+  // paragraph is on page 5 via _monthReflectionClosingEl.
   msgEl.style.display = 'none';
   knotWrap.appendChild(msgEl);
 
