@@ -810,14 +810,13 @@ function showMonthEndCeremony(){
   var overlay = document.createElement('div');
   overlay.id = 'monthEndOverlay';
   overlay.style.cssText = [
-    'position:fixed','inset:0','z-index:9999',
-    // fully opaque — nothing from chain/splash/portrait can bleed through
-    'background:#000',
+    'position:fixed','inset:0','z-index:200',
+    // opaque dark-brown (matches app bg) so chain/splash doesn't bleed
+    // through, but NOT pure #000 — pure black created visible rectangle
+    // edges around the mix-blend-mode:screen canvas and the text.
+    'background:#0a0704',
     'overflow:hidden','cursor:default'
   ].join(';');
-  // belt-and-suspenders: enforce opacity + isolation
-  overlay.style.setProperty('background-color','#000','important');
-  overlay.style.setProperty('isolation','isolate','important');
 
   // threshold line — horizontal across vertical center
   var line = document.createElement('div');
