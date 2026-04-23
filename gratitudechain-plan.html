@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GratitudeChain — Full Business Plan</title>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,700;1,9..144,400&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#faf7f2; --ink:#1a1612; --surface:#ffffff; --surface2:#f2ede4;
+  --border:rgba(26,22,18,0.1); --muted:#8a7f72; --dim:#b5a898;
+  --rose:#c2627a; --rose-light:#fdf0f3; --rose-mid:#e8a0b0;
+  --gold:#c9943a; --gold-light:#fdf5e8;
+  --sage:#4a7c59; --sage-light:#edf4f0;
+  --slate:#4a607a; --slate-light:#eef2f7;
+  --warm:#f5ede0;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:'DM Sans',sans-serif;font-weight:300;overflow-x:hidden}
+
+/* COVER */
+.cover{min-height:440px;background:var(--ink);padding:80px 64px 56px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:flex-end}
+.cover-grid{position:absolute;inset:0;background-image:linear-gradient(rgba(255,255,255,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,0.025) 1px,transparent 1px);background-size:52px 52px}
+.cover-glow{position:absolute;top:-100px;right:-60px;width:520px;height:520px;background:radial-gradient(circle,rgba(194,98,122,0.22) 0%,transparent 65%);pointer-events:none}
+.cover-glow2{position:absolute;bottom:-80px;left:-40px;width:400px;height:400px;background:radial-gradient(circle,rgba(201,148,58,0.12) 0%,transparent 65%);pointer-events:none}
+.cover-eye{font-size:11px;letter-spacing:0.25em;text-transform:uppercase;color:var(--rose-mid);font-weight:500;margin-bottom:20px;position:relative}
+.cover h1{font-family:'Fraunces',serif;font-size:clamp(48px,8vw,90px);font-weight:700;color:#fff;line-height:0.95;letter-spacing:-0.03em;position:relative}
+.cover h1 em{font-style:italic;color:var(--rose-mid);font-weight:300}
+.cover-tag{margin-top:22px;font-size:15px;color:rgba(255,255,255,0.45);max-width:500px;line-height:1.65;position:relative}
+.cover-stats{display:flex;gap:48px;margin-top:48px;padding-top:36px;border-top:1px solid rgba(255,255,255,0.08);position:relative;flex-wrap:wrap}
+.cs-num{font-family:'DM Mono',monospace;font-size:26px;color:#fff}
+.cs-num span{color:var(--rose-mid)}
+.cs-lbl{font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:rgba(255,255,255,0.32);margin-top:2px}
+
+/* SECTIONS */
+section{padding:68px 64px;border-bottom:1px solid var(--border);max-width:1200px;margin:0 auto}
+.s-eye{font-size:10px;letter-spacing:0.28em;text-transform:uppercase;color:var(--rose);font-weight:500;margin-bottom:28px;display:flex;align-items:center;gap:12px}
+.s-eye::after{content:'';width:32px;height:1px;background:var(--rose);opacity:0.4}
+h2{font-family:'Fraunces',serif;font-size:clamp(26px,3.5vw,42px);font-weight:600;letter-spacing:-0.02em;line-height:1.1;margin-bottom:18px}
+h2 em{font-style:italic;font-weight:300;color:var(--muted)}
+.lead{font-size:15px;line-height:1.75;color:#555;max-width:640px;margin-bottom:36px}
+h3{font-size:12px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+p{font-size:14.5px;line-height:1.75;color:#4a4540}
+
+/* MARKET BARS */
+.mbar-wrap{display:flex;flex-direction:column;gap:11px;margin-top:28px}
+.mbar-row{display:grid;grid-template-columns:56px 1fr 110px;align-items:center;gap:14px}
+.mbar-yr{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);text-align:right}
+.mbar-track{height:28px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.mbar-fill{height:100%;border-radius:3px}
+.mbar-val{font-family:'DM Mono',monospace;font-size:13px;color:var(--ink)}
+
+/* CARDS */
+.card-grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+.card-grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.card-grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+@media(max-width:900px){.card-grid-2,.card-grid-3,.card-grid-4{grid-template-columns:1fr}}
+@media(max-width:600px){section,.cover{padding-left:24px;padding-right:24px}}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:24px 22px;position:relative}
+.card-accent{position:absolute;top:0;left:0;right:0;height:3px;border-radius:8px 8px 0 0}
+.card-icon{font-size:22px;margin-bottom:14px}
+.card h4{font-size:14px;font-weight:500;color:var(--ink);margin-bottom:8px;line-height:1.3}
+.card p{font-size:13px;color:#666;line-height:1.6}
+
+/* COMPETITOR TABLE */
+.comp-table{width:100%;border-collapse:collapse;margin-top:28px;font-size:13px}
+.comp-table th{text-align:left;padding:10px 14px;font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);font-weight:500;background:var(--surface2)}
+.comp-table td{padding:13px 14px;border-bottom:1px solid rgba(26,22,18,0.05);color:#4a4540;vertical-align:middle}
+.comp-table tr.us td{background:rgba(194,98,122,0.04)}
+.comp-table tr.us td:first-child{font-weight:500;color:var(--rose)}
+.pill{display:inline-block;font-size:11px;font-weight:500;padding:2px 8px;border-radius:20px}
+.p-g{background:var(--sage-light);color:var(--sage)}
+.p-r{background:var(--rose-light);color:var(--rose)}
+.p-y{background:var(--gold-light);color:var(--gold)}
+.p-b{background:var(--slate-light);color:var(--slate)}
+.p-rose{background:var(--rose-light);color:var(--rose)}
+
+/* WHAT MAKES IT UNIQUE */
+.unique-list{display:flex;flex-direction:column;gap:10px;margin-top:24px}
+.unique-item{display:flex;gap:16px;align-items:flex-start;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:18px 20px}
+.ui-num{font-family:'DM Mono',monospace;font-size:11px;color:var(--rose);min-width:22px;font-weight:500;padding-top:1px}
+.ui-h{font-size:14px;font-weight:500;color:var(--ink);margin-bottom:4px}
+.ui-p{font-size:13px;color:var(--muted);line-height:1.6}
+
+/* WORKFLOW */
+.workflow{display:flex;flex-direction:column;margin-top:40px}
+.wf{display:grid;grid-template-columns:52px 1fr;gap:20px;position:relative}
+.wf:not(:last-child) .wf-line{position:absolute;left:23px;top:48px;bottom:-1px;width:1px;background:var(--border)}
+.wf-circle{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-family:'DM Mono',monospace;font-size:12px;font-weight:500;flex-shrink:0;border:1.5px solid}
+.wf-body{padding:8px 0 34px}
+.wf-title{font-size:15px;font-weight:500;color:var(--ink);margin-bottom:6px}
+.wf-desc{font-size:13.5px;color:var(--muted);line-height:1.65;max-width:560px;margin-bottom:10px}
+.wf-chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--surface2);color:var(--muted);border:1px solid var(--border)}
+
+/* BUSINESS MODEL */
+.bm-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:28px}
+.bm{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:22px 20px}
+.bm-phase{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;font-weight:500;margin-bottom:10px}
+.bm h4{font-size:16px;font-weight:500;color:var(--ink);margin-bottom:6px}
+.bm-amt{font-family:'DM Mono',monospace;font-size:24px;margin-bottom:14px}
+.bm ul{list-style:none;display:flex;flex-direction:column;gap:6px}
+.bm li{font-size:12.5px;color:var(--muted);padding-left:12px;position:relative;line-height:1.5}
+.bm li::before{content:'–';position:absolute;left:0;color:var(--border)}
+
+/* MVP */
+.mvp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:28px}
+@media(max-width:800px){.mvp-grid{grid-template-columns:1fr}}
+.mvp-col{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.mvp-hdr{padding:14px 18px;font-size:11px;font-weight:500;letter-spacing:0.15em;text-transform:uppercase}
+.mvp-body{padding:16px 18px;display:flex;flex-direction:column;gap:10px}
+.mvp-item{display:flex;gap:10px;align-items:flex-start}
+.mvp-icon{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;flex-shrink:0;margin-top:1px}
+.mvp-item p{font-size:13px;line-height:1.5;color:#4a4540}
+
+/* SCIENCE BOX */
+.science-box{background:var(--rose-light);border:1px solid rgba(194,98,122,0.2);border-radius:12px;padding:24px 26px;margin-bottom:28px}
+.sb-eye{font-size:10px;letter-spacing:0.2em;text-transform:uppercase;color:var(--rose);font-weight:700;margin-bottom:10px}
+.sb-body{font-size:14px;color:#4a2535;line-height:1.7}
+.sb-body strong{color:var(--rose);font-weight:600}
+
+/* PROJECTIONS */
+.proj-row{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:24px}
+@media(max-width:700px){.proj-row{grid-template-columns:repeat(2,1fr)}}
+.proj{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:20px;text-align:center}
+.proj-yr{font-size:10px;letter-spacing:0.15em;text-transform:uppercase;color:var(--muted);margin-bottom:8px}
+.proj-num{font-family:'Fraunces',serif;font-size:28px;font-weight:600;color:var(--ink);line-height:1;margin-bottom:4px}
+.proj-lbl{font-size:11px;color:var(--muted)}
+
+/* REGIONS */
+.region-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;margin-top:24px}
+.rcard{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:18px 16px}
+.rcard-name{font-size:14px;font-weight:500;color:var(--ink);margin-bottom:4px}
+.rcard-p{font-size:11px;font-weight:500;letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px}
+.rcard p{font-size:12.5px;color:var(--muted);line-height:1.6}
+
+/* TECH STACK */
+.stack-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:10px;margin-top:24px}
+.si{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:14px 16px}
+.si-cat{font-size:10px;letter-spacing:0.18em;text-transform:uppercase;color:var(--muted);margin-bottom:4px}
+.si-name{font-size:13.5px;font-weight:500;color:var(--ink)}
+
+.divider{height:1px;background:var(--border);margin:32px 0}
+
+/* CHAIN VISUAL */
+.chain-visual{display:flex;align-items:center;gap:0;margin:28px 0;overflow-x:auto;padding-bottom:4px}
+.chain-link{display:flex;flex-direction:column;align-items:center;gap:6px;flex-shrink:0}
+.chain-circle{width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;position:relative;border:2px solid}
+.chain-day{font-size:10px;font-weight:600;letter-spacing:0.06em;color:var(--muted)}
+.chain-connector{width:24px;height:3px;border-radius:2px;flex-shrink:0;margin-bottom:20px}
+
+footer{background:var(--ink);padding:48px 64px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.footer-brand{font-family:'Fraunces',serif;font-size:22px;color:var(--rose-mid);font-style:italic}
+.footer-note{font-size:12px;color:rgba(255,255,255,0.3)}
+</style>
+</head>
+<body>
+
+<!-- COVER -->
+<div class="cover">
+  <div class="cover-grid"></div>
+  <div class="cover-glow"></div>
+  <div class="cover-glow2"></div>
+  <div class="cover-eye">Full Business Plan · Market Analysis · MVP Scope</div>
+  <h1>Gratitude<em>Chain</em></h1>
+  <p class="cover-tag">One thing you're grateful for. Every day. A chain that grows — and on your hardest days, resurfaces everything you've already been grateful for to remind you of what matters.</p>
+  <div class="cover-stats">
+    <div><div class="cs-num">$310<span>M</span></div><div class="cs-lbl">Gratitude App Market 2024</div></div>
+    <div><div class="cs-num">15.2<span>%</span></div><div class="cs-lbl">CAGR to 2033</div></div>
+    <div><div class="cs-num">$1.35<span>B</span></div><div class="cs-lbl">Gamified Wellness Market 2024</div></div>
+    <div><div class="cs-num">$5.12<span>B</span></div><div class="cs-lbl">Gamified Wellness by 2033</div></div>
+  </div>
+</div>
+
+<!-- ① MARKET ANALYSIS -->
+<section>
+  <div class="s-eye">01 — Market Analysis</div>
+  <h2>A Mental Wellness Market<br><em>Exploding With Opportunity</em></h2>
+  <p class="lead">The gratitude journal app market reached $310M in 2024 and is projected to hit $1.11B by 2033 at 15.2% CAGR. But zoom out to the full gamified wellness platform market and you're looking at $1.35B today growing to $5.12B by 2033 at 17.2% CAGR — where GratitudeChain lives. This is the higher-value, faster-growing category.</p>
+
+  <div class="mbar-wrap">
+    <div class="mbar-row"><div class="mbar-yr">2022</div><div class="mbar-track"><div class="mbar-fill" style="width:30%;background:#c0b8b0"></div></div><div class="mbar-val" style="color:var(--muted)">~$195M</div></div>
+    <div class="mbar-row"><div class="mbar-yr">2023</div><div class="mbar-track"><div class="mbar-fill" style="width:38%;background:#c0b8b0"></div></div><div class="mbar-val" style="color:var(--muted)">~$258M</div></div>
+    <div class="mbar-row"><div class="mbar-yr">2024</div><div class="mbar-track"><div class="mbar-fill" style="width:47%;background:#d4a8b0"></div></div><div class="mbar-val">~$310M</div></div>
+    <div class="mbar-row"><div class="mbar-yr">2025</div><div class="mbar-track"><div class="mbar-fill" style="width:56%;background:linear-gradient(90deg,#b05068,var(--rose))"></div></div><div class="mbar-val" style="color:var(--rose);font-weight:500">~$357M</div></div>
+    <div class="mbar-row"><div class="mbar-yr">2030</div><div class="mbar-track"><div class="mbar-fill" style="width:74%;background:linear-gradient(90deg,#b05068,var(--rose));opacity:0.7"></div></div><div class="mbar-val">~$720M</div></div>
+    <div class="mbar-row"><div class="mbar-yr">2033</div><div class="mbar-track"><div class="mbar-fill" style="width:90%;background:linear-gradient(90deg,#b05068,var(--rose));opacity:0.5"></div></div><div class="mbar-val">~$1.11B</div></div>
+  </div>
+
+  <div class="divider"></div>
+  <h3>Market Drivers</h3>
+  <div class="card-grid-3" style="margin-top:16px">
+    <div class="card"><div class="card-accent" style="background:var(--rose)"></div><div class="card-icon">🧠</div><h4>Mental Health Awareness Surge</h4><p>Global mental wellness conversations are no longer taboo. People actively seek accessible, daily tools for emotional regulation — and gratitude practice is backed by decades of clinical research.</p></div>
+    <div class="card"><div class="card-accent" style="background:var(--gold)"></div><div class="card-icon">🔥</div><h4>Streak Psychology Works</h4><p>Apps using dual streak + milestone systems see 40–60% higher daily active users. Duolingo's success proves streaks create daily habits. GratitudeChain applies this to emotional wellness — a much stickier context.</p></div>
+    <div class="card"><div class="card-accent" style="background:var(--sage)"></div><div class="card-icon">📱</div><h4>Smartphone Habit Formation</h4><p>71% of users abandon wellness apps within 90 days. GratitudeChain's memory resurface mechanism is specifically designed to break this drop-off — because on hard days, your past entries become your reason to stay.</p></div>
+    <div class="card"><div class="card-accent" style="background:var(--slate)"></div><div class="card-icon">🌏</div><h4>Asia Pacific is the Fastest Growing</h4><p>Asia Pacific gratitude app market at $54M in 2024 with a 14.2% CAGR — the fastest globally. Rapidly urbanizing populations in PH, ID, IN are seeking mental wellness tools as disposable income rises.</p></div>
+    <div class="card"><div class="card-accent" style="background:var(--rose)"></div><div class="card-icon">✨</div><h4>Gamification Premium</h4><p>The gamified wellness niche (where GratitudeChain sits) commands a 17.2% CAGR — 2 full points above standard journaling apps. Users pay more and retain longer when progress feels visible and rewarding.</p></div>
+    <div class="card"><div class="card-accent" style="background:var(--gold)"></div><div class="card-icon">💼</div><h4>Corporate Wellness Expansion</h4><p>Enterprises now budget for employee mental wellness apps. B2B corporate wellness is an untapped revenue layer — a team gratitude practice tool for remote and hybrid companies is a direct upsell path.</p></div>
+  </div>
+</section>
+
+<!-- ② THE SCIENCE -->
+<section>
+  <div class="s-eye">02 — The Science Behind It</div>
+  <h2>Why Gratitude + Streaks<br><em>Actually Works</em></h2>
+
+  <div class="science-box">
+    <div class="sb-eye">🔬 Research-Backed Foundation</div>
+    <div class="sb-body">
+      Studies consistently show that <strong>consistent gratitude practice reduces cortisol by up to 23%</strong>, improves sleep quality, and increases resilience. The challenge is consistency — which is where GratitudeChain's streak mechanic is the intervention. A 2024 study of 60,000 gym members confirmed that <strong>consecutive habit days predict long-term behavior change more reliably than non-consecutive days</strong>. Forrester's 2024 research found apps using streak + milestone systems <strong>reduce 30-day churn by 35%</strong> compared to non-gamified alternatives. GratitudeChain's memory resurface feature is the unique differentiator — on bad days, seeing "Day 47: I'm grateful my sister called" reminds users why they started. <strong>That moment of reconnection is the retention hook no competitor has built.</strong>
+    </div>
+  </div>
+
+  <div class="card-grid-2">
+    <div class="card">
+      <h4>The Streak Mechanism</h4>
+      <p style="margin-bottom:12px">Streaks work because they tap into loss aversion — breaking a perfect record feels like losing progress. The longer the chain, the more powerful the motivation to protect it. GratitudeChain uses the chain metaphor visually — each day is a literal link. Breaking it snaps the chain.</p>
+      <p>But unlike Duolingo, GratitudeChain's streaks are forgiving — one "grace day" per month means the mechanic encourages, not punishes.</p>
+    </div>
+    <div class="card">
+      <h4>The Memory Resurface Mechanism</h4>
+      <p style="margin-bottom:12px">The truly novel feature. On days when users open the app feeling low or unmotivated, GratitudeChain surfaces 3 past entries — "On your 30th day, you wrote this..." This is the "On This Day" mechanism from Facebook, but applied to gratitude and timed to emotional need.</p>
+      <p>This creates an emotional flywheel: your past grateful self encourages your present struggling self. No other gratitude app does this intentionally.</p>
+    </div>
+  </div>
+
+  <!-- Chain visual -->
+  <div style="margin-top:32px">
+    <h3>The Chain — Visual Metaphor</h3>
+    <div class="chain-visual">
+      <div class="chain-link">
+        <div class="chain-circle" style="background:var(--rose-light);border-color:var(--rose);color:var(--rose)">😊</div>
+        <div class="chain-day">Day 1</div>
+      </div>
+      <div class="chain-connector" style="background:var(--rose-mid)"></div>
+      <div class="chain-link">
+        <div class="chain-circle" style="background:var(--rose-light);border-color:var(--rose);color:var(--rose)">🌿</div>
+        <div class="chain-day">Day 7</div>
+      </div>
+      <div class="chain-connector" style="background:var(--rose-mid)"></div>
+      <div class="chain-link">
+        <div class="chain-circle" style="background:var(--rose-light);border-color:var(--rose);color:var(--rose)">✨</div>
+        <div class="chain-day">Day 14</div>
+      </div>
+      <div class="chain-connector" style="background:var(--rose-mid)"></div>
+      <div class="chain-link">
+        <div class="chain-circle" style="background:var(--rose-light);border-color:var(--rose);color:var(--rose)">🌸</div>
+        <div class="chain-day">Day 30</div>
+      </div>
+      <div class="chain-connector" style="background:var(--rose-mid)"></div>
+      <div class="chain-link">
+        <div class="chain-circle" style="background:var(--rose-light);border-color:var(--rose);color:var(--rose)">💛</div>
+        <div class="chain-day">Day 60</div>
+      </div>
+      <div class="chain-connector" style="background:var(--gold)"></div>
+      <div class="chain-link">
+        <div class="chain-circle" style="background:var(--gold-light);border-color:var(--gold);color:var(--gold)">🏆</div>
+        <div class="chain-day">Day 100</div>
+      </div>
+      <div class="chain-connector" style="background:var(--gold)"></div>
+      <div class="chain-link">
+        <div class="chain-circle" style="background:var(--gold-light);border-color:var(--gold);color:var(--gold)">👑</div>
+        <div class="chain-day">Day 365</div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-top:6px">Each circle is a day's entry. Gold links are milestone moments. The chain is the app's entire UI metaphor — never broken, always growing.</div>
+  </div>
+</section>
+
+<!-- ③ COMPETITOR ANALYSIS -->
+<section>
+  <div class="s-eye">03 — Competitive Landscape</div>
+  <h2>What Exists Now &<br><em>Where the Gap Is</em></h2>
+  <p class="lead">The gratitude app space is crowded with simple journaling tools. None combine streak psychology with memory resurface the way GratitudeChain does. That specific combination is the moat.</p>
+
+  <table class="comp-table">
+    <thead>
+      <tr>
+        <th>App</th>
+        <th>Daily streak</th>
+        <th>Memory resurface</th>
+        <th>60-sec logging</th>
+        <th>Chain visual</th>
+        <th>AI insights</th>
+        <th>Free core</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><strong>Grateful</strong></td>
+        <td><span class="pill p-y">Basic</span></td>
+        <td><span class="pill p-r">None</span></td>
+        <td><span class="pill p-g">Yes</span></td>
+        <td><span class="pill p-r">None</span></td>
+        <td><span class="pill p-r">None</span></td>
+        <td><span class="pill p-r">Paywall heavy</span></td>
+      </tr>
+      <tr>
+        <td><strong>Five Minute Journal</strong></td>
+        <td><span class="pill p-r">None</span></td>
+        <td><span class="pill p-r">None</span></td>
+        <td><span class="pill p-y">Partial</span></td>
+        <td><span class="pill p-r">None</span></td>
+        <td><span class="pill p-r">None</span></td>
+        <td><span class="pill p-r">Paid only</span></td>
+      </tr>
+      <tr>
+        <td><strong>Reflectly</strong></td>
+        <td><span class="pill p-y">Basic</span></td>
+        <td><span class="pill p-r">None</span></td>
+        <td><span class="pill p-g">Yes</span></td>
+        <td><span class="pill p-r">None</span></td>
+        <td><span class="pill p-y">Limited</span></td>
+        <td><span class="pill p-y">Limited free</span></td>
+      </tr>
+      <tr>
+        <td><strong>Happyfeed (now Orca)</strong></td>
+        <td><span class="pill p-y">Basic</span></td>
+        <td><span class="pill p-y">Partial</span></td>
+        <td><span class="pill p-g">Yes</span></td>
+        <td><span class="pill p-r">None</span></td>
+        <td><span class="pill p-r">None</span></td>
+        <td><span class="pill p-g">Free tier</span></td>
+      </tr>
+      <tr>
+        <td><strong>Day One (journal)</strong></td>
+        <td><span class="pill p-r">None</span></td>
+        <td><span class="pill p-y">On This Day</span></td>
+        <td><span class="pill p-r">Complex</span></td>
+        <td><span class="pill p-r">None</span></td>
+        <td><span class="pill p-r">None</span></td>
+        <td><span class="pill p-r">Paywall</span></td>
+      </tr>
+      <tr class="us">
+        <td><strong>GratitudeChain ✦</strong></td>
+        <td><span class="pill p-rose">Visual chain streak</span></td>
+        <td><span class="pill p-rose">Core feature</span></td>
+        <td><span class="pill p-rose">60 seconds max</span></td>
+        <td><span class="pill p-rose">Full UI metaphor</span></td>
+        <td><span class="pill p-rose">AI mood patterns</span></td>
+        <td><span class="pill p-rose">Always free core</span></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ④ PRODUCT WORKFLOW -->
+<section>
+  <div class="s-eye">04 — Product Workflow</div>
+  <h2>The User Journey:<br><em>Day One to Year One</em></h2>
+  <p class="lead">The entire product is designed around one moment: a person opening the app at night, spending 60 seconds writing one thing they're grateful for, and going to sleep feeling a little better. Everything else supports that moment.</p>
+
+  <div class="workflow">
+
+    <div class="wf">
+      <div class="wf-line"></div>
+      <div><div class="wf-circle" style="background:var(--rose-light);color:var(--rose);border-color:var(--rose)">01</div></div>
+      <div class="wf-body">
+        <div class="wf-title">Onboarding — Set Your Intention</div>
+        <div class="wf-desc">User opens GratitudeChain. A warm, calm onboarding asks: "What do you want to feel more of?" (Joy / Peace / Connection / Strength). This sets a personal intention that personalizes prompts and resurface moments. No account needed for day 1.</div>
+        <div class="wf-chips"><span class="chip">No signup day 1</span><span class="chip">Intention setting</span><span class="chip">30-second setup</span></div>
+      </div>
+    </div>
+
+    <div class="wf">
+      <div class="wf-line"></div>
+      <div><div class="wf-circle" style="background:var(--rose-light);color:var(--rose);border-color:var(--rose)">02</div></div>
+      <div class="wf-body">
+        <div class="wf-title">Daily Entry — 60 Seconds, One Thing</div>
+        <div class="wf-desc">Each night, the user writes one thing they're grateful for. A gentle AI prompt appears if they're stuck: "What made you smile today?" or "Who helped you this week?". Optional: add a photo, choose an emoji, tag a person. Minimum: one sentence. Maximum freedom.</div>
+        <div class="wf-chips"><span class="chip">One sentence minimum</span><span class="chip">AI prompt if stuck</span><span class="chip">Photo optional</span><span class="chip">Person tag</span><span class="chip">Emoji mood</span></div>
+      </div>
+    </div>
+
+    <div class="wf">
+      <div class="wf-line"></div>
+      <div><div class="wf-circle" style="background:var(--rose-light);color:var(--rose);border-color:var(--rose)">03</div></div>
+      <div class="wf-body">
+        <div class="wf-title">The Chain Grows</div>
+        <div class="wf-desc">After saving, a new link is added to their visual chain. The chain is beautiful — each link shows the day number and entry emoji. At 7 days: first milestone animation. At 30 days: the chain turns gold. At 100 days: a special "Century" badge. At 365 days: a shareable year-in-review card.</div>
+        <div class="wf-chips"><span class="chip">Visual chain grows</span><span class="chip">Milestone animations</span><span class="chip">Day 7 / 30 / 100 / 365</span><span class="chip">Shareable cards</span></div>
+      </div>
+    </div>
+
+    <div class="wf">
+      <div class="wf-line"></div>
+      <div><div class="wf-circle" style="background:var(--rose-light);color:var(--rose);border-color:var(--rose)">04</div></div>
+      <div class="wf-body">
+        <div class="wf-title">Memory Resurface — The Magic Moment</div>
+        <div class="wf-desc">When the app detects the user hasn't opened it in 18+ hours (or is opening on a hard day based on mood tag), it surfaces 3 past entries with a message: "Here's what you were grateful for on Day 23..." This is the core retention mechanic. It's emotionally powerful, impossible to replicate without historical data — meaning the longer you use it, the more valuable it becomes.</div>
+        <div class="wf-chips"><span class="chip">Triggered by absence</span><span class="chip">3 past entries shown</span><span class="chip">Personalized to mood</span><span class="chip">Gets better with time</span></div>
+      </div>
+    </div>
+
+    <div class="wf">
+      <div class="wf-line"></div>
+      <div><div class="wf-circle" style="background:var(--rose-light);color:var(--rose);border-color:var(--rose)">05</div></div>
+      <div class="wf-body">
+        <div class="wf-title">Grace Day — No Guilt Mechanic</div>
+        <div class="wf-desc">Miss a day? GratitudeChain gives 1 "Grace Day" per month — the chain doesn't break. The app sends a gentle notification: "Life happens. Your chain is safe. Write one thing when you're ready." This is the anti-Duolingo: we don't guilt-trip, we protect. Users love this and share it.</div>
+        <div class="wf-chips"><span class="chip">1 grace day/month</span><span class="chip">Chain stays intact</span><span class="chip">Gentle notification</span><span class="chip">No guilt design</span></div>
+      </div>
+    </div>
+
+    <div class="wf">
+      <div class="wf-line"></div>
+      <div><div class="wf-circle" style="background:var(--gold-light);color:var(--gold);border-color:var(--gold)">06</div></div>
+      <div class="wf-body">
+        <div class="wf-title">AI Insights — Monthly Gratitude Report</div>
+        <div class="wf-desc">At month end, Claude Haiku analyzes the user's entries and generates a "Gratitude Portrait" — what themes keep coming up (family, nature, food, work), what mood patterns exist, which people appear most. Not therapy — just a beautiful mirror. Shareable as a story card.</div>
+        <div class="wf-chips"><span class="chip">Theme analysis</span><span class="chip">People who matter</span><span class="chip">Mood patterns</span><span class="chip">Shareable story</span><span class="chip">Claude Haiku</span></div>
+      </div>
+    </div>
+
+    <div class="wf">
+      <div><div class="wf-circle" style="background:var(--sage-light);color:var(--sage);border-color:var(--sage)">07</div></div>
+      <div class="wf-body">
+        <div class="wf-title">Phase 2 — Shared Chains & Couples / Family Mode</div>
+        <div class="wf-desc">Two people build one chain together — couples, best friends, parent and child. Each person logs their own entry but the chain is shared. Milestone moments are celebrated together. This is the viral loop — one user gets another user who gets another. The social mechanic that no gratitude app has built yet.</div>
+        <div class="wf-chips"><span class="chip">Shared chains</span><span class="chip">Couples mode</span><span class="chip">Family mode</span><span class="chip">Viral loop</span><span class="chip">Mutual milestones</span></div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ⑤ BUSINESS MODEL -->
+<section>
+  <div class="s-eye">05 — Business Model</div>
+  <h2>Four Revenue Streams,<br><em>Free at the Core</em></h2>
+  <p class="lead">The daily entry is always free. Revenue comes from depth, beauty, and community — things people pay for when they feel genuinely connected to an app.</p>
+
+  <div class="bm-grid">
+    <div class="bm">
+      <div class="bm-phase" style="color:var(--rose)">Stream 1 · Launch</div>
+      <h4>GratitudeChain Plus</h4>
+      <div class="bm-amt" style="color:var(--rose)">$2.99/mo</div>
+      <ul>
+        <li>Unlimited grace days</li>
+        <li>Monthly AI Gratitude Portrait</li>
+        <li>Photo + voice entry support</li>
+        <li>Chain export as PDF book</li>
+        <li>Custom chain themes & colors</li>
+        <li>Mood trend graph</li>
+        <li>Person tag analytics</li>
+      </ul>
+    </div>
+    <div class="bm">
+      <div class="bm-phase" style="color:var(--gold)">Stream 2 · Growth</div>
+      <h4>Printed Chain Book</h4>
+      <div class="bm-amt" style="color:var(--gold)">₱899 / $16</div>
+      <ul>
+        <li>Physical printed yearbook of entries</li>
+        <li>365-day chain beautifully laid out</li>
+        <li>Gift-ready packaging</li>
+        <li>Christmas / anniversary gift SKU</li>
+        <li>High margin product (60%+)</li>
+        <li>Powered by print-on-demand API</li>
+      </ul>
+    </div>
+    <div class="bm">
+      <div class="bm-phase" style="color:var(--sage)">Stream 3 · Scale</div>
+      <h4>Corporate Wellness</h4>
+      <div class="bm-amt" style="color:var(--sage)">$8/seat/mo</div>
+      <ul>
+        <li>Team gratitude chains</li>
+        <li>Manager dashboard (anonymized)</li>
+        <li>Weekly team mood summary</li>
+        <li>Onboarding program templates</li>
+        <li>HR integration (Slack, Teams)</li>
+        <li>Bulk billing + invoicing</li>
+      </ul>
+    </div>
+    <div class="bm">
+      <div class="bm-phase" style="color:var(--slate)">Stream 4 · Scale</div>
+      <h4>Wellness Partnerships</h4>
+      <div class="bm-amt" style="color:var(--slate)">B2B deals</div>
+      <ul>
+        <li>Mental health clinic integrations</li>
+        <li>School / university wellness programs</li>
+        <li>Insurance company wellness rewards</li>
+        <li>Church / faith community packs</li>
+        <li>Therapist referral program</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ⑥ MVP SCOPE -->
+<section>
+  <div class="s-eye">06 — MVP Scope</div>
+  <h2>What to Build in<br><em>6 Weeks</em></h2>
+  <p class="lead">The MVP is brutally simple: one entry per day, one growing chain, one memory resurface. Everything else is Phase 2. Ship fast, validate the core loop, then layer depth.</p>
+
+  <div class="mvp-grid">
+    <div class="mvp-col">
+      <div class="mvp-hdr" style="background:var(--rose-light);color:var(--rose)">✅ Must Have — Week 1–4</div>
+      <div class="mvp-body">
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--rose-light);color:var(--rose)">✓</div><p>Intention setting onboarding (Joy / Peace / Connection / Strength)</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--rose-light);color:var(--rose)">✓</div><p>Daily entry — one text field, one emoji, one submit</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--rose-light);color:var(--rose)">✓</div><p>Visual chain — grows one link per day with emoji + day number</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--rose-light);color:var(--rose)">✓</div><p>Streak counter — current streak + longest streak</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--rose-light);color:var(--rose)">✓</div><p>Milestone celebrations — Day 7, 14, 30 animations</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--rose-light);color:var(--rose)">✓</div><p>Memory resurface — triggered after 20+ hours absence</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--rose-light);color:var(--rose)">✓</div><p>Daily push notification (gentle, customizable time)</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--rose-light);color:var(--rose)">✓</div><p>Cloud backup + Google / Apple sign-in</p></div>
+      </div>
+    </div>
+    <div class="mvp-col">
+      <div class="mvp-hdr" style="background:var(--slate-light);color:var(--slate)">🔜 Should Have — Week 5–6</div>
+      <div class="mvp-body">
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--slate-light);color:var(--slate)">→</div><p>AI daily prompt ("What made you smile today?")</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--slate-light);color:var(--slate)">→</div><p>1 Grace Day per month mechanic</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--slate-light);color:var(--slate)">→</div><p>Photo attachment to daily entry</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--slate-light);color:var(--slate)">→</div><p>Person tag ("Grateful for: [name]")</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--slate-light);color:var(--slate)">→</div><p>Day 100 milestone card — shareable to Instagram Stories</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--slate-light);color:var(--slate)">→</div><p>Entry history scroll — browse your full chain</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--slate-light);color:var(--slate)">→</div><p>Basic mood emoji tracker (happy / neutral / hard day)</p></div>
+      </div>
+    </div>
+    <div class="mvp-col">
+      <div class="mvp-hdr" style="background:var(--sage-light);color:var(--sage)">🚀 Phase 2 — Post-Launch</div>
+      <div class="mvp-body">
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--sage-light);color:var(--sage)">+</div><p>Monthly AI Gratitude Portrait (Claude Haiku analysis)</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--sage-light);color:var(--sage)">+</div><p>Shared chains — couples and family mode</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--sage-light);color:var(--sage)">+</div><p>Printed chain book (print-on-demand)</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--sage-light);color:var(--sage)">+</div><p>365-day shareable year-in-review card</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--sage-light);color:var(--sage)">+</div><p>Corporate wellness team dashboard</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--sage-light);color:var(--sage)">+</div><p>Voice entry (speak your gratitude)</p></div>
+        <div class="mvp-item"><div class="mvp-icon" style="background:var(--sage-light);color:var(--sage)">+</div><p>Widget — see chain streak on home screen</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ⑦ TARGET MARKETS -->
+<section>
+  <div class="s-eye">07 — Target Markets</div>
+  <h2>Who Opens This App<br><em>Every Night</em></h2>
+
+  <div class="region-grid">
+    <div class="rcard">
+      <div class="rcard-name">🇵🇭 Philippines</div>
+      <div class="rcard-p" style="color:var(--rose)">Priority 1 — Launch</div>
+      <p>Deeply faith-rooted culture with strong gratitude values. Young, mobile-first population. TikTok-driven virality. "Salamat" (thank you) is a daily cultural reflex — gratitude practice feels natural, not foreign.</p>
+    </div>
+    <div class="rcard">
+      <div class="rcard-name">🇮🇩 Indonesia</div>
+      <div class="rcard-p" style="color:var(--rose)">Priority 1 — Launch</div>
+      <p>270M+ population, deeply spiritual culture. "Syukur" (gratitude to God) is a daily practice. Mental wellness awareness growing fast among Gen Z. Huge TikTok creator economy to seed the app virally.</p>
+    </div>
+    <div class="rcard">
+      <div class="rcard-name">🇮🇳 India</div>
+      <div class="rcard-p" style="color:var(--gold)">Priority 2 — Expand</div>
+      <p>500M+ smartphone users. Yoga and mindfulness culturally embedded. Growing mental health awareness especially post-pandemic. "Gratitude" as a daily practice resonates deeply with Hindu and spiritual communities.</p>
+    </div>
+    <div class="rcard">
+      <div class="rcard-name">🌎 Latin America</div>
+      <div class="rcard-p" style="color:var(--gold)">Priority 2 — Expand</div>
+      <p>Brazil and Mexico have strong faith communities and family values. "Gracias a Dios" culture. Spanish/Portuguese localization opens 650M+ potential users. High WhatsApp usage = viral sharing of milestone cards.</p>
+    </div>
+    <div class="rcard">
+      <div class="rcard-name">🇺🇸 USA / Global</div>
+      <div class="rcard-p" style="color:var(--muted)">Priority 3 — Scale</div>
+      <p>Largest paying wellness market. Gratitude journaling mainstream. Corporate wellness budgets. High willingness to pay for premium apps. Influencer-driven growth via Instagram and TikTok therapy communities.</p>
+    </div>
+    <div class="rcard">
+      <div class="rcard-name">🌍 Faith Communities</div>
+      <div class="rcard-p" style="color:var(--muted)">Priority 3 — Scale</div>
+      <p>Churches, mosques, temples globally. Faith-based gratitude practice is a natural fit. Church group "shared chains" is a powerful feature. Spiritual wellness is an underserved app niche globally.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ⑧ REVENUE PROJECTIONS -->
+<section>
+  <div class="s-eye">08 — Revenue Projections</div>
+  <h2>Conservative Growth<br><em>Scenario</em></h2>
+  <p class="lead">Assuming PH + ID launch, organic viral growth via shareable milestone cards, and a 3.5% free-to-paid conversion (conservative for a daily-habit app with emotional stickiness).</p>
+
+  <div class="proj-row">
+    <div class="proj"><div class="proj-yr">Year 1</div><div class="proj-num">80K</div><div class="proj-lbl">Active users</div></div>
+    <div class="proj"><div class="proj-yr">Year 1</div><div class="proj-num">$101K</div><div class="proj-lbl">ARR (Plus subs)</div></div>
+    <div class="proj"><div class="proj-yr">Year 2</div><div class="proj-num">400K</div><div class="proj-lbl">Active users</div></div>
+    <div class="proj"><div class="proj-yr">Year 2</div><div class="proj-num">$680K</div><div class="proj-lbl">ARR (Plus + books + B2B)</div></div>
+  </div>
+
+  <div class="divider"></div>
+  <h3>Key Assumptions</h3>
+  <div class="card-grid-3" style="margin-top:16px">
+    <div class="card">
+      <h4>3.5% free → Plus conversion</h4>
+      <p>Emotional apps with daily habits convert higher than utility apps. At 80K users: 2,800 Plus subscribers × $2.99/mo = $101K ARR in Year 1.</p>
+    </div>
+    <div class="card">
+      <h4>Milestone cards = organic virality</h4>
+      <p>Every Day 30, 100, 365 generates a shareable card. If 10% of users share their Day 30 card to Instagram Stories, that's 8,000 organic impressions per month in Year 1 alone — at zero cost.</p>
+    </div>
+    <div class="card">
+      <h4>Printed book adds 20% Y2 revenue</h4>
+      <p>If 1% of users order a printed chain book at $16 each: 4,000 books = $64K at 60% margin = $38K gross profit from a single SKU. Scales with user base.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ⑨ TECH STACK -->
+<section>
+  <div class="s-eye">09 — Suggested Tech Stack</div>
+  <h2>What to Build<br><em>It With</em></h2>
+  <div class="stack-grid">
+    <div class="si"><div class="si-cat">Frontend</div><div class="si-name">Next.js 14 + React Native (Expo)</div></div>
+    <div class="si"><div class="si-cat">Database</div><div class="si-name">Supabase + PostgreSQL</div></div>
+    <div class="si"><div class="si-cat">Auth</div><div class="si-name">Supabase Auth (Google + Apple SSO)</div></div>
+    <div class="si"><div class="si-cat">AI / Prompts</div><div class="si-name">Claude Haiku (daily prompts + monthly portrait)</div></div>
+    <div class="si"><div class="si-cat">Push Notifications</div><div class="si-name">Expo Push + Supabase Edge Functions</div></div>
+    <div class="si"><div class="si-cat">Background Jobs</div><div class="si-name">Inngest (resurface trigger + reminders)</div></div>
+    <div class="si"><div class="si-cat">Payments</div><div class="si-name">Stripe (subscriptions + one-time)</div></div>
+    <div class="si"><div class="si-cat">Photo Storage</div><div class="si-name">Supabase Storage</div></div>
+    <div class="si"><div class="si-cat">Print-on-Demand</div><div class="si-name">Printful API (chain books)</div></div>
+    <div class="si"><div class="si-cat">Analytics</div><div class="si-name">PostHog (streak analytics, drop-off)</div></div>
+    <div class="si"><div class="si-cat">Shareable Cards</div><div class="si-name">Satori / OG Image generation</div></div>
+    <div class="si"><div class="si-cat">Email</div><div class="si-name">Resend (weekly chain summary)</div></div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-brand">GratitudeChain</div>
+  <div class="footer-note">Business Plan · Market Analysis · MVP Scope · March 2026</div>
+</footer>
+
+</body>
+</html>
