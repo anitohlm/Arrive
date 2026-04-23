@@ -863,23 +863,28 @@ function showMonthEndCeremony(){
   announceWrap.appendChild(monthNameEl);
   announceWrap.appendChild(morningsEl);
 
-  // knot block — flex column centered (knot + word + rule + message)
+  // knot block — flex column centered, padding reserves space for the
+  // announcement block above (which is position:absolute at top:10%)
   var knotWrap = document.createElement('div');
   knotWrap.style.cssText = [
     'position:absolute','inset:0',
     'display:flex','flex-direction:column','align-items:center','justify-content:center',
-    'gap:18px','padding:120px 32px','pointer-events:none'
+    'gap:14px','padding:28vh 32px 120px','pointer-events:none'
   ].join(';');
 
+  // rose sized responsively to viewport — shrinks on short phones so the
+  // announcement text never collides with it
   var dpr = Math.min(window.devicePixelRatio||1, 2);
+  var _cvsSize = Math.max(160, Math.min(220, Math.min(window.innerWidth, window.innerHeight) * 0.42));
+  _cvsSize = Math.round(_cvsSize);
   var knotCanvas = document.createElement('canvas');
   knotCanvas.style.cssText = [
-    'width:220px','height:220px',
+    'width:'+_cvsSize+'px','height:'+_cvsSize+'px',
     'opacity:0','transition:opacity 600ms ease',
     'mix-blend-mode:screen'
   ].join(';');
-  knotCanvas.width = 220 * dpr;
-  knotCanvas.height = 220 * dpr;
+  knotCanvas.width = _cvsSize * dpr;
+  knotCanvas.height = _cvsSize * dpr;
 
   var wordEl = document.createElement('p');
   wordEl.textContent = monthWord;
