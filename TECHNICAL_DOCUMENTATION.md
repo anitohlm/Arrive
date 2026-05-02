@@ -531,7 +531,128 @@ Edit the `DEMO_EMOTIONS` / `DEMO_ENTRIES` arrays in `js/demo.js`. To adjust the 
 
 ---
 
-## 14. Version history (cache-bust anchors)
+## 14. Problems encountered (and how we solved them)
+
+A frank record of every meaningful issue hit during the hackathon build, with the diagnosis and fix. Kept here so a future engineer doesn't waste a day re-discovering a 30-second answer.
+
+### 14.1  Deployment & infrastructure
+
+| # | Problem | Diagnosis | Fix |
+|---|---|---|---|
+| **D1** | App Service `:( Application Error` immediately after first deploy | `db.py` import called `CosmosClient.from_connection_string(os.getenv("COSMOS_CONNECTION_STRING"))` — env var was missing, `.rstrip(';')` blew up on `None` | Added all required env vars in App Service → Environment variables. Long-term: `db.py` should fail soft on missing env, surface a debug page instead of crashing on import. |
+| **D2** | Foundry calls returned `ClientAuthenticationError: DefaultAzureCredential failed to retrieve a token` | App Service had no managed identity assigned; `DefaultAzureCredential` exhausted every fallback (CLI, VS Code, IMDS, broker) | Enabled **system-assigned managed identity** on `arrive` web app, granted `Cognitive Services User` + `Azure AI Developer` on the Foundry resource. |
+| **D3** | Static Web Apps build failed: *"The size of the app content was too large. Limit 262144000 bytes."* | Default `app_location: "/"` packaged the entire repo (Python backend, docs, archives, plus 173 MB of bloated SVG icons). 38 unused SVGs were 3 MB each — raster PNGs disguised as SVG. | (1) Deleted 38 unused SVG variants. (2) Modified the SWA workflow to stage frontend-only files into `_swa_dist/` before upload (`index.html`, `js/`, `css/`, `assets/`). Bundle dropped from ~270 MB to ~30 MB. |
+| **D4** | `git push` rejected: *"refusing to allow a Personal Access Token to create or update workflow"* | Local PAT lacked the `workflow` scope, GitHub blocks workflow file pushes without it. | Edited `.github/workflows/azure-static-web-apps-*.yml` directly via GitHub web UI. Documented this as a permanent constraint in the troubleshooting table. |
+| **D5** | CORS preflight `OPTIONS /post-insight 400` from the live frontend | The SWA URL is `mango-wave-04adc570f.7.azurestaticapps.net` — three subdomain segments. The CORS regex `[a-z0-9-]+\.azurestaticapps\.net` only matches one segment before the suffix. | Changed regex to `[a-z0-9.-]+\.azurestaticapps\.net` (added `.` to character class) so multi-segment hostnames match. |
+| **D6** | First request after idle takes 10–15 seconds | Free F1 tier puts the app to sleep after 20 min idle | Documented as expected behavior. Mitigations: B1 Basic ($13/mo) for always-on, or a keep-alive ping if needed. Not blocking for hackathon. |
+| **D7** | "App is empty after deploy" / `{"detail":"Not Found"}` at root URL | FastAPI doesn't define a route for `/`, returns 404 by design | Documented that the backend is API-only; users access the frontend via Static Web Apps URL. Health check at `/health` confirms backend liveness. |
+| **D8** | Function App deploy: *"Can't determine project language from files"* | `func azure functionapp publish` couldn't auto-detect language without explicit flag | Used `--python` flag. Documented in `functions/README.md`. |
+| **D9** | `func --version` "command not found" after `winget install` | PATH refresh required for new shell session | Used full path `& "C:\Program Files\Microsoft\Azure Functions Core Tools\func.exe"` or restarted PowerShell. |
+| **D10** | `[Convert]::ToHexString` failed in Windows PowerShell 5.1 | Method only exists in PowerShell 7+ | Used `-join ((1..64) \| ForEach-Object { '{0:x}' -f (Get-Random -Max 16) })` or GUID-based fallback. |
+
+### 14.2  Frontend rendering & layout
+
+| # | Problem | Diagnosis | Fix |
+|---|---|---|---|
+| **F1** | Month-end ceremony rose appeared *cropped* on every viewport | The weave animation hardcoded `W_CVS = H_CVS = 220` for its drawing coordinate space, but the canvas's actual CSS pixel size (`_cvsSize`) was responsive (180–380px). On phones smaller than 220px the rose drew past the canvas bounds and clipped. On tablets larger than 220px the rose sat in the upper-left with empty space below/right. | `W_CVS = H_CVS = _cvsSize`. The drawing coords now match the canvas's actual size on every device. |
+| **F2** | Mini pendant on the closing page ("carry it forward") was clipped | Same root cause — `miniKnotTick` hardcoded `mcx=60, mcy=60, mR=120*0.38` but the canvas was 96px | Derived `mcx`, `mcy`, `mR` from the canvas's actual `offsetWidth`. |
+| **F3** | Visible rectangular dark frame around the rose pendant | Canvas had `mix-blend-mode: screen`, which lifted any sub-1.0-alpha pixels (from the radial glow gradient that fills the canvas to its bounds) so the rectangular canvas edge became visible against the opaque overlay | Removed `mix-blend-mode: screen`. The rose's internal radial glow is already luminous enough; no compositor blend needed. |
+| **F4** | Splash/chain content bleeding through the ceremony overlay (faint chain icon below the rose, "logged today" text at bottom) | Overlay background was `rgba(7,5,3,0)` with a transition to opacity — left brief transparent windows, plus the chain canvas stroke had high enough alpha to show through the partially-transparent moments | Set overlay background to `#0a0704` solid from t=0. Removed the transition. |
+| **F5** | DOM particles (the evaporating sparkles) suddenly disappeared | While debugging F4 we'd raised the overlay's `z-index` from 180 → 200 → 9999. Particles spawn with `z-index: 185`, so any overlay above 185 hid them. | Reverted overlay to `z-index: 180`. Particles back at 185 are above the overlay, visible. |
+| **F6** | `ReferenceError: reflectionPage is not defined` killed every month-end ceremony | We'd briefly tried a 7-page structure with a `reflectionPage` wrapping element. Reverted to 6 pages but missed one orphaned `reflectionPage.appendChild(msgEl)` call. | Mounted `msgEl` (display:none) on `knotWrap` instead, satisfying the AI resolver's `if(!msgEl.parentNode) return` guard while the visible paragraph rendered on page 5's separate element. |
+| **F7** | Pendant felt "off-center" — biased upward in the visible frame | Used flex-column with `justify-content:center` and the announcement + rose + word + paragraph stacked together. Flex centers the **whole stack**, not the rose. The rose ended up ~5–10% above the optical midline. | Gave page 0 three absolute-positioned zones (announcement at top:22%, rose at top:50% with `transform: translate(-50%, -50%)`, word group at bottom:22%). Rose now lands at exactly viewport center. Then iterated to a flex-stack with the rose dominating visual weight, so it *reads* as centered without absolute math fighting the layout. |
+| **F8** | "noticing" chip rendered side-by-side with the AI reply instead of stacked above | `postInsightAi` lives inside `.post-insight-ai-wrap` which is flex-row (with the loading dot). My `insertBefore(chip, postInsightAi)` made the chip a flex-row sibling. | Insert the chip one level up — before `.post-insight-ai-wrap` itself, at the `.post-insight-wrap` parent level. Added `width: fit-content` so the pill sizes to its content. |
+| **F9** | Year-end ceremony showed "january to april" instead of "january to december" | `endDate` was set to `new Date()` (today) instead of `startDate + 364 days` | Fixed: `endDate = startDate + 364 days`. The label now spans the actual calendar year regardless of when the ceremony fires. |
+| **F10** | iPad year-end pager showed page 1 + page 2 side by side | A leftover `#yearCeremonyOverlay > div > div { max-width: 540px }` rule constrained pages to 540px while the pager's `flex: 0 0 100vw` + `translateX(-100vw)` math required uncapped page widths. | Removed the max-width cap. |
+| **F11** | Stray gold dot near the chain clasp on iPad | Was a sparkle rain particle spawning randomly across the chain canvas footprint | Made rain particles spawn in **bands outside** the chain's horizontal footprint on viewports ≥768px, so no particle ever looks like a stranded knot. |
+| **F12** | Birthday calendar picker "bled" past the viewport — couldn't scroll to bottom years | Was a dropdown with `position: absolute` inside a parent with `overflow: hidden`. Overflowing content was unreachable. | Converted to a centered modal with `position: fixed`, scale-in animation, and a large `box-shadow: 0 0 0 100vmax rgba(...)` that doubles as a dim backdrop. |
+| **F13** | Bottom nav icons visible through the ceremony overlay (transparent overlay let the nav peek through) | Bottom nav has `position: fixed; z-index: 50` — below the overlay (180) but the overlay's transparent background didn't hide it visually | Added a CSS `:has()` rule that hides `.bottom-nav` whenever any ceremony overlay is in the DOM (matches DEMO pill auto-hide pattern). |
+| **F14** | Year-end emotion chart showed every emotion at ~3% (flat distribution) | Demo seed used uniform random over 18 emotions → ~5.5% each → judges saw a "nothing happened" chart | Replaced with a **seasonal weighted distribution**: each 30-day window picks 2 anchor + 2 secondary emotions and emits with weights 45 / 30 / 11 / 6 / 8. Top emotions now legibly dominate. |
+| **F15** | "morning N" still small after seeding 365 days for year-end | `dayNum` is computed from `today − gc_start_date`, not from entry count. For year-end demo we set `gc_start_date = Jan 1 of current year`, so on April 23 `dayNum = 113` not 365. | (Design choice, not a bug) `dayNum` correctly represents personal calendar progress; entries can be in the future relative to that. The year-end ceremony fires on entry count, not on dayNum, so the visual lands correctly. |
+
+### 14.3  Demo panel & adaptive layer
+
+| # | Problem | Diagnosis | Fix |
+|---|---|---|---|
+| **A1** | Month-end demo "seeded 0 demo days" toast on 2nd+ click | Seeder skipped days already in `gc_logged_dates`. After first run filled the month, subsequent runs added nothing. | Purge demo-tagged entries for the current month + remove their dates from `gc_logged_dates` before re-seeding. Each click now produces a guaranteed-fresh 30-day month. |
+| **A2** | Month-end ceremony silently never fired | `triggerMonthEndCeremony` called `showMonthEndCeremony()`, which checked for an existing `monthEndOverlay` element and returned silently. Year-end overlay (or any prior overlay) hadn't been cleaned up. | Force-remove all known ceremony overlays (`monthEndOverlay`, `yearCeremonyOverlay`, `yearCloseOverlay`, `birthdayCeremonyOverlay`, `necklaceWitnessLayer`, `monthReplayOverlay`) and clear stale `window._monthlyReflectionPrefetch`/`_monthReflectionText`/`_monthReflectionClosingEl` before calling show. |
+| **A3** | "Seed 7 anxious days" → submit → no NOTICING chip on insight screen | Frontend wasn't sending `recent_entries` field; backend's adaptive layer fell back to a Cosmos query that returned demo-seeded entries which only existed in localStorage. | Made `/post-insight` accept an optional `recent_entries: List[RecentEntry]`. Frontend pulls last 7 from `gc_entries` localStorage and sends them inline. Backend uses those directly. Falls back to Cosmos only if none provided + `user_id` present. |
+| **A4** | Demo seeder set `gc_start_date` to today even when user already had a startDate, breaking the chain logic | `if(!localStorage.getItem('gc_start_date'))` guard worked but the *timing* — running seeder right after first onboard — meant the freshly-set startDate was today, leaving day 1 = today with 7 backdated entries | Demo flow now respects existing `gc_start_date`. If absent, set to `today − (days−1)` so the seeded data spans backwards correctly. |
+| **A5** | "you've already arrived today" blocked the demo flow | After clearing `gc_logged_today`, the splash still showed already-logged because `gc_logged_dates` contained today's ISO from a real earlier entry | Demo cleanup script also strips today from `gc_logged_dates` and removes any entry dated today from `gc_entries`. |
+| **A6** | "noticing" chip phrasing didn't acknowledge today's mood when user picked something different from the streak | `_build_noticed_line` only knew the recent pattern; if user just picked "calm" after 7 anxious days, the chip read "you've carried anxious for three mornings" — sounded like it was describing now | Added optional `today_mood` parameter to `build_user_context`. When today's mood differs from the streak, phrasing shifts to **"three mornings of anxious behind you. today feels different."** Acknowledges the shift instead of pretending it isn't there. |
+| **A7** | "Co-Authored-By: Claude Opus 4.7" appearing on every commit on GitHub's UI | Every `git commit -m` had been adding the trailer | (1) Stop adding it going forward. (2) Used `git filter-branch --msg-filter 'sed "/^Co-Authored-By: Claude/d"'` to strip the trailer from all 88 historical commits. Force-pushed clean history. |
+| **A8** | Stale `intention: "joy"` field on every user document in Cosmos confused inspectors ("why does this user have 'joy' when they chose 'hopeful'?") | `db.py:get_user` had `"intention": "joy"` as a hardcoded default in the new-user fallback dict. Field was never actually read anywhere. | Removed the field. New users no longer get it; existing user docs still have it as harmless dead data. |
+
+### 14.4  Cron / Functions
+
+| # | Problem | Diagnosis | Fix |
+|---|---|---|---|
+| **C1** | Initial "monthly" cron fired on 1st of calendar month — wrong for users mid-cycle | A user who first logged on April 15 shouldn't get their "monthly portrait" on May 1 after only 15 days. | Both Function timers now run **daily** (09:00 / 10:00 UTC). Backend `/cron/*` endpoints filter per-user: only fires insight where `(today − user.startDate)` is a positive multiple of 30 (monthly) or 365 (yearly). Each user gets their own personal milestone cadence. |
+| **C2** | `/submit-entry` rejected demo-seeded backdated entries | Endpoint uses `process_streak()` which returns `already_logged` after the first call. Backdating 7 entries with the same "today" timestamp was a violation of the streak invariant. | Demo seeding writes to localStorage only; the adaptive layer reads from the client's `recent_entries` payload. No need to push demo entries to Cosmos. |
+| **C3** | Function App `func` command not on PATH after install | New shell session needed to pick up updated PATH | Documented: use full path `& "C:\Program Files\Microsoft\Azure Functions Core Tools\func.exe"` or restart PowerShell. |
+
+### 14.5  AI agents & content safety
+
+| # | Problem | Diagnosis | Fix |
+|---|---|---|---|
+| **AI1** | Foundry returned 400 / content-filter rejection on certain reflection prompts | System prompts had **bad-example** blocks ("DO NOT write 'amazing!' or 'beautiful!'"). The bad-example text itself triggered the jailbreak detector. | Rewrote every agent's system prompt to use **positive framing only** ("Always write tender witnesses in lowercase sentence case"). No NEVER/MUST directives, no listed bad examples. Foundry's filter stopped rejecting. |
+| **AI2** | AI reflection paragraph didn't land in time on the ceremony screen — users saw the hardcoded one-liner fallback | `_monthlyReflectionPrefetch` race: ceremony fired before the fetch resolved. | Self-prefetch in `showMonthEndCeremony()` itself if no caller had prefetched. Cached resolved text in `window._monthReflectionText` so any later page-mount could pick it up. |
+| **AI3** | Insight reply consistently described entries instead of speaking to the user ("Top themes: cooking, following instructions") | Original system prompt used analyst-style framing | Rewrote to "speak TO them not ABOUT them" with concrete tone examples: "that's a you thing — making kare-kare from a tiktok. i love that." Voice landed immediately. |
+| **AI4** | Crisis disclosures could reach the AI before being intercepted | Original architecture had safety checks AFTER the AI call | Moved `classify_crisis()` to run **before** `client.complete()`. If a crisis is detected, return a hardcoded resource card immediately. The AI is never exposed to the disclosure. The entry is never saved. |
+
+---
+
+## 15. Known gaps & deferred work
+
+What we **didn't** build, what we descoped, what's worth pursuing post-hackathon. Listed candidly so judges (and future maintainers) can see the boundaries clearly.
+
+### 15.1  Product gaps
+
+| Gap | Why it's not in v1 | Notes |
+|---|---|---|
+| **No intra-day mindfulness nudges** | Push notification infrastructure (FCM/APNs) needs platform-specific work and a notification preference center. Out of scope for a 4-week hackathon build. | Could be added via Azure Notification Hubs + a small scheduled Function. The `mindfulness_agent` already produces content suitable for these. |
+| **No NLP-based emotion detection** | Users manually pick their mood from 38 named emotions before writing. We chose this over auto-detection because it forces a moment of self-attunement, which is the whole point of the keystone-habit thesis. | We *could* add a passive sentiment pass on the entry text and surface a "you wrote anxious but felt calmer" reflection — interesting product question, not a technical gap. |
+| **No calendar / wearable / reminder integration** | Out of scope for hackathon. Would need OAuth flows for Google/Apple Calendar + Health Kit. | The data shape is ready: `gc_logged_dates` could push to a calendar subscription URL; `mood` + `entry text` could attach to a Day-One-style export. |
+| **No full STT/TTS voice assistant pipeline** | Voice **recording** is supported (`attachments.js`), but no transcription, no spoken AI replies. | Azure Speech is the obvious next step. Recordings are persisted as base64 in Cosmos so transcription can run server-side later without re-recording. |
+| **No A/B adaptive testing** | The adaptive layer reads patterns and tunes prompts, but doesn't *learn* which adaptations the user responded to | A reinforcement loop (did the user re-read this insight? did they write longer next time?) is fascinating design space. Out of scope for hackathon. |
+| **No multi-language support** | English-only copy throughout, including agent system prompts | Would need an `i18n.js` lookup + translated system prompts that preserve the voice rulebook in target languages. Translation isn't enough — the *tone* doesn't translate one-to-one. |
+
+### 15.2  Operational gaps
+
+| Gap | Risk | Mitigation path |
+|---|---|---|
+| **No Application Insights actively monitored** | Errors in production are only visible via App Service Log Stream (live tail) or Function App Monitor tab | App Insights is wired in `host.json` for Functions; just not integrated into a dashboard / alerting. Would take ~1 hour to add real alerts. |
+| **No Cosmos backup/restore strategy** | Free tier doesn't include continuous backups; periodic backups need manual configuration | Cosmos Backup Policy → "Periodic" with 24h interval is one click in the portal. Disaster recovery beyond that needs Azure Backup or a custom export Function. |
+| **No GDPR data-export endpoint** | Users can't download all their data; can't delete their account through the UI | Two new endpoints: `GET /user/export` (returns JSON dump of users + entries + links scoped to user_id) and `POST /user/delete` (cascading delete + 30-day soft-delete grace period). Pydantic schemas already support this. |
+| **Stale `intention: "joy"` field on existing user docs** | Cosmetic confusion when inspecting Cosmos — judges might wonder why a user "has joy" | Removed from `db.py:get_user` defaults so new users are clean. Existing 9 user docs still have it. One-off cleanup script could `upsert_item` each user without the field; not worth the deploy churn for a cosmetic field. |
+| **`GC_DEBUG=1` is currently enabled in production** | `/debug/cosmos` and `/debug/reflection` are publicly callable. They don't expose secrets or PII (counts only, throwaway test reflections), but they do reveal infrastructure shape. | For real production: flip `GC_DEBUG=0` after the hackathon. For demo period: kept on so judges can verify the deployment from the browser. |
+| **No automated tests** | Refactors are eyeballed and smoke-tested manually | Pytest for `agents/safety.py` + `streak_agent.py` (pure functions, no mocking needed) would be a 2-hour win. Frontend Playwright tests for the ceremony flows would be another half-day. |
+| **No load test** | Free F1 tier limits (60 CPU min/day, 1 GB RAM) haven't been pressure-tested | Real production load would justify B1 Basic ($13/mo) or Premium V3. The architecture (stateless FastAPI + Cosmos + Functions) scales horizontally without code change. |
+| **First-request cold start (5–15 s)** | Free F1 idle-sleeps after 20 min | Documented as expected. B1 Basic = always-on if it matters. |
+
+### 15.3  Design gaps
+
+| Gap | Notes |
+|---|---|
+| **Desktop layout is phone-first** | Above 1024px the content stays narrow; doesn't make use of wide-screen real estate. Production would want a true desktop layout (multi-column portrait grid, hover states, max-width container). |
+| **No dark/light mode toggle** | Theme is one-way dark + brown/gold. The data model has a `gc_theme` slot for "morning" mode, but the morning-mode CSS isn't fully wired across every screen. |
+| **Accessibility gaps** | No screen-reader testing; canvas-rendered roses have no aria-label or text alternative; emotion picker doesn't announce selection state. WCAG 2.2 AA pass is owed. |
+| **Reduced motion fallback exists for ceremonies but not for splash/chain rotation** | `prefers-reduced-motion` is honored in `showMonthEndCeremony`, but the chain canvas rotation and rain particles ignore it. |
+| **No haptic feedback hooks** | Mobile browsers expose `navigator.vibrate()`. Could add tasteful 10-30ms pulses on knot-tied moments, milestone reveals, ceremony transitions. |
+
+### 15.4  Things we descoped (decided against on purpose)
+
+| Item | Rationale |
+|---|---|
+| **Streaks-as-pressure** (`X days in a row! don't break your streak!`) | The keystone-habit thesis: gentleness > pressure. Streaks count days but never threaten. Grace days exist (one per month) so a missed day doesn't reset anything. |
+| **"Share to social" buttons** | Gratitude is internal work. The product would betray its own voice if it nudged toward performative posting. The year-end pendant *is* shareable (`<emotion>-2026.png` export), but it's user-initiated, never prompted. |
+| **In-app purchases / subscription gates** | Hackathon scope, but also a design choice — every screen is free. The product has no "premium" tier because there's nothing the product wants to withhold from the user. |
+| **Streak insurance / emotional-response scoring** | Quantifying mood would betray the voice. Arrive does NOT score, rate, summarize-as-grade, or progress-bar emotional growth. |
+| **Multi-account / family sharing** | The walking-alongside link feature exists (link two users so they see each other's "still here" status, never each other's content) but a family-tier UX would require significant new design work. |
+
+---
+
+## 16. Version history (cache-bust anchors)
 
 | Version | Notable |
 |---|---|
@@ -552,10 +673,25 @@ Edit the `DEMO_EMOTIONS` / `DEMO_ENTRIES` arrays in `js/demo.js`. To adjust the 
 | v=115   | iPad year-end pager fix (pages no longer overlap) |
 | v=116   | Year-end label spans full 365 days ("january to december") |
 | v=117   | Necklace witness solid backdrop (no chain bleed-through) |
+| v=118   | Birthday calendar picker → centered modal (no overflow clipping) |
+| v=121   | Month-end rose scales fluidly from phone to desktop |
+| v=126   | Three-zone ceremony composition with hidden bottom nav |
+| v=131   | Year grid renders filled roses for any month with entries |
+| v=137   | `arriveDebug` console diagnostics for ceremony firing |
+| v=140   | Opaque overlay background prevents splash bleed-through |
+| v=143   | Removed `mix-blend-mode: screen` (rectangle frame artifact gone) |
+| v=145   | Restored DOM particles (z-index ordering fixed) |
+| v=146   | **CRITICAL** — `W_CVS = _cvsSize` fixes rose cropping on every device |
+| v=147   | Tech stack table + architecture diagram updated |
+| v=148   | Adaptive-strategy layer (`agents/user_context.py` + NOTICING chip) |
+| v=151   | Adapt-demo seeder no-reload flow |
+| v=152   | "Preview noticing chip →" instant demo button |
+| v=153   | Chip stacks above AI reply (was rendering side-by-side) |
+| v=154   | Shift-aware noticing phrasing ("today feels different") |
 
 ---
 
-## 15. Appendix — file-by-file one-liners
+## 17. Appendix — file-by-file one-liners
 
 **Frontend JS**
 
