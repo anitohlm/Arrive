@@ -33,3 +33,7 @@ node_modules/
 package.json
 package-lock.json
 _build_docx.js
+
+# Demo video script — internal, not for the public repo
+DEMO_SCRIPT.md
+docs/DEMO_SCRIPT.md

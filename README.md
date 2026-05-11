@@ -22,6 +22,8 @@ The product concept and business plan were developed prior to the hackathon. All
 - **Azure Cosmos DB** — user profiles, links, journal entries
 - **Azure AI Search** — semantic memory resurface
 - **Azure App Service** — FastAPI backend hosting
+- **Azure Functions** — daily timer-triggered Portraits + yearly insights
+- **Azure Static Web Apps** — vanilla-JS frontend, free tier
 - **Managed Identity + DefaultAzureCredential** — zero hardcoded keys
 - **FastAPI** — REST API with slowapi rate limiting + Pydantic validation
 
@@ -35,11 +37,11 @@ All seven call **Azure AI Foundry** via `DefaultAzureCredential`. They share one
 | 2 | **Insight** | Quiet post-submit "friend voice" line after each entry lands on the chain |
 | 3 | **Grace** | Soft re-entry message after a missed day — no shame, just welcome |
 | 4 | **Memory** | Resurfaces a past entry semantically matched to today's mood via Azure AI Search |
-| 5 | **Mindfulness** | Guides a short breathing exercise when you arrive anxious or overwhelmed |
+| 5 | **Mindfulness** | Guides a short breathing or grounding exercise. Switches from breath to grounding when the user has been anxious for 3+ days in a row (breathwork can worsen entrenched anxiety — grounding pulls them back into the body). |
 | 6 | **Monthly Insights** | Generates the month-end Gratitude Portrait copy |
 | 7 | **Yearly Insights** | Composes a personalized year-in-review paragraph at 365 mornings — addressed by name, reflecting the emotional shape of the whole year |
 
-## Two Support Modules
+## Three Support Modules
 
 These aren't Foundry agents — they run entirely offline, before or alongside the AI layer.
 
@@ -47,6 +49,7 @@ These aren't Foundry agents — they run entirely offline, before or alongside t
 |---|---|
 | **Safety Classifier** (`agents/safety.py`) | Regex-based detection for abuse / self-harm / suicidal-ideation disclosures. Runs **before** the AI is called; short-circuits to real resources (988, RAINN, Childhelp, Philippines DSWD 1343, findahelpline.com). The entry is never saved to the chain. *A gratitude app should know when to stop being a gratitude app.* |
 | **Streak Engine** (`agents/streak_agent.py`) | Pure math — streak computation, milestone detection (days 7 / 100 / 200 / 250 / 300), grace-day accounting (one per month). |
+| **Adaptive Layer** (`agents/user_context.py`) | Reads the user's last 7 entries to extract recent-pattern signals: emotion streak, brevity trend, missed-day rate, dominant emotion, shift detection. Every AI agent receives this as an **ADAPTATION** block appended to its system prompt — so the reply tunes length, tone, and suggestions to what the user has actually been carrying. The visible artifact is a **"noticing" chip** on the post-insight screen (`noticing · three mornings of anxious behind you. today feels different.`). |
 
 ## Voice
 
@@ -58,6 +61,13 @@ One close-friend register across every piece of AI output in the app: tender, un
 - **Streak milestones** at days 7, 100, 200, 250, 300 — one quiet line, no confetti
 - **Birthday ceremony** — the knot that falls on your birthday is marked with your birthstone
 - **Year-end ceremony** — twelve monthly pendants arrayed for you to pick one to carry forward as a permanent necklace
+
+## Other features
+
+- **Walking alongside** — link up to three people who can see *that* you showed up today, never *what* you wrote. The whole point is presence without surveillance.
+- **Time capsules** — write a sealed letter to your future self. Capsules glow only on or after their unlock day, so the surprise stays a surprise.
+- **Constellation heatmap** — a year-at-a-glance grid of your mornings, colored by emotion.
+- **Memory resurface** — on a heavy morning, a past entry semantically matched to today's mood surfaces on the insight screen — your own words, handed back.
 
 ## Safety + Privacy
 

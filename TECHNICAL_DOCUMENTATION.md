@@ -87,7 +87,7 @@ Arrive/
 │  localStorage keys (all prefixed gc_):                   │
 │    gc_user_id          UUID, first-boot generated        │
 │    gc_user             {name, email, birthday, birthYear}│
-│    gc_entries          cached entries array              │
+│    gc_entries          cached entries array (last N)     │
 │    gc_logged_today     toDateString — self-healing       │
 │    gc_logged_dates     ISO dates logged                  │
 │    gc_start_date       first-entry local-ISO date        │
@@ -99,6 +99,10 @@ Arrive/
 │    gc_birthday_knots   day numbers that fell on bdays    │
 │    gc_time_capsules    future-self letters               │
 │    gc_grace            {month, remaining}                │
+│                                                          │
+│  On /post-insight the client sends the last 7 entries    │
+│  inline as `recent_entries` so the adaptive layer can    │
+│  run on demo-seeded data too (no Cosmos round-trip).     │
 └────────────┬─────────────────────────────────────────────┘
              │ HTTPS/JSON  (API_BASE: arrive.azurewebsites.net in prod, :8766 dev)
              │ CORS allow-list: *.azurestaticapps.net
@@ -111,11 +115,24 @@ Arrive/
 │                                                          │
 │  orchestrator.py — cross-agent workflows                 │
 │                                                          │
-│  agents/ (7 AI + 2 support)                              │
+│  ┌─ ADAPTIVE LAYER (agents/user_context.py) ──────────┐  │
+│  │  Pure-Python signal extractor. Reads last 7        │  │
+│  │  entries, emits:                                   │  │
+│  │    • streak_emotion   (3+ days same emotion)       │  │
+│  │    • avg_length       short / medium / long        │  │
+│  │    • missed_rate      0.0–1.0 over 7 days          │  │
+│  │    • dominant_emotion most frequent this week      │  │
+│  │    • noticed          1-line shift-aware summary   │  │
+│  │  context_preamble() injects an ADAPTATION block    │  │
+│  │  into every agent's system prompt below.           │  │
+│  └────────────────────────┬───────────────────────────┘  │
+│                           │ ctx injected                 │
+│  agents/ (7 AI + 3 support)                              │
 │    Azure Managed Identity → DefaultAzureCredential       │
 │    → Microsoft Agent Framework (azure-ai-agents)         │
-│    safety.py short-circuits AI for crisis disclosures    │
-│    streak_agent.py runs pure math offline                │
+│    safety.py       short-circuits AI for crisis text     │
+│    streak_agent.py pure math, milestones, grace          │
+│    user_context.py adaptation signals (above)            │
 │                                                          │
 │  db.py        → AZURE COSMOS DB  (entries/users/links)   │
 │  search.py    → AZURE AI SEARCH  (text-only projection)  │
@@ -126,14 +143,18 @@ Arrive/
              │ POST /cron/yearly-insights
 ┌────────────┴─────────────────────────────────────────────┐
 │  AZURE FUNCTIONS  (arrive-scheduler — Consumption plan)  │
-│    monthly_portraits   Timer: 1st of month @ 09:00 UTC   │
-│    yearly_insights     Timer: Jan 1 @ 10:00 UTC          │
+│    monthly_portraits   Timer: daily @ 09:00 UTC          │
+│    yearly_insights     Timer: daily @ 10:00 UTC          │
+│  Both fire daily; backend filters per-user so insights   │
+│  land on each user's personal day-30 / day-365 anchor.   │
 └──────────────────────────────────────────────────────────┘
 
          [CI/CD pipeline — GitHub Actions]
   git push main ──► main_arrive.yml ──► App Service redeploys
               └──► azure-static-web-apps-*.yml ──► SWA redeploys
 ```
+
+**How the adaptive layer feeds every agent.** On `/post-insight`, the route assembles a `ctx` dict via `build_user_context(recent_entries, today_mood)`. That dict is threaded into the agent call as `user_context=ctx`; the agent's `get_*` function calls `context_preamble(ctx)` which renders a tight `ADAPTATION` block — e.g. "they tend to write briefly — keep your reply under 15 words" or "the user has been 'anxious' for 3+ days. acknowledge the continuity gently." Reflection, Insight, and Mindfulness all honor this. The same `ctx["noticed"]` line ships back to the frontend in the response and renders as the gold **"noticing"** chip above the AI reply — making the adaptation visible to the user, not just to the model.
 
 ---
 
