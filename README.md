@@ -14,7 +14,7 @@ Open the demo URL in any modern browser — sign in with your name, write a morn
 **For judges in a hurry:** open the **DEMO** pill at the top-left → *seed 30 days* → tap the chain heart → *arrive* → *month-end* → *year-end*. You'll see the full ceremony arc — knot, pendant, year necklace — in under two minutes.
 
 ## Prior Work Disclosure
-The product concept and business plan were developed prior to the hackathon. All code in this repository was written exclusively during the hackathon period (April 2 – May 3, 2026). No prior codebase was used.
+The product concept and business plan were developed prior to the hackathon. All code in this repository was written exclusively during the hackathon period (April 2 – May 13, 2026). No prior codebase was used.
 
 ## Tech Stack
 - **Azure AI Foundry** — model hosting for all seven AI agents
